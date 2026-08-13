@@ -419,3 +419,23 @@ Creating command definitions outside the manager keeps command schema constructi
 #### Consequences
 
 Direct subsystem mutation should stay internal where possible. Future parsing and execution should use the manager-owned registry rather than allowing separate mutable command-system entrypoints. Batch command registration should remain atomic so setup failures do not leave partial command state.
+
+### D-017: Flag And Option Schema Names Are Prefix-Free
+
+#### Context
+
+Command flags and options are typed by users with a prefix such as `--`, but storing that prefix inside every command schema makes definitions noisier and harder to adapt for projects that prefer a different prefix.
+
+#### Decision
+
+Flag and option schema names should be defined without their command-line prefix.
+
+The prefix is configured through `CommandParsingOptions.FlagAndOptionPrefix`, which defaults to `--`. The parser will apply the configured prefix later when matching command input.
+
+#### Reasoning
+
+Prefix-free schema names keep command definitions focused on logical command vocabulary. A configurable prefix lets callers use styles such as `-delay` or another project-specific prefix when their command set can safely support it.
+
+#### Consequences
+
+Command registration should reject flag or option names that already include the manager's configured prefix. User-facing docs should show schema names such as `delay` and input examples such as `--delay 10`.

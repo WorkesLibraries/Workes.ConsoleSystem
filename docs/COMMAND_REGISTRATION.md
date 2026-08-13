@@ -42,8 +42,8 @@ var console = new ConsoleManager();
 CommandDefinition restart = new CommandBuilder("server.restart")
     .Description("Restart the server.")
     .Argument<RestartCommandState>(x => x.Reason, "reason")
-    .Flag<RestartCommandState>(x => x.IgnorePlayers, "--ignore-players", "-i")
-    .Option<RestartCommandState>(x => x.DelaySeconds, "--delay", "-d")
+    .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "i")
+    .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "d")
         .Default(10)
         .Range(0, 60)
         .AllowedValues(0, 10, 30, 60)
@@ -55,6 +55,31 @@ console.RegisterCommand(restart);
 ```
 
 Arguments, flags, options, and constraints are schema metadata in this stage. They are not parsed or evaluated yet.
+
+## Flag And Option Names
+
+Flag and option names are defined without their command-line prefix.
+
+```csharp
+.Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "i")
+.Option<RestartCommandState>(x => x.DelaySeconds, "delay", "d")
+```
+
+The configured parser prefix is applied later when command input is parsed. The default prefix is `--`, so the logical option name `delay` will be typed as `--delay` by default.
+
+Use `CommandParsingOptions.FlagAndOptionPrefix` to configure another prefix, such as `-`.
+
+```csharp
+var console = new ConsoleManager(new ConsoleManagerOptions
+{
+    CommandParsing = new CommandParsingOptions
+    {
+        FlagAndOptionPrefix = "-"
+    }
+});
+```
+
+With that configuration, the logical option name `delay` will be typed as `-delay`.
 
 ## Path Rules
 

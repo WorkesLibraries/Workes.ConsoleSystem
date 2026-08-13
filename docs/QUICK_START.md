@@ -49,6 +49,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
     CommandParsing = new CommandParsingOptions
     {
         OptionValueStyle = OptionValueStyle.AnySeparated,
+        FlagAndOptionPrefix = "--",
         IsCaseSensitive = false
     },
     History = new HistoryOptions

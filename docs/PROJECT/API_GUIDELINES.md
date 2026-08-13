@@ -97,8 +97,8 @@ public sealed record RestartCommand(
     int DelaySeconds);
 
 var restart = new CommandBuilder("server.restart")
-    .Flag<RestartCommand>(x => x.IgnorePlayers, "--ignore-players", "-i")
-    .Option<RestartCommand>(x => x.DelaySeconds, "--delay", "-d")
+    .Flag<RestartCommand>(x => x.IgnorePlayers, "ignore-players", "i")
+    .Option<RestartCommand>(x => x.DelaySeconds, "delay", "d")
         .Default(10)
         .Range(0, 3600)
     .Constraint(
@@ -125,7 +125,7 @@ Command input should follow this order:
 
 Use positional arguments for required core command state. Use named options or flags for optional state. Do not make optional positional arguments part of the first public design.
 
-Flag and option registration should support multiple user-facing names or aliases. Option and positional-argument value autocomplete should be opt-in through command-provided candidate functions.
+Flag and option registration should support multiple user-facing logical names or aliases. These names should be defined without the configured command-line prefix; the parser applies `CommandParsingOptions.FlagAndOptionPrefix` later. Option and positional-argument value autocomplete should be opt-in through command-provided candidate functions.
 
 Constraints should run against the fully bound command state and should be expressible through state properties or reusable constraint helpers.
 
@@ -142,7 +142,7 @@ public enum OptionValueStyle
 }
 ```
 
-Default command parsing should use `SpaceSeparated`, case-insensitive matching, quoted string support, and order-independent flags/options after the path and required positional arguments.
+Default command parsing should use `SpaceSeparated`, `FlagAndOptionPrefix = "--"`, case-insensitive matching, quoted string support, and order-independent flags/options after the path and required positional arguments. Prefixes such as `"-"` should be configurable for callers whose command schemas can safely support them.
 
 Synchronous command handlers should be the default. Leave API room for async handlers later without making async the initial baseline.
 

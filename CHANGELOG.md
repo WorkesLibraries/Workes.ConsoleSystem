@@ -17,6 +17,7 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added immutable command registration definitions through `CommandBuilder`.
 - Added manager-owned command registration with read-only registry inspection.
 - Added focused user-facing command registration documentation.
+- Added configurable `CommandParsingOptions.FlagAndOptionPrefix` for future flag/option parsing.
 
 ### Changed
 
@@ -24,4 +25,5 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - `ConsoleManager` can now be constructed with options while keeping `new ConsoleManager()` as the default path.
 - `HistoryOptions` now controls active console and command input history capacity.
 - Logging and command input recording now use manager-centered public methods.
+- Command flag and option schema names are now defined without their command-line prefix.
 

@@ -69,6 +69,8 @@ If strict flag/option ordering is added, it should use schema/builder order.
 
 Options are mutable setup objects, but `ConsoleManager` snapshots them during construction. Null nested option sections resolve to defaults. Capacity values must be greater than zero.
 
+Flag and option schema names are defined without their command-line prefix. `CommandParsingOptions.FlagAndOptionPrefix` controls the prefix later applied during parsing and defaults to `--`.
+
 History capacity options are active. When either retained history reaches capacity, adding a new item drops the oldest retained item. `CommandHistory` rejects consecutive duplicate command inputs by default using trimmed, case-insensitive comparison while preserving the originally submitted text for retained entries.
 
 Presentation options are still extension slots only. Concrete semantic-output/theme/formatter types are part of later command-output work.
@@ -104,8 +106,8 @@ The preferred registration style is explicit fluent command creation and manager
 
 ```csharp
 var restart = new CommandBuilder("server.restart")
-    .Flag<RestartCommand>(x => x.IgnorePlayers, "--ignore-players", "-i")
-    .Option<RestartCommand>(x => x.DelaySeconds, "--delay", "-d")
+    .Flag<RestartCommand>(x => x.IgnorePlayers, "ignore-players", "i")
+    .Option<RestartCommand>(x => x.DelaySeconds, "delay", "d")
         .Default(10)
         .Range(0, 3600)
     .Constraint(

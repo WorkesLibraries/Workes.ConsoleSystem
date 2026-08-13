@@ -83,6 +83,7 @@ public sealed class ConsoleManager
             throw new ArgumentNullException(nameof(command));
         }
 
+        ValidateCommandMemberNamesDoNotIncludePrefix(command);
         ValidateCommandIsNotDuplicate(command.Path, Commands.Definitions);
         Commands.Add(command);
         return command;
@@ -189,6 +190,7 @@ public sealed class ConsoleManager
     {
         foreach (CommandDefinition command in commands)
         {
+            ValidateCommandMemberNamesDoNotIncludePrefix(command);
             ValidateCommandIsNotDuplicate(command.Path, Commands.Definitions);
         }
 
@@ -210,6 +212,38 @@ public sealed class ConsoleManager
             {
                 throw new InvalidOperationException($"A command with path '{path}' is already registered.");
             }
+        }
+    }
+
+    private void ValidateCommandMemberNamesDoNotIncludePrefix(CommandDefinition command)
+    {
+        string prefix = _options.CommandParsing.FlagAndOptionPrefix;
+
+        foreach (CommandFlagDefinition flag in command.Flags)
+        {
+            ValidateNameDoesNotIncludePrefix(flag.Name, prefix);
+            foreach (string alias in flag.Aliases)
+            {
+                ValidateNameDoesNotIncludePrefix(alias, prefix);
+            }
+        }
+
+        foreach (CommandOptionDefinition option in command.Options)
+        {
+            ValidateNameDoesNotIncludePrefix(option.Name, prefix);
+            foreach (string alias in option.Aliases)
+            {
+                ValidateNameDoesNotIncludePrefix(alias, prefix);
+            }
+        }
+    }
+
+    private static void ValidateNameDoesNotIncludePrefix(string name, string prefix)
+    {
+        if (name.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Flag and option schema names should not include the configured prefix '{prefix}'. Use '{name.Substring(prefix.Length)}' instead.");
         }
     }
 }

@@ -32,6 +32,7 @@ public sealed class ConsoleSystemTests
 
         Assert.That(console.Options.CommandParsing, Is.Not.Null);
         Assert.That(console.Options.CommandParsing.OptionValueStyle, Is.EqualTo(OptionValueStyle.SpaceSeparated));
+        Assert.That(console.Options.CommandParsing.FlagAndOptionPrefix, Is.EqualTo("--"));
         Assert.That(console.Options.CommandParsing.IsCaseSensitive, Is.False);
         Assert.That(console.Options.CommandParsing.AllowQuotedStrings, Is.True);
         Assert.That(console.Options.CommandParsing.AllowFlagsAndOptionsInAnyOrder, Is.True);
@@ -54,6 +55,7 @@ public sealed class ConsoleSystemTests
             CommandParsing = new CommandParsingOptions
             {
                 OptionValueStyle = OptionValueStyle.AnySeparated,
+                FlagAndOptionPrefix = "-",
                 IsCaseSensitive = true,
                 AllowQuotedStrings = false,
                 AllowFlagsAndOptionsInAnyOrder = false
@@ -72,6 +74,7 @@ public sealed class ConsoleSystemTests
         });
 
         Assert.That(console.Options.CommandParsing.OptionValueStyle, Is.EqualTo(OptionValueStyle.AnySeparated));
+        Assert.That(console.Options.CommandParsing.FlagAndOptionPrefix, Is.EqualTo("-"));
         Assert.That(console.Options.CommandParsing.IsCaseSensitive, Is.True);
         Assert.That(console.Options.CommandParsing.AllowQuotedStrings, Is.False);
         Assert.That(console.Options.CommandParsing.AllowFlagsAndOptionsInAnyOrder, Is.False);
@@ -162,6 +165,23 @@ public sealed class ConsoleSystemTests
         };
 
         Assert.Throws<ArgumentOutOfRangeException>(() => new ConsoleManager(options));
+    }
+
+    [TestCase(null)]
+    [TestCase("")]
+    [TestCase("   ")]
+    [TestCase("- -")]
+    public void Constructor_InvalidFlagAndOptionPrefixThrows(string? prefix)
+    {
+        var options = new ConsoleManagerOptions
+        {
+            CommandParsing = new CommandParsingOptions
+            {
+                FlagAndOptionPrefix = prefix!
+            }
+        };
+
+        Assert.That(() => new ConsoleManager(options), Throws.InstanceOf<Exception>());
     }
 
     [Test]

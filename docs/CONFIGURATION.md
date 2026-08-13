@@ -12,7 +12,8 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 {
     CommandParsing = new CommandParsingOptions
     {
-        OptionValueStyle = OptionValueStyle.AnySeparated
+        OptionValueStyle = OptionValueStyle.AnySeparated,
+        FlagAndOptionPrefix = "--"
     },
     History = new HistoryOptions
     {
@@ -54,11 +55,14 @@ Command parsing options exist now so the public configuration shape is ready for
 Defaults:
 
 - `OptionValueStyle = OptionValueStyle.SpaceSeparated`
+- `FlagAndOptionPrefix = "--"`
 - `IsCaseSensitive = false`
 - `AllowQuotedStrings = true`
 - `AllowFlagsAndOptionsInAnyOrder = true`
 
 Parsing behavior itself is not implemented yet.
+
+Flag and option schema names are defined without this prefix. The prefix is applied to command input later by the parser.
 
 ## History Options
 
