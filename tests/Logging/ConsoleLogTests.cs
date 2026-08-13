@@ -9,7 +9,7 @@ public sealed class ConsoleLogTests
     [Test]
     public void Information_AddsLogEntryToSharedHistory()
     {
-        var console = new GameConsole();
+        var console = new ConsoleManager();
 
         console.Log.Information("Game started.");
 

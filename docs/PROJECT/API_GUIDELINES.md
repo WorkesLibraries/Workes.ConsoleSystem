@@ -34,16 +34,32 @@ Update when the project's API design principles, naming conventions, consistency
 
 ## Naming And Structure
 
-- Use `GameConsole` as the root object for the package-level console system.
+- Use `ConsoleManager` as the root object for the package-level console system.
 - Keep namespaces grouped by responsibility: `Core`, `History`, `Logging`, `Entries`, and `Commands`.
 - Use clear domain names such as `ConsoleHistory`, `ConsoleLog`, `LogEntry`, and `CommandHistory`.
 - Avoid names that imply a game engine, UI framework, storage layer, or singleton lifecycle.
 
 ## Configuration Style
 
-There is no public configuration surface yet.
+There is no implemented public configuration surface yet.
 
 Future configuration should prefer constructor options or small option objects when configuration becomes necessary. Avoid hidden global configuration.
+
+`ConsoleManager` should be constructible with no arguments and should also accept an options object with complete defaults:
+
+```csharp
+var console = new ConsoleManager();
+
+var configuredConsole = new ConsoleManager(new ConsoleManagerOptions
+{
+    CommandParsing = new CommandParsingOptions
+    {
+        OptionValueStyle = OptionValueStyle.AnySeparated
+    }
+});
+```
+
+Changing one option should not require the caller to specify every other option.
 
 ## Command API Direction
 
@@ -53,7 +69,7 @@ Simple commands should be possible without a command state type:
 
 ```csharp
 commands.Register("noclip")
-    .Execute(ctx => ToggleNoclip());
+    .Execute(ctx => CommandResult.Success());
 ```
 
 Complex commands should prefer small immutable state records:
@@ -66,10 +82,22 @@ public sealed record RestartCommand(
 commands.Register<RestartCommand>("server.restart")
     .Flag(x => x.IgnorePlayers, "--ignore-players", "-i")
     .Option(x => x.DelaySeconds, "--delay", "-d")
-        .Default(0)
+        .Default(10)
         .Range(0, 3600)
-    .MutuallyExclusive(x => x.IgnorePlayers, x => x.DelaySeconds)
-    .Execute((ctx, state) => RestartServer(state));
+    .MutuallyExclusive(
+        x => x.IgnorePlayers,
+        x => x.DelaySeconds,
+        "Ignore players cannot be combined with delayed restart.")
+    .Execute((ctx, state) =>
+    {
+        RestartServer(state);
+
+        return CommandResult.Success(
+            CommandOutput.Inline(defaultStyle: "Success")
+                .Text("Restarting server in ")
+                .Value(state.DelaySeconds.ToString(), style: "Amount", data: state.DelaySeconds)
+                .Text(" seconds."));
+    });
 ```
 
 Prefer this typed state-record model over string IDs or mutable parameter handles as the primary user-facing API.
@@ -88,6 +116,31 @@ Constraints should run against the fully bound command state and should be expre
 
 Command definitions should become immutable after registration/finalization so parsing and execution read a validated schema.
 
+Command parser configuration should support:
+
+```csharp
+public enum OptionValueStyle
+{
+    SpaceSeparated,
+    EqualSeparated,
+    AnySeparated
+}
+```
+
+Default command parsing should use `SpaceSeparated`, case-insensitive matching, quoted string support, and order-independent flags/options after the path and required positional arguments.
+
+Synchronous command handlers should be the default. Leave API room for async handlers later without making async the initial baseline.
+
+## Command Result And Output Direction
+
+Commands should return `CommandResult`.
+
+`CommandResult` should support success/failure status and zero, one, or many output entries. Output entries may be inline or block/multi-line. A help command, for example, should be able to return one multi-line output entry rather than one timestamped entry per rendered line.
+
+Prefer returned command output entries over imperative output methods on `CommandContext`.
+
+`CommandContext` should remain available for command execution metadata such as the originating input, future caller/source information, service access if needed, and future async/cancellation integration. It should not be the primary output writing model.
+
 ## Console Entry API Direction
 
 `IConsoleEntry` should remain an extensibility point for all console-visible entries. It should require timestamp and entry type/kind information, but it should not require log severity.
@@ -95,6 +148,26 @@ Command definitions should become immutable after registration/finalization so p
 Built-in entry types should include log entries, command input entries, command output entries, and command failure/error entries. Users should be able to add custom entry types for game-specific console events.
 
 Keep `LogLevel` on `LogEntry`. Command output should use command-output-specific metadata such as `CommandOutputLevel`. Custom entries should be free to expose metadata that makes sense for their domain.
+
+## Styling And Formatting Direction
+
+Entries should not store engine-specific formatted strings as their only representation.
+
+Command output should support semantic content segments:
+
+```csharp
+CommandOutput.Inline(defaultStyle: "Success")
+    .Text("Gave ")
+    .Value(state.Amount.ToString(), style: "Amount", data: state.Amount)
+    .Text(" ")
+    .Value(state.ItemName, style: "Item", data: state.ItemName)
+    .Text(" to ")
+    .Value(state.ReceiverName, style: "Player", data: state.ReceiverName);
+```
+
+Themes should map semantic style IDs to style values. Formatters should convert semantic content and theme values into plain text, Unity rich text, Godot BBCode, terminal output, or custom UI representations.
+
+Actual Unity/Godot UI controls remain outside the package. Advanced UIs should be able to consume semantic segments directly instead of relying on string markup.
 
 ## Error Handling And Validation
 
@@ -105,9 +178,9 @@ Keep `LogLevel` on `LogEntry`. Command output should use command-output-specific
 ## Examples Of Preferred API Shape
 
 ```csharp
-var console = new GameConsole();
+var console = new ConsoleManager();
 
 console.Log.Information("Console ready.");
 ```
 
-Prefer examples that start from one owned `GameConsole` instance and show implemented behavior only.
+Prefer examples that start from one owned `ConsoleManager` instance and show implemented behavior only.

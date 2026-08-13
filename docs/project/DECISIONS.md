@@ -45,7 +45,7 @@ What does this make easier, harder, or more constrained?
 
 ## Accepted Decisions
 
-### D-001: One Logical Console, Not A Singleton
+### D-001: One Logical Console Manager, Not A Singleton
 
 #### Context
 
@@ -53,7 +53,7 @@ The package needs a normal root object for a running game console, but hosts and
 
 #### Decision
 
-`GameConsole` represents the normal root object for one running game console. Applications are expected to create one instance during startup and keep it for the game lifetime, but the package does not enforce singleton behavior.
+`ConsoleManager` represents the normal root object for one running game console. Applications are expected to create one instance during startup and keep it for the game lifetime, but the package does not enforce singleton behavior.
 
 #### Reasoning
 
@@ -61,7 +61,7 @@ This keeps ownership explicit and testable, avoids hidden global state, and leav
 
 #### Consequences
 
-Consumers are responsible for owning and passing the `GameConsole` instance. The package remains easier to test and less coupled to a specific host lifecycle.
+Consumers are responsible for owning and passing the `ConsoleManager` instance. The package remains easier to test and less coupled to a specific host lifecycle.
 
 ### D-002: Console History Is The Shared Chronological Record
 
@@ -211,3 +211,147 @@ Keeping severity on log entries preserves a clean model: logs have log levels, c
 #### Consequences
 
 The package should not make `LogLevel` a required member of `IConsoleEntry`. Future sinks/routing can be added later if needed, but the first design should focus on extensible entry objects and the shared chronological history.
+
+### D-008: Public Root Is ConsoleManager
+
+#### Context
+
+`ConsoleManager` is the package root because it coordinates commands, logging, history, options, output formatting, and future console services rather than representing a UI console directly.
+
+#### Decision
+
+The public root object should be named `ConsoleManager`.
+
+`ConsoleManager` remains an owned root object, not a singleton. Applications are expected to create and hold one manager for the normal console lifetime, but the package should not enforce global state.
+
+#### Reasoning
+
+`ConsoleManager` better communicates coordination and configuration responsibilities. It avoids implying that the package includes a rendered console UI, which remains outside package scope.
+
+#### Consequences
+
+Documentation and examples should use `ConsoleManager` when describing the public root object.
+
+### D-009: ConsoleManager Uses Options With Complete Defaults
+
+#### Context
+
+The package needs configuration for parsing preferences, history limits, themes, and future behavior while staying easy to instantiate for the default case.
+
+#### Decision
+
+`ConsoleManager` should accept an optional options object. Every option should have a default, so users can pass no options or pass an options object that overrides only the values they care about.
+
+Initial option areas should include command parsing, history behavior, and presentation/theme behavior.
+
+#### Reasoning
+
+This follows the intended pattern from related packages: root construction stays simple, advanced behavior is configurable, and changing one preference does not require copying every default value.
+
+#### Consequences
+
+Options classes should be designed as additive configuration surfaces. Avoid requiring callers to fully populate nested option objects.
+
+### D-010: Command Parsing Is Configurable But Space-Separated By Default
+
+#### Context
+
+Different developers prefer different command syntaxes. The package should support common syntaxes without forcing one style everywhere.
+
+#### Decision
+
+Command option value syntax should be configured by an `OptionValueStyle`-like setting:
+
+- `SpaceSeparated`: `--delay 10`
+- `EqualSeparated`: `--delay=10`
+- `AnySeparated`: both forms
+
+The default should be `SpaceSeparated`.
+
+Command paths, flags, and options should be case-insensitive by default. Quoted strings should be supported. Quotes should always work for string values, and command schema should be able to require quotes for string arguments/options when the value is expected to contain spaces.
+
+Flags and options should be able to appear in any order after the command path and required positional arguments. If an ordering option is added, strict mode should use the schema/builder order.
+
+#### Reasoning
+
+Space-separated options are readable and familiar for game-console style commands. Case-insensitive matching is friendlier for interactive use. Quoted strings are required for natural text values such as full names, messages, and labels.
+
+#### Consequences
+
+The parser should separate raw tokenization, command path resolution, argument binding, option/flag binding, and parse error reporting. Parser behavior should read from `ConsoleManager` options instead of being hard-coded.
+
+### D-011: Commands Return CommandResult With Output Entries
+
+#### Context
+
+Command output could be written imperatively during execution or returned as part of the command result. Mixing both as equal primary models would make command behavior harder to reason about and harder to validate.
+
+#### Decision
+
+Command execution should return a `CommandResult`.
+
+`CommandResult` should be able to contain zero, one, or many command output entries. Command output should be represented as entries rather than being written directly through an output sink during execution.
+
+The framework should create command failure entries for parse errors, constraint errors, and execution errors. Command implementations should create intentional output through returned result entries.
+
+#### Reasoning
+
+Returning output makes command execution easier to test, easier to reason about, and easier to convert into console history. It also supports dynamic output such as help text without forcing one output entry per line.
+
+#### Consequences
+
+Avoid making `ctx.Output.Write(...)` the primary output model. A context object may still be useful for execution metadata, services, caller/source information, and future async/cancellation support, but intentional user-visible command output should come from the returned result.
+
+### D-012: Command Output Uses Semantic Content Segments
+
+#### Context
+
+Output needs to support plain text, multi-line blocks, structured command-specific data, and semantic styling without coupling the package to Unity rich text, Godot BBCode, HTML, terminal colors, or any UI framework.
+
+#### Decision
+
+Command output entries should store semantic text content rather than engine-specific formatted strings.
+
+Output content may be inline or block/multi-line. Content should be representable as ordered segments, where each segment contains plain text and optional style information. Output builders such as `CommandOutput.Inline(...)` may accept a default style so unstylized segments inherit an output-level style.
+
+Example intended concept:
+
+```text
+Inline(defaultStyle: Success)
+  Text("Gave ")
+  Value("10", style: Amount, data: amount)
+  Text(" ")
+  Value("gold", style: Item, data: item)
+  Text(" to ")
+  Value("Anthony5172", style: Player, data: receiver)
+```
+
+Entries should expose plain text as a derived representation, but should preserve semantic segments for renderers that can use them.
+
+#### Reasoning
+
+Plain text alone cannot express that `10` is an amount, `gold` is an item, and `Anthony5172` is a player. Semantic segments let formatters convert output to Unity rich text, Godot BBCode, plain text, or custom UI spans without making the core package engine-specific.
+
+#### Consequences
+
+The package should separate output content from rendering. Themes define style IDs and style values. Formatters/renderers consume semantic content and themes to produce engine-specific strings or UI elements. Building actual Unity/Godot UI remains outside this package.
+
+### D-013: Console History Uses Configurable Drop-Oldest Capacity
+
+#### Context
+
+Console history should not grow without bound by default, but callers should be able to configure the capacity.
+
+#### Decision
+
+History capacity should be configurable through `ConsoleManager` options.
+
+When capacity is reached, adding a new entry should drop the oldest entry so the history behaves like a chronological ring buffer. Public history exposure should remain chronological from oldest retained entry to newest retained entry.
+
+#### Reasoning
+
+Drop-oldest capacity keeps memory bounded and matches the expected behavior for an in-game console history.
+
+#### Consequences
+
+The implementation should avoid exposing storage details that make later capacity policy changes difficult. The first policy should be drop-oldest.

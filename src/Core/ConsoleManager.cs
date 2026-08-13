@@ -11,12 +11,12 @@ namespace Workes.ConsoleSystem.Core;
 /// Normal applications are expected to create one instance during startup and retain it for the
 /// lifetime of the game, though the type does not enforce singleton usage.
 /// </remarks>
-public sealed class GameConsole
+public sealed class ConsoleManager
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="GameConsole"/> class.
+    /// Initializes a new instance of the <see cref="ConsoleManager"/> class.
     /// </summary>
-    public GameConsole()
+    public ConsoleManager()
     {
         History = new ConsoleHistory();
         CommandHistory = new CommandHistory();

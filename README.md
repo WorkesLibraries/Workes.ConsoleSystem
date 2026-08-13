@@ -9,7 +9,7 @@ The initial package shape provides the console root, log facade, entry model, an
 
 ## Highlights
 
-- Create one `GameConsole` to coordinate console state.
+- Create one `ConsoleManager` to coordinate console state.
 - Write log messages into a shared chronological `ConsoleHistory`.
 - Keep command input history separate from the rendered console entry stream.
 - Start from a command-system surface that can evolve without binding the package to a specific UI or engine.
@@ -36,7 +36,7 @@ The package targets .NET Standard 2.1.
 using Workes.ConsoleSystem.Core;
 using Workes.ConsoleSystem.Entries;
 
-var console = new GameConsole();
+var console = new ConsoleManager();
 
 console.Log.Information("Console ready.");
 console.Log.Warning("Example warning.");

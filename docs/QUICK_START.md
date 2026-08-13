@@ -31,10 +31,10 @@ The package targets .NET Standard 2.1.
 ```csharp
 using Workes.ConsoleSystem.Core;
 
-var console = new GameConsole();
+var console = new ConsoleManager();
 ```
 
-Keep the `GameConsole` instance for the lifetime of the host console. The package does not enforce a singleton, but most applications should create one logical console during startup.
+Keep the `ConsoleManager` instance for the lifetime of the host console. The package does not enforce a singleton, but most applications should create one logical console manager during startup.
 
 ## First Working Example
 
@@ -43,7 +43,7 @@ using System;
 using Workes.ConsoleSystem.Core;
 using Workes.ConsoleSystem.Entries;
 
-var console = new GameConsole();
+var console = new ConsoleManager();
 
 console.Log.Information("Console ready.");
 console.Log.Error("Example error message.");
