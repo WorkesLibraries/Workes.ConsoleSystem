@@ -39,9 +39,9 @@ Workes.ConsoleSystem is currently a small engine-neutral package centered on `Co
 
 ## Root Options
 
-`ConsoleManager` should accept an optional options object with complete defaults. Passing no options should produce the normal recommended behavior. Passing an options object with one changed value should change only that value.
+`ConsoleManager` accepts an optional options object with complete defaults. Passing no options produces the normal recommended behavior. Passing an options object with one changed value changes only that value.
 
-Initial option areas:
+Implemented option areas:
 
 - command parsing;
 - history capacity/overflow behavior;
@@ -66,6 +66,10 @@ Default command parsing behavior:
 - flags and options may appear in any order after path and required positional arguments.
 
 If strict flag/option ordering is added, it should use schema/builder order.
+
+Options are mutable setup objects, but `ConsoleManager` snapshots them during construction. Null nested option sections resolve to defaults. Capacity values must be greater than zero.
+
+Stage 1 stores history and presentation option values only. Bounded history behavior is implemented later, and concrete semantic-output/theme/formatter types are part of later command-output work.
 
 ## Planned Command Model
 

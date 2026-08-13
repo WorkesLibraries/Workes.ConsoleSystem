@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Workes.ConsoleSystem</PackageId>
     <Version>0.1.0</Version>
-    <PackageReleaseNotes>Initial package scaffold with a game-console root object, shared chronological console history, logging facade, command input history, and placeholder command infrastructure.</PackageReleaseNotes>
+    <PackageReleaseNotes>Initial package scaffold with a ConsoleManager root object, shared chronological console history, logging facade, command input history, and placeholder command infrastructure.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>Workes</Authors>
     <Company>Workes</Company>

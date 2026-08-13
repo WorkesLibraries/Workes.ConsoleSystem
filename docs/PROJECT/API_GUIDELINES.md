@@ -41,9 +41,7 @@ Update when the project's API design principles, naming conventions, consistency
 
 ## Configuration Style
 
-There is no implemented public configuration surface yet.
-
-Future configuration should prefer constructor options or small option objects when configuration becomes necessary. Avoid hidden global configuration.
+Configuration uses constructor options. Avoid hidden global configuration.
 
 `ConsoleManager` should be constructible with no arguments and should also accept an options object with complete defaults:
 
@@ -60,6 +58,8 @@ var configuredConsole = new ConsoleManager(new ConsoleManagerOptions
 ```
 
 Changing one option should not require the caller to specify every other option.
+
+Options objects are mutable setup objects for convenient object-initializer use. `ConsoleManager` snapshots the supplied values during construction, so later caller mutations do not alter manager behavior. Null nested option sections resolve to defaults.
 
 ## Command API Direction
 

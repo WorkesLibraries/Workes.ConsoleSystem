@@ -355,3 +355,23 @@ Drop-oldest capacity keeps memory bounded and matches the expected behavior for 
 #### Consequences
 
 The implementation should avoid exposing storage details that make later capacity policy changes difficult. The first policy should be drop-oldest.
+
+### D-014: ConsoleManager Options Are Mutable Setup Objects With Snapshot Semantics
+
+#### Context
+
+`ConsoleManager` needs a public configuration surface that is easy to use with object initializers, while avoiding surprising runtime behavior if a caller mutates the same options object after manager construction.
+
+#### Decision
+
+`ConsoleManagerOptions` and nested option types are mutable setup objects.
+
+`ConsoleManager` snapshots supplied option values during construction. Null nested option sections resolve to defaults. The manager exposes resolved options for inspection, but callers should not treat that exposed object as live runtime configuration.
+
+#### Reasoning
+
+Mutable setup objects keep the normal .NET options workflow concise and make partial overrides pleasant. Snapshotting keeps manager behavior stable after construction and avoids hidden coupling to caller-owned configuration objects.
+
+#### Consequences
+
+Later systems should read resolved settings from manager-owned configuration instead of retaining caller-owned option references. Runtime configuration changes should be introduced explicitly if they are ever needed, rather than emerging accidentally through mutable options.

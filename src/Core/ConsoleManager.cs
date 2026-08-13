@@ -1,4 +1,5 @@
 using Workes.ConsoleSystem.Commands;
+using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.History;
 using Workes.ConsoleSystem.Logging;
 
@@ -13,16 +14,34 @@ namespace Workes.ConsoleSystem.Core;
 /// </remarks>
 public sealed class ConsoleManager
 {
+    private readonly ConsoleManagerOptions _options;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="ConsoleManager"/> class.
     /// </summary>
     public ConsoleManager()
+        : this(new ConsoleManagerOptions())
     {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConsoleManager"/> class.
+    /// </summary>
+    /// <param name="options">The manager options.</param>
+    public ConsoleManager(ConsoleManagerOptions options)
+    {
+        _options = ConsoleManagerOptions.CreateSnapshot(options);
+
         History = new ConsoleHistory();
         CommandHistory = new CommandHistory();
         Log = new ConsoleLog(History);
         Commands = new CommandSystem();
     }
+
+    /// <summary>
+    /// Gets the resolved manager options.
+    /// </summary>
+    public ConsoleManagerOptions Options => ConsoleManagerOptions.CreateSnapshot(_options);
 
     /// <summary>
     /// Gets the shared chronological console history.
