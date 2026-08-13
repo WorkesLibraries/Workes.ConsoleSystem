@@ -13,6 +13,7 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added bounded `ConsoleHistory` and `CommandHistory` retention.
 - Added public command input history add/clear behavior.
 - Added `CommandHistoryDuplicatePolicy` for command input duplicate handling.
+- Added focused user-facing guides for `ConsoleManager`, configuration, console history, and command history.
 
 ### Changed
 

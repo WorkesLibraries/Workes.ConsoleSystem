@@ -121,6 +121,9 @@ Command registration, parsing, execution, permissions, aliases, arguments, and a
 
 ## What To Read Next
 
-- README.md for package positioning and installation.
-- CHANGELOG.md for release history and migration-sensitive changes.
+- [ConsoleManager](CONSOLE_MANAGER.md) for the root object and ownership model.
+- [Configuration](CONFIGURATION.md) for options, defaults, and snapshot behavior.
+- [Console History](CONSOLE_HISTORY.md) for rendered console entries and retention.
+- [Command History](COMMAND_HISTORY.md) for submitted command input history.
+- [CHANGELOG.md](../CHANGELOG.md) for release history and migration-sensitive changes.
 

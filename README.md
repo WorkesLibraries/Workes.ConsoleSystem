@@ -68,7 +68,10 @@ Start here:
 
 Focused guides:
 
-- Configuration is covered in the [Quick Start](docs/QUICK_START.md).
+- [ConsoleManager](docs/CONSOLE_MANAGER.md)
+- [Configuration](docs/CONFIGURATION.md)
+- [Console History](docs/CONSOLE_HISTORY.md)
+- [Command History](docs/COMMAND_HISTORY.md)
 - Additional focused guides will be added as command behavior and history policies become stable.
 
 See the [Changelog](CHANGELOG.md) for release history and migration-sensitive changes.

@@ -69,6 +69,12 @@ History options control active retained history behavior. Histories are bounded 
 
 `CommandHistory` is a UI helper for submitted command strings. It may be written to directly with `Add(string input)` and cleared with `Clear()`. It stores strings only; adding `CommandInputEntry` values to the shared console history belongs to command execution.
 
+## User Documentation Direction
+
+Each implemented first-class public concept should have a focused user-facing guide under `docs/`.
+
+README should position the package and link to guides. Quick Start should remain beginner-first and should not become the exhaustive documentation page. Project-control docs under `docs/PROJECT/` should explain design intent, not replace focused user documentation.
+
 ## Command API Direction
 
 Command registration should use one schema model instead of separate command types for non-parameterized, flag-parameterized, option-parameterized, and positional commands.
