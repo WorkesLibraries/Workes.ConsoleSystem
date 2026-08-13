@@ -11,17 +11,17 @@ using Workes.ConsoleSystem.Core;
 
 var console = new ConsoleManager();
 
-bool added = console.CommandHistory.Add("noclip");
+bool added = console.RecordCommandInput("noclip");
 
 Console.WriteLine(added); // true
 ```
 
-`Add` returns:
+`RecordCommandInput` returns:
 
 - `true` when the input is retained;
 - `false` when the input is skipped.
 
-`Add(null)` throws `ArgumentNullException`.
+`RecordCommandInput(null)` throws `ArgumentNullException`.
 
 Blank or whitespace-only input is ignored and returns `false`.
 
@@ -38,10 +38,10 @@ Duplicate comparison:
 The original submitted string is preserved when it is stored.
 
 ```csharp
-console.CommandHistory.Add("noclip");      // true
-console.CommandHistory.Add(" NOCLIP ");    // false
-console.CommandHistory.Add("help");        // true
-console.CommandHistory.Add("noclip");      // true
+console.RecordCommandInput("noclip");      // true
+console.RecordCommandInput(" NOCLIP ");    // false
+console.RecordCommandInput("help");        // true
+console.RecordCommandInput("noclip");      // true
 ```
 
 `noclip` and `noclip --invisible` are different inputs, so both are retained.
@@ -78,9 +78,9 @@ var console = new ConsoleManager(new ConsoleManagerOptions
     }
 });
 
-console.CommandHistory.Add("first");
-console.CommandHistory.Add("second");
-console.CommandHistory.Add("third");
+console.RecordCommandInput("first");
+console.RecordCommandInput("second");
+console.RecordCommandInput("third");
 
 Console.WriteLine(console.CommandHistory.Entries.Count); // 2
 ```

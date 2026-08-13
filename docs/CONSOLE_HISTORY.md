@@ -12,7 +12,7 @@ using Workes.ConsoleSystem.Entries;
 
 var console = new ConsoleManager();
 
-console.Log.Information("Console ready.");
+console.LogInformation("Console ready.");
 
 foreach (var entry in console.History.Entries)
 {
@@ -43,9 +43,9 @@ var console = new ConsoleManager(new ConsoleManagerOptions
     }
 });
 
-console.Log.Information("First");
-console.Log.Information("Second");
-console.Log.Information("Third");
+console.LogInformation("First");
+console.LogInformation("Second");
+console.LogInformation("Third");
 
 Console.WriteLine(console.History.Entries.Count); // 2
 ```
@@ -62,7 +62,7 @@ console.History.Clear();
 
 ## Adding Entries
 
-`ConsoleHistory` does not currently expose public direct entry addition. User-visible package systems write to it, such as `ConsoleLog`.
+`ConsoleHistory` does not currently expose public direct entry addition. User-visible manager methods write to it, such as `console.LogInformation(...)`.
 
 This keeps the shared rendered stream controlled while the command system is still being built.
 

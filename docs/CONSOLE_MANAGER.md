@@ -17,7 +17,7 @@ The default constructor creates:
 - `History`, the shared rendered console entry stream.
 - `CommandHistory`, the submitted command input history used by UI navigation.
 - `Log`, the logging facade.
-- `Commands`, the future command registration and execution surface.
+- `Commands`, the inspectable command registry and future execution surface.
 
 ## Configured Setup
 
@@ -43,15 +43,17 @@ Options are setup values. `ConsoleManager` snapshots the supplied values during 
 
 The currently implemented manager behavior is:
 
-- log messages can be written through `console.Log`;
+- log messages can be written through manager methods such as `console.LogInformation(...)`;
 - log entries are stored in `console.History`;
-- submitted command strings can be stored in `console.CommandHistory`;
+- submitted command strings can be recorded through `console.RecordCommandInput(...)`;
 - histories are bounded and drop the oldest retained item when full.
+- immutable command definitions can be registered through `console.RegisterCommand(...)`.
 
-Command registration, parsing, execution, and autocomplete are planned but not implemented yet.
+Command parsing, execution, and autocomplete are planned but not implemented yet.
 
 ## Related Guides
 
 - [Configuration](CONFIGURATION.md)
 - [Console History](CONSOLE_HISTORY.md)
 - [Command History](COMMAND_HISTORY.md)
+- [Command Registration](COMMAND_REGISTRATION.md)

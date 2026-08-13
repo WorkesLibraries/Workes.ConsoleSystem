@@ -20,7 +20,7 @@ public sealed class ConsoleLog
     /// Adds a trace log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void Trace(string message)
+    internal void Trace(string message)
     {
         Write(LogLevel.Trace, message);
     }
@@ -29,7 +29,7 @@ public sealed class ConsoleLog
     /// Adds a debug log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void Debug(string message)
+    internal void Debug(string message)
     {
         Write(LogLevel.Debug, message);
     }
@@ -38,7 +38,7 @@ public sealed class ConsoleLog
     /// Adds an informational log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void Information(string message)
+    internal void Information(string message)
     {
         Write(LogLevel.Information, message);
     }
@@ -47,7 +47,7 @@ public sealed class ConsoleLog
     /// Adds a warning log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void Warning(string message)
+    internal void Warning(string message)
     {
         Write(LogLevel.Warning, message);
     }
@@ -56,7 +56,7 @@ public sealed class ConsoleLog
     /// Adds an error log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void Error(string message)
+    internal void Error(string message)
     {
         Write(LogLevel.Error, message);
     }
@@ -65,7 +65,7 @@ public sealed class ConsoleLog
     /// Adds a critical log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void Critical(string message)
+    internal void Critical(string message)
     {
         Write(LogLevel.Critical, message);
     }
@@ -75,7 +75,7 @@ public sealed class ConsoleLog
     /// </summary>
     /// <param name="level">The severity of the log message.</param>
     /// <param name="message">The log message.</param>
-    public void Write(LogLevel level, string message)
+    internal void Write(LogLevel level, string message)
     {
         _history.Add(new LogEntry(DateTimeOffset.UtcNow, level, message));
     }

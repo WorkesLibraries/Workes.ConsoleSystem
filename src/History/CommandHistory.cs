@@ -53,7 +53,7 @@ public sealed class CommandHistory
     /// </summary>
     /// <param name="input">The submitted command input.</param>
     /// <returns><c>true</c> when the input was retained; otherwise, <c>false</c>.</returns>
-    public bool Add(string input)
+    internal bool Add(string input)
     {
         if (input is null)
         {

@@ -67,7 +67,7 @@ History options control active retained history behavior. Histories are bounded 
 
 `ConsoleHistory` is the shared rendered console entry stream. It should stay controlled by package systems for now, except that callers may inspect `Entries`, inspect `Capacity`, and clear retained entries.
 
-`CommandHistory` is a UI helper for submitted command strings. It may be written to directly with `Add(string input)` and cleared with `Clear()`. It stores strings only; adding `CommandInputEntry` values to the shared console history belongs to command execution.
+`CommandHistory` is a UI helper for submitted command strings. It should be written through `ConsoleManager.RecordCommandInput(string input)` and may be cleared with `Clear()`. It stores strings only; adding `CommandInputEntry` values to the shared console history belongs to command execution.
 
 ## User Documentation Direction
 
@@ -77,13 +77,16 @@ README should position the package and link to guides. Quick Start should remain
 
 ## Command API Direction
 
-Command registration should use one schema model instead of separate command types for non-parameterized, flag-parameterized, option-parameterized, and positional commands.
+Command registration uses one schema model instead of separate command types for non-parameterized, flag-parameterized, option-parameterized, and positional commands.
 
 Simple commands should be possible without a command state type:
 
 ```csharp
-commands.Register("noclip")
-    .Execute(ctx => CommandResult.Success());
+var noclip = new CommandBuilder("noclip")
+    .Execute(ctx => new CommandResult())
+    .Build();
+
+console.RegisterCommand(noclip);
 ```
 
 Complex commands should prefer small immutable state records:
@@ -93,25 +96,23 @@ public sealed record RestartCommand(
     bool IgnorePlayers,
     int DelaySeconds);
 
-commands.Register<RestartCommand>("server.restart")
-    .Flag(x => x.IgnorePlayers, "--ignore-players", "-i")
-    .Option(x => x.DelaySeconds, "--delay", "-d")
+var restart = new CommandBuilder("server.restart")
+    .Flag<RestartCommand>(x => x.IgnorePlayers, "--ignore-players", "-i")
+    .Option<RestartCommand>(x => x.DelaySeconds, "--delay", "-d")
         .Default(10)
         .Range(0, 3600)
-    .MutuallyExclusive(
-        x => x.IgnorePlayers,
-        x => x.DelaySeconds,
+    .Constraint(
+        "delay-ignore-players",
         "Ignore players cannot be combined with delayed restart.")
-    .Execute((ctx, state) =>
+    .Execute<RestartCommand>((ctx, state) =>
     {
         RestartServer(state);
 
-        return CommandResult.Success(
-            CommandOutput.Inline(defaultStyle: "Success")
-                .Text("Restarting server in ")
-                .Value(state.DelaySeconds.ToString(), style: "Amount", data: state.DelaySeconds)
-                .Text(" seconds."));
-    });
+        return new CommandResult();
+    })
+    .Build();
+
+console.RegisterCommand(restart);
 ```
 
 Prefer this typed state-record model over string IDs or mutable parameter handles as the primary user-facing API.
@@ -128,7 +129,7 @@ Flag and option registration should support multiple user-facing names or aliase
 
 Constraints should run against the fully bound command state and should be expressible through state properties or reusable constraint helpers.
 
-Command definitions should become immutable after registration/finalization so parsing and execution read a validated schema.
+Command definitions are immutable after `CommandBuilder.Build()`. Registration is owned by `ConsoleManager`, which validates command paths against the manager registry.
 
 Command parser configuration should support:
 
@@ -194,7 +195,7 @@ Actual Unity/Godot UI controls remain outside the package. Advanced UIs should b
 ```csharp
 var console = new ConsoleManager();
 
-console.Log.Information("Console ready.");
+console.LogInformation("Console ready.");
 ```
 
 Prefer examples that start from one owned `ConsoleManager` instance and show implemented behavior only.

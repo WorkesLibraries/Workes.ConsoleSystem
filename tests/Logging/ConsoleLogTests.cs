@@ -11,7 +11,7 @@ public sealed class ConsoleLogTests
     {
         var console = new ConsoleManager();
 
-        console.Log.Information("Game started.");
+        console.LogInformation("Game started.");
 
         Assert.That(console.History.Entries, Has.Count.EqualTo(1));
 

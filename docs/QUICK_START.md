@@ -78,9 +78,9 @@ var console = new ConsoleManager(new ConsoleManagerOptions
     }
 });
 
-console.Log.Information("First");
-console.Log.Information("Second");
-console.Log.Information("Third");
+console.LogInformation("First");
+console.LogInformation("Second");
+console.LogInformation("Third");
 
 Console.WriteLine(console.History.Entries.Count); // 2
 ```
@@ -88,10 +88,10 @@ Console.WriteLine(console.History.Entries.Count); // 2
 Command input history stores submitted command strings for UI navigation. Blank inputs are ignored. Consecutive duplicate inputs are rejected by default using trimmed, case-insensitive comparison, but the original submitted text is preserved when it is stored.
 
 ```csharp
-console.CommandHistory.Add("noclip");      // true
-console.CommandHistory.Add(" NOCLIP ");    // false
-console.CommandHistory.Add("help");        // true
-console.CommandHistory.Add("noclip");      // true
+console.RecordCommandInput("noclip");      // true
+console.RecordCommandInput(" NOCLIP ");    // false
+console.RecordCommandInput("help");        // true
+console.RecordCommandInput("noclip");      // true
 ```
 
 ## First Working Example
@@ -103,8 +103,8 @@ using Workes.ConsoleSystem.Entries;
 
 var console = new ConsoleManager();
 
-console.Log.Information("Console ready.");
-console.Log.Error("Example error message.");
+console.LogInformation("Console ready.");
+console.LogError("Example error message.");
 
 foreach (var entry in console.History.Entries)
 {
@@ -117,7 +117,27 @@ foreach (var entry in console.History.Entries)
 
 This example demonstrates the currently implemented behavior: logging writes `LogEntry` values into the shared chronological history.
 
-Command registration, parsing, execution, permissions, aliases, arguments, and autocomplete are not implemented yet.
+Command registration is implemented for schema definitions. Parsing, execution, permissions, aliases during parsing, arguments during parsing, and autocomplete are not implemented yet.
+
+## Register A Command Schema
+
+```csharp
+using Workes.ConsoleSystem.Commands;
+using Workes.ConsoleSystem.Core;
+
+var console = new ConsoleManager();
+
+var command = new CommandBuilder("noclip")
+    .Description("Toggle noclip.")
+    .Execute(ctx => new CommandResult())
+    .Build();
+
+console.RegisterCommand(command);
+
+Console.WriteLine(console.Commands.Definitions.Count); // 1
+```
+
+Registered commands can be inspected, but command input parsing and execution are planned later stages.
 
 ## What To Read Next
 
@@ -125,5 +145,6 @@ Command registration, parsing, execution, permissions, aliases, arguments, and a
 - [Configuration](CONFIGURATION.md) for options, defaults, and snapshot behavior.
 - [Console History](CONSOLE_HISTORY.md) for rendered console entries and retention.
 - [Command History](COMMAND_HISTORY.md) for submitted command input history.
+- [Command Registration](COMMAND_REGISTRATION.md) for immutable command schemas.
 - [CHANGELOG.md](../CHANGELOG.md) for release history and migration-sensitive changes.
 

@@ -14,10 +14,14 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added public command input history add/clear behavior.
 - Added `CommandHistoryDuplicatePolicy` for command input duplicate handling.
 - Added focused user-facing guides for `ConsoleManager`, configuration, console history, and command history.
+- Added immutable command registration definitions through `CommandBuilder`.
+- Added manager-owned command registration with read-only registry inspection.
+- Added focused user-facing command registration documentation.
 
 ### Changed
 
 - Renamed the root console coordinator to `ConsoleManager`.
 - `ConsoleManager` can now be constructed with options while keeping `new ConsoleManager()` as the default path.
 - `HistoryOptions` now controls active console and command input history capacity.
+- Logging and command input recording now use manager-centered public methods.
 

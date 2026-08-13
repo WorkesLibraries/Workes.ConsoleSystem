@@ -17,32 +17,32 @@ public sealed class CommandHistoryTests
     [Test]
     public void Add_StoresValidInputAndReturnsTrue()
     {
-        var history = new CommandHistory();
+        var console = new ConsoleManager();
 
-        bool added = history.Add("noclip");
+        bool added = console.RecordCommandInput("noclip");
 
         Assert.That(added, Is.True);
-        Assert.That(history.Entries, Is.EqualTo(new[] { "noclip" }));
+        Assert.That(console.CommandHistory.Entries, Is.EqualTo(new[] { "noclip" }));
     }
 
     [Test]
     public void Add_NullInputThrows()
     {
-        var history = new CommandHistory();
+        var console = new ConsoleManager();
 
-        Assert.Throws<ArgumentNullException>(() => history.Add(null!));
+        Assert.Throws<ArgumentNullException>(() => console.RecordCommandInput(null!));
     }
 
     [TestCase("")]
     [TestCase("   ")]
     public void Add_BlankInputIsIgnored(string input)
     {
-        var history = new CommandHistory();
+        var console = new ConsoleManager();
 
-        bool added = history.Add(input);
+        bool added = console.RecordCommandInput(input);
 
         Assert.That(added, Is.False);
-        Assert.That(history.Entries, Is.Empty);
+        Assert.That(console.CommandHistory.Entries, Is.Empty);
     }
 
     [Test]
@@ -56,9 +56,9 @@ public sealed class CommandHistoryTests
             }
         });
 
-        console.CommandHistory.Add("first");
-        console.CommandHistory.Add("second");
-        console.CommandHistory.Add("third");
+        console.RecordCommandInput("first");
+        console.RecordCommandInput("second");
+        console.RecordCommandInput("third");
 
         Assert.That(console.CommandHistory.Entries, Is.EqualTo(new[] { "second", "third" }));
     }
@@ -66,39 +66,39 @@ public sealed class CommandHistoryTests
     [Test]
     public void Add_ByDefaultRejectsConsecutiveDuplicateUsingTrimmedCaseInsensitiveComparison()
     {
-        var history = new CommandHistory();
+        var console = new ConsoleManager();
 
-        bool firstAdded = history.Add("  noclip  ");
-        bool duplicateAdded = history.Add("NOCLIP");
+        bool firstAdded = console.RecordCommandInput("  noclip  ");
+        bool duplicateAdded = console.RecordCommandInput("NOCLIP");
 
         Assert.That(firstAdded, Is.True);
         Assert.That(duplicateAdded, Is.False);
-        Assert.That(history.Entries, Is.EqualTo(new[] { "  noclip  " }));
+        Assert.That(console.CommandHistory.Entries, Is.EqualTo(new[] { "  noclip  " }));
     }
 
     [Test]
     public void Add_DefaultDuplicateRejectionAllowsDistinctCommands()
     {
-        var history = new CommandHistory();
+        var console = new ConsoleManager();
 
-        history.Add("noclip");
-        bool added = history.Add("noclip --invisible");
+        console.RecordCommandInput("noclip");
+        bool added = console.RecordCommandInput("noclip --invisible");
 
         Assert.That(added, Is.True);
-        Assert.That(history.Entries, Is.EqualTo(new[] { "noclip", "noclip --invisible" }));
+        Assert.That(console.CommandHistory.Entries, Is.EqualTo(new[] { "noclip", "noclip --invisible" }));
     }
 
     [Test]
     public void Add_DefaultDuplicateRejectionAllowsNonConsecutiveDuplicates()
     {
-        var history = new CommandHistory();
+        var console = new ConsoleManager();
 
-        history.Add("noclip");
-        history.Add("help");
-        bool added = history.Add("Noclip");
+        console.RecordCommandInput("noclip");
+        console.RecordCommandInput("help");
+        bool added = console.RecordCommandInput("Noclip");
 
         Assert.That(added, Is.True);
-        Assert.That(history.Entries, Is.EqualTo(new[] { "noclip", "help", "Noclip" }));
+        Assert.That(console.CommandHistory.Entries, Is.EqualTo(new[] { "noclip", "help", "Noclip" }));
     }
 
     [Test]
@@ -112,8 +112,8 @@ public sealed class CommandHistoryTests
             }
         });
 
-        console.CommandHistory.Add("noclip");
-        bool duplicateAdded = console.CommandHistory.Add("NOCLIP");
+        console.RecordCommandInput("noclip");
+        bool duplicateAdded = console.RecordCommandInput("NOCLIP");
 
         Assert.That(duplicateAdded, Is.True);
         Assert.That(console.CommandHistory.Entries, Is.EqualTo(new[] { "noclip", "NOCLIP" }));
@@ -122,23 +122,23 @@ public sealed class CommandHistoryTests
     [Test]
     public void Add_PreservesOriginalInput()
     {
-        var history = new CommandHistory();
+        var console = new ConsoleManager();
 
-        history.Add("  NoClip  ");
+        console.RecordCommandInput("  NoClip  ");
 
-        Assert.That(history.Entries, Is.EqualTo(new[] { "  NoClip  " }));
+        Assert.That(console.CommandHistory.Entries, Is.EqualTo(new[] { "  NoClip  " }));
     }
 
     [Test]
     public void Clear_RemovesAllInputs()
     {
-        var history = new CommandHistory();
+        var console = new ConsoleManager();
 
-        history.Add("first");
-        history.Add("second");
+        console.RecordCommandInput("first");
+        console.RecordCommandInput("second");
 
-        history.Clear();
+        console.CommandHistory.Clear();
 
-        Assert.That(history.Entries, Is.Empty);
+        Assert.That(console.CommandHistory.Entries, Is.Empty);
     }
 }

@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using Workes.ConsoleSystem.Commands;
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.History;
@@ -15,6 +17,7 @@ namespace Workes.ConsoleSystem.Core;
 public sealed class ConsoleManager
 {
     private readonly ConsoleManagerOptions _options;
+    private readonly StringComparer _commandPathComparer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConsoleManager"/> class.
@@ -31,6 +34,9 @@ public sealed class ConsoleManager
     public ConsoleManager(ConsoleManagerOptions options)
     {
         _options = ConsoleManagerOptions.CreateSnapshot(options);
+        _commandPathComparer = _options.CommandParsing.IsCaseSensitive
+            ? StringComparer.Ordinal
+            : StringComparer.OrdinalIgnoreCase;
 
         History = new ConsoleHistory(_options.History.ConsoleHistoryCapacity);
         CommandHistory = new CommandHistory(
@@ -64,4 +70,146 @@ public sealed class ConsoleManager
     /// Gets the command registry and future execution surface.
     /// </summary>
     public CommandSystem Commands { get; }
+
+    /// <summary>
+    /// Registers a command definition.
+    /// </summary>
+    /// <param name="command">The command definition.</param>
+    /// <returns>The registered command definition.</returns>
+    public CommandDefinition RegisterCommand(CommandDefinition command)
+    {
+        if (command is null)
+        {
+            throw new ArgumentNullException(nameof(command));
+        }
+
+        ValidateCommandIsNotDuplicate(command.Path, Commands.Definitions);
+        Commands.Add(command);
+        return command;
+    }
+
+    /// <summary>
+    /// Registers multiple command definitions atomically.
+    /// </summary>
+    /// <param name="commands">The command definitions.</param>
+    /// <returns>The registered command definitions.</returns>
+    public IReadOnlyList<CommandDefinition> RegisterCommands(IEnumerable<CommandDefinition> commands)
+    {
+        if (commands is null)
+        {
+            throw new ArgumentNullException(nameof(commands));
+        }
+
+        var commandList = new List<CommandDefinition>();
+        foreach (CommandDefinition command in commands)
+        {
+            if (command is null)
+            {
+                throw new ArgumentException("Command batches cannot contain null commands.", nameof(commands));
+            }
+
+            commandList.Add(command);
+        }
+
+        ValidateBatch(commandList);
+
+        foreach (CommandDefinition command in commandList)
+        {
+            Commands.Add(command);
+        }
+
+        return commandList.AsReadOnly();
+    }
+
+    /// <summary>
+    /// Adds submitted command input to command history.
+    /// </summary>
+    /// <param name="input">The submitted command input.</param>
+    /// <returns><c>true</c> when the input was retained; otherwise, <c>false</c>.</returns>
+    public bool RecordCommandInput(string input)
+    {
+        return CommandHistory.Add(input);
+    }
+
+    /// <summary>
+    /// Adds a trace log message to the shared console history.
+    /// </summary>
+    /// <param name="message">The log message.</param>
+    public void LogTrace(string message)
+    {
+        Log.Trace(message);
+    }
+
+    /// <summary>
+    /// Adds a debug log message to the shared console history.
+    /// </summary>
+    /// <param name="message">The log message.</param>
+    public void LogDebug(string message)
+    {
+        Log.Debug(message);
+    }
+
+    /// <summary>
+    /// Adds an informational log message to the shared console history.
+    /// </summary>
+    /// <param name="message">The log message.</param>
+    public void LogInformation(string message)
+    {
+        Log.Information(message);
+    }
+
+    /// <summary>
+    /// Adds a warning log message to the shared console history.
+    /// </summary>
+    /// <param name="message">The log message.</param>
+    public void LogWarning(string message)
+    {
+        Log.Warning(message);
+    }
+
+    /// <summary>
+    /// Adds an error log message to the shared console history.
+    /// </summary>
+    /// <param name="message">The log message.</param>
+    public void LogError(string message)
+    {
+        Log.Error(message);
+    }
+
+    /// <summary>
+    /// Adds a critical log message to the shared console history.
+    /// </summary>
+    /// <param name="message">The log message.</param>
+    public void LogCritical(string message)
+    {
+        Log.Critical(message);
+    }
+
+    private void ValidateBatch(IReadOnlyList<CommandDefinition> commands)
+    {
+        foreach (CommandDefinition command in commands)
+        {
+            ValidateCommandIsNotDuplicate(command.Path, Commands.Definitions);
+        }
+
+        var paths = new HashSet<string>(_commandPathComparer);
+        foreach (CommandDefinition command in commands)
+        {
+            if (!paths.Add(command.Path))
+            {
+                throw new InvalidOperationException($"Duplicate command path '{command.Path}' in registration batch.");
+            }
+        }
+    }
+
+    private void ValidateCommandIsNotDuplicate(string path, IReadOnlyList<CommandDefinition> existingCommands)
+    {
+        foreach (CommandDefinition existingCommand in existingCommands)
+        {
+            if (_commandPathComparer.Equals(existingCommand.Path, path))
+            {
+                throw new InvalidOperationException($"A command with path '{path}' is already registered.");
+            }
+        }
+    }
 }

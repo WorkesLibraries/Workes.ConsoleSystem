@@ -396,4 +396,26 @@ This keeps command navigation useful for common game-console workflows without t
 
 #### Consequences
 
-Blank command input is ignored. Consecutive duplicates return `false` from `CommandHistory.Add`. More advanced semantic comparison, command-aware normalization, or history search should be explicit future features rather than hidden behavior.
+Blank command input is ignored. Consecutive duplicates return `false` from `ConsoleManager.RecordCommandInput(...)`. More advanced semantic comparison, command-aware normalization, or history search should be explicit future features rather than hidden behavior.
+
+### D-016: Commands Are Built Externally And Registered Through ConsoleManager
+
+#### Context
+
+The command system needs validated immutable command definitions, but duplicate path validation depends on the manager's existing registry and parsing options. The root object should also be the main interaction surface for normal consumers.
+
+#### Decision
+
+Commands are created with `CommandBuilder`, committed with `Build()`, and registered through `ConsoleManager.RegisterCommand(...)` or `ConsoleManager.RegisterCommands(...)`.
+
+`CommandSystem` remains public as an inspectable read-only registry. Registration is owned by `ConsoleManager`.
+
+Logging and command input recording should also prefer manager methods such as `LogInformation(...)` and `RecordCommandInput(...)`.
+
+#### Reasoning
+
+Creating command definitions outside the manager keeps command schema construction testable and reusable. Registering through `ConsoleManager` lets the package validate against existing commands and manager-specific options. Making the manager the normal interaction surface keeps common usage coherent.
+
+#### Consequences
+
+Direct subsystem mutation should stay internal where possible. Future parsing and execution should use the manager-owned registry rather than allowing separate mutable command-system entrypoints. Batch command registration should remain atomic so setup failures do not leave partial command state.

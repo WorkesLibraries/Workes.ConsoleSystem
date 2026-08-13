@@ -1,12 +1,25 @@
+using System;
+using System.Collections.Generic;
+
 namespace Workes.ConsoleSystem.Commands;
 
 /// <summary>
 /// Represents the permanent command registry and future parsing and execution infrastructure.
 /// </summary>
 /// <remarks>
-/// Registration, parsing, execution, permission checks, and path resolution are intentionally not
-/// implemented in the initial package skeleton.
+/// Parsing, execution, permission checks, and path resolution are intentionally not implemented yet.
 /// </remarks>
 public sealed class CommandSystem
 {
+    private readonly List<CommandDefinition> _definitions = new List<CommandDefinition>();
+
+    /// <summary>
+    /// Gets the registered command definitions.
+    /// </summary>
+    public IReadOnlyList<CommandDefinition> Definitions => _definitions.AsReadOnly();
+
+    internal void Add(CommandDefinition definition)
+    {
+        _definitions.Add(definition ?? throw new ArgumentNullException(nameof(definition)));
+    }
 }

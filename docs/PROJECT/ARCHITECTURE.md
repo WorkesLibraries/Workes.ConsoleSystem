@@ -26,7 +26,7 @@ Update when the internal structure, core abstractions, dependency flow, or major
 
 Workes.ConsoleSystem is currently a small engine-neutral package centered on `ConsoleManager`.
 
-`ConsoleManager` owns the shared console history, command input history, logging facade, and command-system placeholder. It is the normal root object for a host application, but it is not a singleton and does not use static global state.
+`ConsoleManager` owns the shared console history, command input history, logging facade, and command registry. It is the normal root object for a host application, but it is not a singleton and does not use static global state.
 
 ## Main Components
 
@@ -34,7 +34,7 @@ Workes.ConsoleSystem is currently a small engine-neutral package centered on `Co
 - `ConsoleHistory` stores one bounded chronological stream of `IConsoleEntry` values.
 - `ConsoleLog` is the developer-facing facade for adding `LogEntry` values to the shared history.
 - `CommandHistory` stores bounded submitted command input strings for future UI navigation.
-- `CommandSystem` is present as the future command registry/execution surface, but command behavior is intentionally not implemented yet.
+- `CommandSystem` is the read-only command registry and future parsing/execution surface.
 - Entry types under `Workes.ConsoleSystem.Entries` represent log entries, command input, and command output.
 
 ## Root Options
@@ -75,7 +75,7 @@ Presentation options are still extension slots only. Concrete semantic-output/th
 
 ## Planned Command Model
 
-Command behavior is still unimplemented, but the intended design direction is settled enough to guide the next implementation work.
+Command registration is implemented, while parsing and execution are still unimplemented.
 
 A command should be defined by one schema model rather than separate public command types for non-parameterized, flag-parameterized, option-parameterized, or positional commands.
 
@@ -98,21 +98,27 @@ The command schema should support:
 
 Optional positional arguments should not be part of the first command model. Optional state should be represented with named options or flags.
 
-Simple commands should not require a state type. Semi-complex or complex commands should prefer small immutable typed state records, with schema bindings expressed against record properties. After a command definition is complete, registration should validate and freeze it so runtime command execution reads immutable command definitions.
+Simple commands do not require a state type. Semi-complex or complex commands should prefer small immutable typed state records, with schema bindings expressed against record properties. A command definition is created through `CommandBuilder.Build()` and then registered through `ConsoleManager`.
 
-The preferred registration style is explicit fluent registration against typed state records:
+The preferred registration style is explicit fluent command creation and manager-owned registration:
 
 ```csharp
-commands.Register<RestartCommand>("server.restart")
-    .Flag(x => x.IgnorePlayers, "--ignore-players", "-i")
-    .Option(x => x.DelaySeconds, "--delay", "-d")
+var restart = new CommandBuilder("server.restart")
+    .Flag<RestartCommand>(x => x.IgnorePlayers, "--ignore-players", "-i")
+    .Option<RestartCommand>(x => x.DelaySeconds, "--delay", "-d")
         .Default(10)
         .Range(0, 3600)
-    .MutuallyExclusive(
-        x => x.IgnorePlayers,
-        x => x.DelaySeconds,
+    .Constraint(
+        "delay-ignore-players",
         "Ignore players cannot be combined with delayed restart.")
-    .Execute((ctx, state) => RestartServer(state));
+    .Execute<RestartCommand>((ctx, state) =>
+    {
+        RestartServer(state);
+        return new CommandResult();
+    })
+    .Build();
+
+console.RegisterCommand(restart);
 ```
 
 Constraints should carry error messages that can be surfaced in command failure entries when user input violates the constraint.
@@ -156,9 +162,9 @@ Log calls flow through `ConsoleManager.Log` into `ConsoleLog`, which appends `Lo
 
 Console UI code is expected to read `ConsoleManager.History.Entries` and render entries according to their concrete type.
 
-Console UI code may use `ConsoleManager.CommandHistory.Add(...)` to retain submitted command input strings for navigation. Command input history is separate from the shared console entry stream until command execution is implemented.
+Console UI code may use `ConsoleManager.RecordCommandInput(...)` to retain submitted command input strings for navigation. Command input history is separate from the shared console entry stream until command execution is implemented.
 
-Command input, parsing, execution, permissions, aliases, arguments, options, and autocomplete are not part of the implemented flow yet.
+Command registration is implemented. Command input parsing, execution, permissions, aliases during parsing, arguments during parsing, options during parsing, and autocomplete are not part of the implemented flow yet.
 
 The planned command execution flow is:
 

@@ -25,9 +25,9 @@ public sealed class ConsoleHistoryTests
             }
         });
 
-        console.Log.Information("First");
-        console.Log.Information("Second");
-        console.Log.Information("Third");
+        console.LogInformation("First");
+        console.LogInformation("Second");
+        console.LogInformation("Third");
 
         Assert.That(console.History.Entries, Has.Count.EqualTo(2));
         Assert.That(((LogEntry)console.History.Entries[0]).Message, Is.EqualTo("Second"));
@@ -39,8 +39,8 @@ public sealed class ConsoleHistoryTests
     {
         var console = new ConsoleManager();
 
-        console.Log.Information("First");
-        console.Log.Warning("Second");
+        console.LogInformation("First");
+        console.LogWarning("Second");
 
         console.History.Clear();
 
