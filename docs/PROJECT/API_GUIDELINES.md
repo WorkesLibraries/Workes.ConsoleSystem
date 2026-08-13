@@ -61,6 +61,14 @@ Changing one option should not require the caller to specify every other option.
 
 Options objects are mutable setup objects for convenient object-initializer use. `ConsoleManager` snapshots the supplied values during construction, so later caller mutations do not alter manager behavior. Null nested option sections resolve to defaults.
 
+History options control active retained history behavior. Histories are bounded and use drop-oldest retention. Command input history rejects consecutive duplicate submissions by default using trimmed, case-insensitive comparison.
+
+## History API Direction
+
+`ConsoleHistory` is the shared rendered console entry stream. It should stay controlled by package systems for now, except that callers may inspect `Entries`, inspect `Capacity`, and clear retained entries.
+
+`CommandHistory` is a UI helper for submitted command strings. It may be written to directly with `Add(string input)` and cleared with `Clear()`. It stores strings only; adding `CommandInputEntry` values to the shared console history belongs to command execution.
+
 ## Command API Direction
 
 Command registration should use one schema model instead of separate command types for non-parameterized, flag-parameterized, option-parameterized, and positional commands.

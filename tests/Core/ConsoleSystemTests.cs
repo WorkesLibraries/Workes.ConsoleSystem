@@ -38,6 +38,7 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.History, Is.Not.Null);
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(200));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(100));
+        Assert.That(console.Options.History.CommandHistoryDuplicatePolicy, Is.EqualTo(CommandHistoryDuplicatePolicy.RejectConsecutive));
         Assert.That(console.Options.Presentation, Is.Not.Null);
         Assert.That(console.Options.Presentation.Theme, Is.Null);
         Assert.That(console.Options.Presentation.Formatter, Is.Null);
@@ -60,7 +61,8 @@ public sealed class ConsoleSystemTests
             History = new HistoryOptions
             {
                 ConsoleHistoryCapacity = 50,
-                CommandHistoryCapacity = 25
+                CommandHistoryCapacity = 25,
+                CommandHistoryDuplicatePolicy = CommandHistoryDuplicatePolicy.Allow
             },
             Presentation = new PresentationOptions
             {
@@ -75,6 +77,7 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.CommandParsing.AllowFlagsAndOptionsInAnyOrder, Is.False);
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(50));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(25));
+        Assert.That(console.Options.History.CommandHistoryDuplicatePolicy, Is.EqualTo(CommandHistoryDuplicatePolicy.Allow));
         Assert.That(console.Options.Presentation.Theme, Is.SameAs(theme));
         Assert.That(console.Options.Presentation.Formatter, Is.SameAs(formatter));
     }
@@ -145,5 +148,35 @@ public sealed class ConsoleSystemTests
         };
 
         Assert.Throws<ArgumentOutOfRangeException>(() => new ConsoleManager(options));
+    }
+
+    [Test]
+    public void Constructor_InvalidCommandHistoryDuplicatePolicyThrows()
+    {
+        var options = new ConsoleManagerOptions
+        {
+            History = new HistoryOptions
+            {
+                CommandHistoryDuplicatePolicy = (CommandHistoryDuplicatePolicy)999
+            }
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ConsoleManager(options));
+    }
+
+    [Test]
+    public void Constructor_AppliesHistoryOptionsToHistories()
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            History = new HistoryOptions
+            {
+                ConsoleHistoryCapacity = 2,
+                CommandHistoryCapacity = 3
+            }
+        });
+
+        Assert.That(console.History.Capacity, Is.EqualTo(2));
+        Assert.That(console.CommandHistory.Capacity, Is.EqualTo(3));
     }
 }

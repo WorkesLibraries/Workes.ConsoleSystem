@@ -31,9 +31,9 @@ Workes.ConsoleSystem is currently a small engine-neutral package centered on `Co
 ## Main Components
 
 - `ConsoleManager` coordinates the package-level systems.
-- `ConsoleHistory` stores one chronological stream of `IConsoleEntry` values.
+- `ConsoleHistory` stores one bounded chronological stream of `IConsoleEntry` values.
 - `ConsoleLog` is the developer-facing facade for adding `LogEntry` values to the shared history.
-- `CommandHistory` stores submitted command input strings for future UI navigation.
+- `CommandHistory` stores bounded submitted command input strings for future UI navigation.
 - `CommandSystem` is present as the future command registry/execution surface, but command behavior is intentionally not implemented yet.
 - Entry types under `Workes.ConsoleSystem.Entries` represent log entries, command input, and command output.
 
@@ -69,7 +69,9 @@ If strict flag/option ordering is added, it should use schema/builder order.
 
 Options are mutable setup objects, but `ConsoleManager` snapshots them during construction. Null nested option sections resolve to defaults. Capacity values must be greater than zero.
 
-Stage 1 stores history and presentation option values only. Bounded history behavior is implemented later, and concrete semantic-output/theme/formatter types are part of later command-output work.
+History capacity options are active. When either retained history reaches capacity, adding a new item drops the oldest retained item. `CommandHistory` rejects consecutive duplicate command inputs by default using trimmed, case-insensitive comparison while preserving the originally submitted text for retained entries.
+
+Presentation options are still extension slots only. Concrete semantic-output/theme/formatter types are part of later command-output work.
 
 ## Planned Command Model
 
@@ -153,6 +155,8 @@ Actual engine UI rendering remains outside this package.
 Log calls flow through `ConsoleManager.Log` into `ConsoleLog`, which appends `LogEntry` instances to `ConsoleManager.History`.
 
 Console UI code is expected to read `ConsoleManager.History.Entries` and render entries according to their concrete type.
+
+Console UI code may use `ConsoleManager.CommandHistory.Add(...)` to retain submitted command input strings for navigation. Command input history is separate from the shared console entry stream until command execution is implemented.
 
 Command input, parsing, execution, permissions, aliases, arguments, options, and autocomplete are not part of the implemented flow yet.
 

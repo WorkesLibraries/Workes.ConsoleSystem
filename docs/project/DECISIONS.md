@@ -375,3 +375,25 @@ Mutable setup objects keep the normal .NET options workflow concise and make par
 #### Consequences
 
 Later systems should read resolved settings from manager-owned configuration instead of retaining caller-owned option references. Runtime configuration changes should be introduced explicitly if they are ever needed, rather than emerging accidentally through mutable options.
+
+### D-015: Command Input History Rejects Consecutive Semantic Duplicates By Default
+
+#### Context
+
+Command input history exists primarily to support UI navigation through submitted command strings. Retaining every submission is faithful, but repeated accidental submits of the same command can make navigation noisy.
+
+#### Decision
+
+`CommandHistory` rejects consecutive duplicate inputs by default.
+
+Duplicate comparison trims leading and trailing whitespace and compares case-insensitively. The stored input preserves the original submitted string. Only the newest retained input is considered for duplicate rejection, so the same command can appear again later after another command is submitted.
+
+The behavior is configurable through `CommandHistoryDuplicatePolicy`. The initial policies are `Allow` and `RejectConsecutive`.
+
+#### Reasoning
+
+This keeps command navigation useful for common game-console workflows without treating semantically distinct command strings as the same command. Preserving the original string avoids surprising users who expect history to recall what they actually typed.
+
+#### Consequences
+
+Blank command input is ignored. Consecutive duplicates return `false` from `CommandHistory.Add`. More advanced semantic comparison, command-aware normalization, or history search should be explicit future features rather than hidden behavior.

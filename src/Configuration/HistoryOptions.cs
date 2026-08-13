@@ -18,6 +18,7 @@ public sealed class HistoryOptions
     {
         ConsoleHistoryCapacity = ValidateCapacity(source.ConsoleHistoryCapacity, nameof(ConsoleHistoryCapacity));
         CommandHistoryCapacity = ValidateCapacity(source.CommandHistoryCapacity, nameof(CommandHistoryCapacity));
+        CommandHistoryDuplicatePolicy = ValidateDuplicatePolicy(source.CommandHistoryDuplicatePolicy);
     }
 
     /// <summary>
@@ -30,6 +31,11 @@ public sealed class HistoryOptions
     /// </summary>
     public int CommandHistoryCapacity { get; set; } = 100;
 
+    /// <summary>
+    /// Gets or sets how submitted command input history handles duplicate entries.
+    /// </summary>
+    public CommandHistoryDuplicatePolicy CommandHistoryDuplicatePolicy { get; set; } = CommandHistoryDuplicatePolicy.RejectConsecutive;
+
     internal static HistoryOptions CreateSnapshot(HistoryOptions? source)
     {
         return source is null ? new HistoryOptions() : new HistoryOptions(source);
@@ -40,6 +46,16 @@ public sealed class HistoryOptions
         if (value <= 0)
         {
             throw new ArgumentOutOfRangeException(parameterName, value, "Capacity values must be greater than zero.");
+        }
+
+        return value;
+    }
+
+    private static CommandHistoryDuplicatePolicy ValidateDuplicatePolicy(CommandHistoryDuplicatePolicy value)
+    {
+        if (!Enum.IsDefined(typeof(CommandHistoryDuplicatePolicy), value))
+        {
+            throw new ArgumentOutOfRangeException(nameof(CommandHistoryDuplicatePolicy), value, "Unknown command history duplicate policy.");
         }
 
         return value;

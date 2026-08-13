@@ -54,14 +54,45 @@ var console = new ConsoleManager(new ConsoleManagerOptions
     History = new HistoryOptions
     {
         ConsoleHistoryCapacity = 200,
-        CommandHistoryCapacity = 100
+        CommandHistoryCapacity = 100,
+        CommandHistoryDuplicatePolicy = CommandHistoryDuplicatePolicy.RejectConsecutive
     }
 });
 ```
 
 The manager snapshots supplied options during construction. Changing the options object afterwards does not change the manager.
 
-Current option areas are command parsing preferences, history capacities, and presentation extension slots. Bounded history, parsing behavior, and concrete presentation formatting are planned later stages.
+Current option areas are command parsing preferences, history capacities, command input duplicate handling, and presentation extension slots. Parsing behavior and concrete presentation formatting are planned later stages.
+
+## History
+
+`ConsoleHistory` and `CommandHistory` both retain a bounded number of entries. When capacity is reached, the oldest retained item is dropped and public entries remain ordered from oldest retained to newest retained.
+
+```csharp
+var console = new ConsoleManager(new ConsoleManagerOptions
+{
+    History = new HistoryOptions
+    {
+        ConsoleHistoryCapacity = 2,
+        CommandHistoryCapacity = 2
+    }
+});
+
+console.Log.Information("First");
+console.Log.Information("Second");
+console.Log.Information("Third");
+
+Console.WriteLine(console.History.Entries.Count); // 2
+```
+
+Command input history stores submitted command strings for UI navigation. Blank inputs are ignored. Consecutive duplicate inputs are rejected by default using trimmed, case-insensitive comparison, but the original submitted text is preserved when it is stored.
+
+```csharp
+console.CommandHistory.Add("noclip");      // true
+console.CommandHistory.Add(" NOCLIP ");    // false
+console.CommandHistory.Add("help");        // true
+console.CommandHistory.Add("noclip");      // true
+```
 
 ## First Working Example
 

@@ -32,8 +32,10 @@ public sealed class ConsoleManager
     {
         _options = ConsoleManagerOptions.CreateSnapshot(options);
 
-        History = new ConsoleHistory();
-        CommandHistory = new CommandHistory();
+        History = new ConsoleHistory(_options.History.ConsoleHistoryCapacity);
+        CommandHistory = new CommandHistory(
+            _options.History.CommandHistoryCapacity,
+            _options.History.CommandHistoryDuplicatePolicy);
         Log = new ConsoleLog(History);
         Commands = new CommandSystem();
     }

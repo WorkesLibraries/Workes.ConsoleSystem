@@ -11,8 +11,8 @@ The initial package shape provides the console root, configuration foundation, l
 
 - Create one `ConsoleManager` to coordinate console state.
 - Configure parsing, history, and presentation defaults through `ConsoleManagerOptions`.
-- Write log messages into a shared chronological `ConsoleHistory`.
-- Keep command input history separate from the rendered console entry stream.
+- Write log messages into a bounded shared chronological `ConsoleHistory`.
+- Keep bounded command input history separate from the rendered console entry stream.
 - Start from a command-system surface that can evolve without binding the package to a specific UI or engine.
 
 ## Installation
