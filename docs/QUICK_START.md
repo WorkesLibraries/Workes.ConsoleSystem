@@ -36,6 +36,33 @@ var console = new ConsoleManager();
 
 Keep the `ConsoleManager` instance for the lifetime of the host console. The package does not enforce a singleton, but most applications should create one logical console manager during startup.
 
+## Configuration
+
+`ConsoleManager` can also be created with options. All options have defaults, so you only need to specify the values you want to change.
+
+```csharp
+using Workes.ConsoleSystem.Configuration;
+using Workes.ConsoleSystem.Core;
+
+var console = new ConsoleManager(new ConsoleManagerOptions
+{
+    CommandParsing = new CommandParsingOptions
+    {
+        OptionValueStyle = OptionValueStyle.AnySeparated,
+        IsCaseSensitive = false
+    },
+    History = new HistoryOptions
+    {
+        ConsoleHistoryCapacity = 200,
+        CommandHistoryCapacity = 100
+    }
+});
+```
+
+The manager snapshots supplied options during construction. Changing the options object afterwards does not change the manager.
+
+Current option areas are command parsing preferences, history capacities, and presentation extension slots. Bounded history, parsing behavior, and concrete presentation formatting are planned later stages.
+
 ## First Working Example
 
 ```csharp
@@ -59,7 +86,7 @@ foreach (var entry in console.History.Entries)
 
 This example demonstrates the currently implemented behavior: logging writes `LogEntry` values into the shared chronological history.
 
-Command registration, parsing, execution, permissions, aliases, arguments, and autocomplete are not implemented in the initial skeleton.
+Command registration, parsing, execution, permissions, aliases, arguments, and autocomplete are not implemented yet.
 
 ## What To Read Next
 
