@@ -37,6 +37,33 @@ Workes.ConsoleSystem is currently a small engine-neutral package centered on `Ga
 - `CommandSystem` is present as the future command registry/execution surface, but command behavior is intentionally not implemented yet.
 - Entry types under `Workes.ConsoleSystem.Entries` represent log entries, command input, and command output.
 
+## Planned Command Model
+
+Command behavior is still unimplemented, but the intended design direction is settled enough to guide the next implementation work.
+
+A command should be defined by one schema model rather than separate public command types for non-parameterized, flag-parameterized, option-parameterized, or positional commands.
+
+The intended input order is:
+
+```text
+<path> <required positional arguments...> [flags and options...]
+```
+
+The command schema should support:
+
+- command paths such as `noclip`, `server.restart`, or `player.give`;
+- required positional arguments for core command state;
+- boolean flags for modifiers;
+- typed key-value options for named configurable state;
+- aliases for flags and options;
+- option defaults, ranges, allowed values, and similar validation metadata;
+- constraints over the fully bound command state;
+- autocomplete for paths, flag names, option names, and command-provided value candidates.
+
+Optional positional arguments should not be part of the first command model. Optional state should be represented with named options or flags.
+
+Simple commands should not require a state type. Semi-complex or complex commands should prefer small immutable typed state records, with schema bindings expressed against record properties. After a command definition is complete, registration should validate and freeze it so runtime command execution reads immutable command definitions.
+
 ## Data Flow / Control Flow
 
 Log calls flow through `GameConsole.Log` into `ConsoleLog`, which appends `LogEntry` instances to `GameConsole.History`.
@@ -45,9 +72,26 @@ Console UI code is expected to read `GameConsole.History.Entries` and render ent
 
 Command input, parsing, execution, permissions, aliases, arguments, options, and autocomplete are not part of the implemented flow yet.
 
+The planned command execution flow is:
+
+```text
+raw input
+-> parse path, required positional arguments, flags, and options
+-> resolve command definition
+-> bind values into a typed command state record or simple command context
+-> run schema validation and constraints
+-> execute handler
+-> append command input, output, and failure entries to console history
+```
+
+Autocomplete should be schema-driven where possible. Command path, flag name, and option name completion should come from registered command definitions. Positional argument values and option values should require command-provided candidate functions.
+
 ## Important Constraints
 
 - Keep ownership explicit and testable.
 - Keep UI and engine dependencies outside this package.
 - Preserve one shared chronological console history for logs, command input, command output, and future command failures.
-- Do not add speculative command abstractions before the registration and execution models are decided.
+- Keep simple commands simple.
+- Prefer typed state records for complex commands rather than string IDs or mutable parameter handles as the primary model.
+- Do not introduce separate public command-type hierarchies for each parameterization style.
+- Do not force log severity onto every console entry; severity belongs to log entries, while command output and custom entries should own their own metadata.

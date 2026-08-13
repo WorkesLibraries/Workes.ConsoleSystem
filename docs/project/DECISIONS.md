@@ -116,3 +116,98 @@ Trello is now the formula-level source of truth for current work, next work, bac
 #### Consequences
 
 Do not recreate a Markdown task board under `docs/PROJECT`. Assistants should use the mapped Trello board for task state.
+
+### D-005: Commands Use One Schema Model Instead Of Separate Command Types
+
+#### Context
+
+The command system needs to support simple commands, flags, key-value options, positional arguments, aliases, defaults, validation constraints, and autocomplete without forcing separate command types such as non-parameterized commands, flag-parameterized commands, and option-parameterized commands.
+
+#### Decision
+
+Commands should be modeled as one command definition with a path, positional arguments, flags, options, constraints, and an execution handler.
+
+The command input shape should be:
+
+```text
+<path> <required positional arguments...> [flags and options...]
+```
+
+Positional arguments should represent required core command state. Optional command state should be expressed through named options or flags instead of optional positional arguments.
+
+#### Reasoning
+
+A single schema model allows command creators to mix flags, options, and positional arguments naturally. Required positional arguments keep common commands bearable to type, while named options and flags make optional behavior explicit and easier to validate, document, and autocomplete.
+
+Avoiding optional positional arguments keeps parsing, help text, autocomplete, and user expectations simpler.
+
+#### Consequences
+
+The parser and registration API should support required positional arguments, boolean flags, typed options, aliases for flags/options, defaults for options, and validation constraints over the fully bound command state.
+
+Future command design should not introduce separate public command-type hierarchies for each parameterization style.
+
+### D-006: Complex Commands Prefer Typed State Records
+
+#### Context
+
+The command API needs a clean way for handlers and constraints to access bound command values. String IDs are flexible but can become magic strings. Typed parameter handles avoid strings but make command definitions feel more mutable and less cleanly finalized. Class-per-command state initially felt like ceremony, but small immutable records can represent the command's input contract clearly.
+
+#### Decision
+
+Simple commands should remain simple and should not require a state type.
+
+Complex commands should prefer a typed command state record as the primary clean model. The command builder should bind positional arguments, flags, and options to properties on that record, then execute handlers against a validated immutable state object.
+
+Example intended shape:
+
+```csharp
+public sealed record RestartCommand(
+    bool IgnorePlayers,
+    int DelaySeconds);
+
+commands.Register<RestartCommand>("server.restart")
+    .Flag(x => x.IgnorePlayers, "--ignore-players", "-i")
+    .Option(x => x.DelaySeconds, "--delay", "-d")
+        .Default(0)
+        .Range(0, 3600)
+    .MutuallyExclusive(x => x.IgnorePlayers, x => x.DelaySeconds)
+    .Execute((ctx, state) =>
+    {
+        // use state.IgnorePlayers and state.DelaySeconds
+    });
+```
+
+#### Reasoning
+
+Typed state records give the command definition a clear input contract, avoid magic strings, preserve type safety, allow immutable bound state, and keep constraints tied to real properties. They also let a command be fully defined and validated as a complete schema before use.
+
+The small-record cost is acceptable for semi-complex commands because the record documents the command's public input model.
+
+#### Consequences
+
+The future command registration API should make the typed state-record path feel first-class. Dynamic/string-based command state may exist later as an advanced escape hatch, but it should not be the primary design target.
+
+The command system should freeze or otherwise prevent mutation of command definitions once registration is complete.
+
+### D-007: Console Entries Are Extensible And Type-Specific
+
+#### Context
+
+The console history needs to contain logs, command input, command output, command failures, and possible game-specific entries. Logging severity is useful for system log messages, but not every console entry is a log.
+
+#### Decision
+
+Console history should store extensible `IConsoleEntry` objects. Entries should carry their own timestamp and stable entry type/kind.
+
+Built-in entry types should cover at least system/log messages, command input, command output, and command errors or failures. Users should be able to define custom entry types for game-specific console events.
+
+Log severity should belong to `LogEntry`, not to all console entries. Command output should use command-output-specific metadata such as output level/type instead of being forced into log severity.
+
+#### Reasoning
+
+Keeping severity on log entries preserves a clean model: logs have log levels, command output has command output semantics, and custom entries can expose their own metadata. Storing all of them as `IConsoleEntry` values preserves one chronological console stream while allowing extensibility.
+
+#### Consequences
+
+The package should not make `LogLevel` a required member of `IConsoleEntry`. Future sinks/routing can be added later if needed, but the first design should focus on extensible entry objects and the shared chronological history.
