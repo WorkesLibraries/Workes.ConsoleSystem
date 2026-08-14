@@ -18,6 +18,10 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added manager-owned command registration with read-only registry inspection.
 - Added focused user-facing command registration documentation.
 - Added configurable `CommandParsingOptions.FlagAndOptionPrefix` for future flag/option parsing.
+- Added side-effect-free `ConsoleManager.ParseCommand(...)`.
+- Added structured command parse result, error, and bound command types.
+- Added typed command value binding for required positional arguments, flags, and options.
+- Added focused user-facing command parsing documentation.
 
 ### Changed
 
@@ -26,4 +30,4 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - `HistoryOptions` now controls active console and command input history capacity.
 - Logging and command input recording now use manager-centered public methods.
 - Command flag and option schema names are now defined without their command-line prefix.
-
+- Command parsing options now control active parse behavior instead of being configuration placeholders only.

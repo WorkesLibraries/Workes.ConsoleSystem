@@ -142,7 +142,11 @@ public enum OptionValueStyle
 }
 ```
 
-Default command parsing should use `SpaceSeparated`, `FlagAndOptionPrefix = "--"`, case-insensitive matching, quoted string support, and order-independent flags/options after the path and required positional arguments. Prefixes such as `"-"` should be configurable for callers whose command schemas can safely support them.
+Default command parsing uses `SpaceSeparated`, `FlagAndOptionPrefix = "--"`, case-insensitive matching, quoted string support, and order-independent flags/options after the path and required positional arguments. Prefixes such as `"-"` should be configurable for callers whose command schemas can safely support them.
+
+Parsing is exposed through `ConsoleManager.ParseCommand(string input)`. It should return a structured success/failure result, not throw for normal user input mistakes. Parsing should not execute command handlers or write to history.
+
+Successful parse results should expose the matched definition, typed state object when present, and bound argument/flag/option values by schema name. Failed parse results should expose a stable `CommandParseErrorCode` and a human-readable message.
 
 Synchronous command handlers should be the default. Leave API room for async handlers later without making async the initial baseline.
 
@@ -187,6 +191,7 @@ Actual Unity/Godot UI controls remain outside the package. Advanced UIs should b
 ## Error Handling And Validation
 
 - Throw `ArgumentNullException` for null values that cannot be represented safely.
+- Return structured parse errors for ordinary invalid user command input.
 - Keep invalid-state rules close to the type that owns the state.
 - Do not add broad exception hierarchies until command behavior or history policies create real error cases.
 

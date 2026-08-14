@@ -48,8 +48,9 @@ The currently implemented manager behavior is:
 - submitted command strings can be recorded through `console.RecordCommandInput(...)`;
 - histories are bounded and drop the oldest retained item when full.
 - immutable command definitions can be registered through `console.RegisterCommand(...)`.
+- registered command input can be parsed through `console.ParseCommand(...)`.
 
-Command parsing, execution, and autocomplete are planned but not implemented yet.
+Command execution and autocomplete are planned but not implemented yet.
 
 ## Related Guides
 
@@ -57,3 +58,4 @@ Command parsing, execution, and autocomplete are planned but not implemented yet
 - [Console History](CONSOLE_HISTORY.md)
 - [Command History](COMMAND_HISTORY.md)
 - [Command Registration](COMMAND_REGISTRATION.md)
+- [Command Parsing](COMMAND_PARSING.md)

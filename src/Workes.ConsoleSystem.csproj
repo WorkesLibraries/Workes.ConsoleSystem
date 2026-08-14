@@ -8,12 +8,12 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Workes.ConsoleSystem</PackageId>
     <Version>0.1.0</Version>
-    <PackageReleaseNotes>Initial package scaffold with a ConsoleManager root object, configurable bounded history, logging facade, command input history, and placeholder command infrastructure.</PackageReleaseNotes>
+    <PackageReleaseNotes>Initial package scaffold with a ConsoleManager root object, configurable bounded history, logging facade, command input history, immutable command registration, and side-effect-free command parsing.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>Workes</Authors>
     <Company>Workes</Company>
     <Product>Workes.ConsoleSystem</Product>
-    <Description>Engine-neutral .NET console foundation for game logging, chronological console history, command input history, and future command workflows.</Description>
+    <Description>Engine-neutral .NET console foundation for game logging, chronological console history, command input history, command registration, and command parsing workflows.</Description>
     <PackageTags>console;logging;commands;game-development;dotnet</PackageTags>
     <PackageProjectUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem.git</RepositoryUrl>

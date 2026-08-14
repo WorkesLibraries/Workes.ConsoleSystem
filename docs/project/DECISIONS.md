@@ -439,3 +439,25 @@ Prefix-free schema names keep command definitions focused on logical command voc
 #### Consequences
 
 Command registration should reject flag or option names that already include the manager's configured prefix. User-facing docs should show schema names such as `delay` and input examples such as `--delay 10`.
+
+### D-018: Parsing Is Side-Effect-Free And Returns Structured Results
+
+#### Context
+
+The package needs command input validation and value binding before command execution is implemented. UI code and tests should be able to ask whether an input is valid without causing history writes, command output, or handler side effects.
+
+#### Decision
+
+`ConsoleManager.ParseCommand(string input)` parses registered commands and returns `CommandParseResult`.
+
+Successful parse results expose the matched command definition, typed state object when present, and bound argument, flag, and option values. Failed parse results expose a stable `CommandParseErrorCode` and a human-readable message.
+
+Parsing does not write to `ConsoleHistory`, does not write to `CommandHistory`, does not evaluate constraints, and does not invoke stored command handlers.
+
+#### Reasoning
+
+A side-effect-free parse API is useful for validation, UI feedback, tests, and future autocomplete/execution workflows. Structured results are easier for UIs to consume than exceptions or plain strings.
+
+#### Consequences
+
+Command execution must explicitly decide when to record command input, command failures, and command output. Parser behavior should remain deterministic and driven by `ConsoleManagerOptions`.

@@ -50,7 +50,7 @@ Console.WriteLine(console.History.Capacity); // 50
 
 ## Command Parsing Options
 
-Command parsing options exist now so the public configuration shape is ready for command parsing work.
+Command parsing options control active `ConsoleManager.ParseCommand(...)` behavior.
 
 Defaults:
 
@@ -60,9 +60,7 @@ Defaults:
 - `AllowQuotedStrings = true`
 - `AllowFlagsAndOptionsInAnyOrder = true`
 
-Parsing behavior itself is not implemented yet.
-
-Flag and option schema names are defined without this prefix. The prefix is applied to command input later by the parser.
+Flag and option schema names are defined without this prefix. The parser applies the prefix to command input.
 
 ## History Options
 
@@ -92,3 +90,5 @@ Concrete theme, style, semantic output, and formatter types are planned for late
 - [ConsoleManager](CONSOLE_MANAGER.md)
 - [Console History](CONSOLE_HISTORY.md)
 - [Command History](COMMAND_HISTORY.md)
+- [Command Registration](COMMAND_REGISTRATION.md)
+- [Command Parsing](COMMAND_PARSING.md)

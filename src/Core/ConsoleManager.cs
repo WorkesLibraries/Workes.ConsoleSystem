@@ -72,6 +72,16 @@ public sealed class ConsoleManager
     public CommandSystem Commands { get; }
 
     /// <summary>
+    /// Parses command input against the registered command schemas without executing the command.
+    /// </summary>
+    /// <param name="input">The command input.</param>
+    /// <returns>The parse result.</returns>
+    public CommandParseResult ParseCommand(string input)
+    {
+        return CommandParser.Parse(input, Commands.Definitions, _options.CommandParsing);
+    }
+
+    /// <summary>
     /// Registers a command definition.
     /// </summary>
     /// <param name="command">The command definition.</param>
@@ -83,7 +93,7 @@ public sealed class ConsoleManager
             throw new ArgumentNullException(nameof(command));
         }
 
-        ValidateCommandMemberNamesDoNotIncludePrefix(command);
+        ValidateCommandMembers(command);
         ValidateCommandIsNotDuplicate(command.Path, Commands.Definitions);
         Commands.Add(command);
         return command;
@@ -190,7 +200,7 @@ public sealed class ConsoleManager
     {
         foreach (CommandDefinition command in commands)
         {
-            ValidateCommandMemberNamesDoNotIncludePrefix(command);
+            ValidateCommandMembers(command);
             ValidateCommandIsNotDuplicate(command.Path, Commands.Definitions);
         }
 
@@ -215,25 +225,30 @@ public sealed class ConsoleManager
         }
     }
 
-    private void ValidateCommandMemberNamesDoNotIncludePrefix(CommandDefinition command)
+    private void ValidateCommandMembers(CommandDefinition command)
     {
         string prefix = _options.CommandParsing.FlagAndOptionPrefix;
+        var seenNamedMembers = new HashSet<string>(_commandPathComparer);
 
         foreach (CommandFlagDefinition flag in command.Flags)
         {
             ValidateNameDoesNotIncludePrefix(flag.Name, prefix);
+            AddUniqueCommandMemberName(seenNamedMembers, flag.Name);
             foreach (string alias in flag.Aliases)
             {
                 ValidateNameDoesNotIncludePrefix(alias, prefix);
+                AddUniqueCommandMemberName(seenNamedMembers, alias);
             }
         }
 
         foreach (CommandOptionDefinition option in command.Options)
         {
             ValidateNameDoesNotIncludePrefix(option.Name, prefix);
+            AddUniqueCommandMemberName(seenNamedMembers, option.Name);
             foreach (string alias in option.Aliases)
             {
                 ValidateNameDoesNotIncludePrefix(alias, prefix);
+                AddUniqueCommandMemberName(seenNamedMembers, alias);
             }
         }
     }
@@ -244,6 +259,14 @@ public sealed class ConsoleManager
         {
             throw new InvalidOperationException(
                 $"Flag and option schema names should not include the configured prefix '{prefix}'. Use '{name.Substring(prefix.Length)}' instead.");
+        }
+    }
+
+    private static void AddUniqueCommandMemberName(HashSet<string> seenNamedMembers, string name)
+    {
+        if (!seenNamedMembers.Add(name))
+        {
+            throw new InvalidOperationException($"Duplicate flag or option name or alias '{name}' for the configured command parsing comparer.");
         }
     }
 }

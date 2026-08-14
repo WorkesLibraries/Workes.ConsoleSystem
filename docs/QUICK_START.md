@@ -63,7 +63,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 
 The manager snapshots supplied options during construction. Changing the options object afterwards does not change the manager.
 
-Current option areas are command parsing preferences, history capacities, command input duplicate handling, and presentation extension slots. Parsing behavior and concrete presentation formatting are planned later stages.
+Current option areas are command parsing preferences, history capacities, command input duplicate handling, and presentation extension slots. Command parsing is active; command execution and concrete presentation formatting are planned later stages.
 
 ## History
 
@@ -118,7 +118,7 @@ foreach (var entry in console.History.Entries)
 
 This example demonstrates the currently implemented behavior: logging writes `LogEntry` values into the shared chronological history.
 
-Command registration is implemented for schema definitions. Parsing, execution, permissions, aliases during parsing, arguments during parsing, and autocomplete are not implemented yet.
+Command registration and parsing are implemented for schema definitions. Command execution, command output processing, constraints, permissions, and autocomplete are not implemented yet.
 
 ## Register A Command Schema
 
@@ -138,7 +138,39 @@ console.RegisterCommand(command);
 Console.WriteLine(console.Commands.Definitions.Count); // 1
 ```
 
-Registered commands can be inspected, but command input parsing and execution are planned later stages.
+Registered commands can be inspected and parsed, but command execution is planned for a later stage.
+
+## Parse Command Input
+
+```csharp
+using Workes.ConsoleSystem.Commands;
+using Workes.ConsoleSystem.Core;
+
+public sealed record RestartState(
+    string Reason,
+    bool IgnorePlayers,
+    int DelaySeconds);
+
+var console = new ConsoleManager();
+
+console.RegisterCommand(new CommandBuilder("server.restart")
+    .Argument<RestartState>(x => x.Reason, "reason")
+    .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "i")
+    .Option<RestartState>(x => x.DelaySeconds, "delay", "d")
+        .Default(10)
+    .Execute<RestartState>((ctx, state) => new CommandResult())
+    .Build());
+
+CommandParseResult result = console.ParseCommand("server.restart maintenance --ignore-players --delay 5");
+
+if (result.Success)
+{
+    RestartState state = result.Command!.GetState<RestartState>()!;
+    Console.WriteLine(state.DelaySeconds); // 5
+}
+```
+
+Parsing validates the command shape and creates typed state. It does not execute the stored handler or write to history yet.
 
 ## What To Read Next
 
@@ -147,5 +179,6 @@ Registered commands can be inspected, but command input parsing and execution ar
 - [Console History](CONSOLE_HISTORY.md) for rendered console entries and retention.
 - [Command History](COMMAND_HISTORY.md) for submitted command input history.
 - [Command Registration](COMMAND_REGISTRATION.md) for immutable command schemas.
+- [Command Parsing](COMMAND_PARSING.md) for parse results and typed value binding.
 - [CHANGELOG.md](../CHANGELOG.md) for release history and migration-sensitive changes.
 

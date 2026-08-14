@@ -34,7 +34,7 @@ Workes.ConsoleSystem is currently a small engine-neutral package centered on `Co
 - `ConsoleHistory` stores one bounded chronological stream of `IConsoleEntry` values.
 - `ConsoleLog` is the developer-facing facade for adding `LogEntry` values to the shared history.
 - `CommandHistory` stores bounded submitted command input strings for future UI navigation.
-- `CommandSystem` is the read-only command registry and future parsing/execution surface.
+- `CommandSystem` is the read-only command registry used by parsing and future execution.
 - Entry types under `Workes.ConsoleSystem.Entries` represent log entries, command input, and command output.
 
 ## Root Options
@@ -75,9 +75,9 @@ History capacity options are active. When either retained history reaches capaci
 
 Presentation options are still extension slots only. Concrete semantic-output/theme/formatter types are part of later command-output work.
 
-## Planned Command Model
+## Command Model
 
-Command registration is implemented, while parsing and execution are still unimplemented.
+Command registration and parsing are implemented, while execution is still unimplemented.
 
 A command should be defined by one schema model rather than separate public command types for non-parameterized, flag-parameterized, option-parameterized, or positional commands.
 
@@ -123,7 +123,7 @@ var restart = new CommandBuilder("server.restart")
 console.RegisterCommand(restart);
 ```
 
-Constraints should carry error messages that can be surfaced in command failure entries when user input violates the constraint.
+Constraints currently carry error messages as metadata. Constraint evaluation is planned for a later stage.
 
 Synchronous command handlers should be the default. The design should leave room for intuitive async command handlers later, but the first implementation should prioritize synchronous debug/game-console commands.
 
@@ -166,7 +166,21 @@ Console UI code is expected to read `ConsoleManager.History.Entries` and render 
 
 Console UI code may use `ConsoleManager.RecordCommandInput(...)` to retain submitted command input strings for navigation. Command input history is separate from the shared console entry stream until command execution is implemented.
 
-Command registration is implemented. Command input parsing, execution, permissions, aliases during parsing, arguments during parsing, options during parsing, and autocomplete are not part of the implemented flow yet.
+Command registration and command input parsing are implemented. Execution, permissions, constraint evaluation, command output handling, and autocomplete are not part of the implemented flow yet.
+
+The current parse flow is:
+
+```text
+raw input
+-> tokenize with quoted-string support
+-> resolve command path
+-> bind required positional arguments
+-> bind flags and options
+-> create typed command state through constructor binding
+-> return CommandParseResult
+```
+
+Parsing has no history side effects and does not invoke stored handlers.
 
 The planned command execution flow is:
 

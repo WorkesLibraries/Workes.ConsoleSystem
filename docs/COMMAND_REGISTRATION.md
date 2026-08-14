@@ -1,8 +1,8 @@
 # Command Registration
 
-Command registration defines command schemas before command parsing and execution are implemented.
+Command registration defines command schemas for parsing and later execution.
 
-In the current package, commands can be created, validated, and registered. Registered definitions can be inspected through `console.Commands.Definitions`. Command input parsing and command execution are planned later stages.
+In the current package, commands can be created, validated, registered, inspected, and parsed. Command execution is planned for a later stage.
 
 ## Simple Commands
 
@@ -22,7 +22,7 @@ CommandDefinition noclip = new CommandBuilder("noclip")
 console.RegisterCommand(noclip);
 ```
 
-`Execute(...)` stores the command handler delegate, but the handler is not invoked until command execution is implemented later.
+`Execute(...)` stores the command handler delegate, but the handler is not invoked by parsing. Handler invocation is planned for command execution.
 
 ## Typed Command Schemas
 
@@ -54,7 +54,7 @@ CommandDefinition restart = new CommandBuilder("server.restart")
 console.RegisterCommand(restart);
 ```
 
-Arguments, flags, options, and constraints are schema metadata in this stage. They are not parsed or evaluated yet.
+Arguments, flags, and options are parsed and bound by `ConsoleManager.ParseCommand(...)`. Constraints remain metadata until constraint evaluation is implemented.
 
 ## Flag And Option Names
 
@@ -65,7 +65,7 @@ Flag and option names are defined without their command-line prefix.
 .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "d")
 ```
 
-The configured parser prefix is applied later when command input is parsed. The default prefix is `--`, so the logical option name `delay` will be typed as `--delay` by default.
+The configured parser prefix is applied when command input is parsed. The default prefix is `--`, so the logical option name `delay` is typed as `--delay` by default.
 
 Use `CommandParsingOptions.FlagAndOptionPrefix` to configure another prefix, such as `-`.
 
@@ -144,3 +144,4 @@ foreach (CommandDefinition command in console.Commands.Definitions)
 - [ConsoleManager](CONSOLE_MANAGER.md)
 - [Configuration](CONFIGURATION.md)
 - [Command History](COMMAND_HISTORY.md)
+- [Command Parsing](COMMAND_PARSING.md)
