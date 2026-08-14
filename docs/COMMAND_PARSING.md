@@ -125,7 +125,7 @@ Escaped matching quotes and backslashes work inside quoted strings.
 say "hello \"world\""
 ```
 
-Unclosed quotes fail parsing with `CommandParseErrorCode.UnclosedQuote`.
+Unclosed quotes fail parsing with `ConsoleFailureCodes.CommandQuoteUnclosed`.
 
 ## Supported Value Types
 
@@ -169,15 +169,16 @@ if (result.Success)
 }
 ```
 
-Failed results expose a stable error code and human-readable message.
+Failed results expose a `ConsoleFailure` with stable kind/code values and a human-readable message.
 
 ```csharp
 CommandParseResult result = console.ParseCommand("server.restart");
 
 if (!result.Success)
 {
-    Console.WriteLine(result.Error!.Code);
-    Console.WriteLine(result.Error.Message);
+    Console.WriteLine(result.Failure!.Kind);
+    Console.WriteLine(result.Failure.Code);
+    Console.WriteLine(result.Failure.Message);
 }
 ```
 
@@ -186,3 +187,4 @@ if (!result.Success)
 - [Command Registration](COMMAND_REGISTRATION.md)
 - [Configuration](CONFIGURATION.md)
 - [ConsoleManager](CONSOLE_MANAGER.md)
+- [Failure Handling](FAILURES.md)

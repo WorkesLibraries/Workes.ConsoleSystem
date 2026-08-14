@@ -15,6 +15,7 @@ The initial package shape provides the console root, configuration foundation, l
 - Keep bounded command input history separate from the rendered console entry stream.
 - Register immutable command definitions without binding the package to a specific UI or engine.
 - Parse registered commands into structured success/failure results and typed command state.
+- Branch on package-wide structured failures instead of parsing messages.
 
 ## Installation
 
@@ -75,6 +76,7 @@ Focused guides:
 - [Command History](docs/COMMAND_HISTORY.md)
 - [Command Registration](docs/COMMAND_REGISTRATION.md)
 - [Command Parsing](docs/COMMAND_PARSING.md)
+- [Failure Handling](docs/FAILURES.md)
 - Additional focused guides will be added as execution, output, and autocomplete become stable.
 
 See the [Changelog](CHANGELOG.md) for release history and migration-sensitive changes.

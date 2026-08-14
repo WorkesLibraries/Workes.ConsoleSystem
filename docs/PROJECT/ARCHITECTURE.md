@@ -130,9 +130,9 @@ Synchronous command handlers should be the default. The design should leave room
 
 Commands should return `CommandResult`. A result can contain zero, one, or many command output entries. Intentional command output should be returned as result entries rather than written through an imperative output sink during execution.
 
-Framework-generated command failure entries should cover parse errors, constraint errors, and execution errors.
+Framework-generated command failure entries should cover parse failures, constraint failures, and execution failures.
 
-Before command output and execution are implemented, the package should gain a shared failure and exception model. That model should follow the `Workes.InventorySystem` pattern: expected domain rejection is structured failure data, programmer/setup misuse uses standard .NET exceptions, and expected-success wrappers throw package-owned exceptions carrying the same structured failure.
+The package uses a shared failure and exception model following the `Workes.InventorySystem` pattern: expected domain rejection is structured `ConsoleFailure` data, programmer/setup misuse uses standard .NET exceptions, and expected-success wrappers throw package-owned exceptions carrying the same structured failure.
 
 ## Planned Output And Styling Model
 
@@ -180,7 +180,7 @@ raw input
 -> bind required positional arguments
 -> bind flags and options
 -> create typed command state through constructor binding
--> return CommandParseResult
+-> return CommandParseResult with BoundCommand or ConsoleFailure
 ```
 
 Parsing has no history side effects and does not invoke stored handlers.

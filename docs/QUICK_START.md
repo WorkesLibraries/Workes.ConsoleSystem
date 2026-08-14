@@ -173,6 +173,10 @@ if (result.Success)
     RestartState state = result.Command!.GetState<RestartState>()!;
     Console.WriteLine(state.DelaySeconds); // 5
 }
+else if (result.Failure?.Code == ConsoleFailureCodes.CommandUnknown)
+{
+    Console.WriteLine(result.Failure.Message);
+}
 ```
 
 Parsing validates the command shape and creates typed state. It does not execute the stored handler or write to history yet.
@@ -185,5 +189,6 @@ Parsing validates the command shape and creates typed state. It does not execute
 - [Command History](COMMAND_HISTORY.md) for submitted command input history.
 - [Command Registration](COMMAND_REGISTRATION.md) for immutable command schemas.
 - [Command Parsing](COMMAND_PARSING.md) for parse results and typed value binding.
+- [Failure Handling](FAILURES.md) for structured failures and project exceptions.
 - [CHANGELOG.md](../CHANGELOG.md) for release history and migration-sensitive changes.
 

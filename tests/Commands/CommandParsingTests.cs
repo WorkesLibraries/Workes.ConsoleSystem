@@ -19,6 +19,7 @@ public sealed class CommandParsingTests
         Assert.That(result.Input, Is.EqualTo("noclip"));
         Assert.That(result.Command!.Definition, Is.SameAs(command));
         Assert.That(result.Command.State, Is.Null);
+        Assert.That(result.Failure, Is.Null);
     }
 
     [Test]
@@ -29,7 +30,9 @@ public sealed class CommandParsingTests
         CommandParseResult result = console.ParseCommand("missing");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.UnknownCommand));
+        Assert.That(result.Command, Is.Null);
+        Assert.That(result.Failure!.Kind, Is.EqualTo(ConsoleFailureKind.CommandParsing));
+        Assert.That(result.Failure.Code, Is.EqualTo(ConsoleFailureCodes.CommandUnknown));
     }
 
     [Test]
@@ -58,7 +61,7 @@ public sealed class CommandParsingTests
         CommandParseResult result = console.ParseCommand("NOCLIP");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.UnknownCommand));
+        Assert.That(result.Failure!.Code, Is.EqualTo(ConsoleFailureCodes.CommandUnknown));
     }
 
     [Test]
@@ -90,7 +93,7 @@ public sealed class CommandParsingTests
         CommandParseResult result = console.ParseCommand("give Anthony5172 gold");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.MissingArgument));
+        Assert.That(result.Failure!.Code, Is.EqualTo(ConsoleFailureCodes.CommandArgumentMissing));
     }
 
     [Test]
@@ -102,7 +105,7 @@ public sealed class CommandParsingTests
         CommandParseResult result = console.ParseCommand("give Anthony5172 gold 10 extra");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.ExtraArgument));
+        Assert.That(result.Failure!.Code, Is.EqualTo(ConsoleFailureCodes.CommandArgumentUnexpected));
     }
 
     [Test]
@@ -197,7 +200,7 @@ public sealed class CommandParsingTests
         CommandParseResult result = console.ParseCommand("server.restart maintenance --delay=5");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.OptionValueSyntaxNotAllowed));
+        Assert.That(result.Failure!.Code, Is.EqualTo(ConsoleFailureCodes.CommandOptionValueSyntaxInvalid));
         Assert.That(result.Input, Is.EqualTo("server.restart maintenance --delay=5"));
     }
 
@@ -210,7 +213,7 @@ public sealed class CommandParsingTests
         CommandParseResult result = console.ParseCommand("server.restart maintenance --now");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.UnknownFlagOrOption));
+        Assert.That(result.Failure!.Code, Is.EqualTo(ConsoleFailureCodes.CommandMemberUnknown));
     }
 
     [Test]
@@ -222,7 +225,7 @@ public sealed class CommandParsingTests
         CommandParseResult result = console.ParseCommand("server.restart maintenance --delay 5 --d 6");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.DuplicateFlagOrOption));
+        Assert.That(result.Failure!.Code, Is.EqualTo(ConsoleFailureCodes.CommandMemberDuplicate));
     }
 
     [Test]
@@ -320,7 +323,8 @@ public sealed class CommandParsingTests
         CommandParseResult result = console.ParseCommand("configure --enabled true --count 12 --mode Fast --amount 3.5");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.InvalidValue));
+        Assert.That(result.Failure!.Kind, Is.EqualTo(ConsoleFailureKind.CommandBinding));
+        Assert.That(result.Failure.Code, Is.EqualTo(ConsoleFailureCodes.CommandValueInvalid));
     }
 
     [Test]
@@ -349,7 +353,7 @@ public sealed class CommandParsingTests
         CommandParseResult result = console.ParseCommand("say \"hello");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.UnclosedQuote));
+        Assert.That(result.Failure!.Code, Is.EqualTo(ConsoleFailureCodes.CommandQuoteUnclosed));
     }
 
     [Test]
@@ -361,7 +365,7 @@ public sealed class CommandParsingTests
         CommandParseResult result = console.ParseCommand("give Anthony5172 gold ten");
 
         Assert.That(result.Success, Is.False);
-        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.InvalidValue));
+        Assert.That(result.Failure!.Code, Is.EqualTo(ConsoleFailureCodes.CommandValueInvalid));
     }
 
     [Test]

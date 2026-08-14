@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Reflection;
 using Workes.ConsoleSystem.Configuration;
+using Workes.ConsoleSystem.Core;
 
 namespace Workes.ConsoleSystem.Commands;
 
@@ -21,26 +22,33 @@ internal static class CommandParser
 
         if (string.IsNullOrWhiteSpace(input))
         {
-            return CommandParseResult.Failed(input, CommandParseErrorCode.EmptyInput, "Command input cannot be blank.");
+            return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                ConsoleFailureCodes.CommandInputEmpty,
+                "Command input cannot be blank."));
         }
 
         TokenizeResult tokenizeResult = Tokenize(input, options.AllowQuotedStrings);
-        if (tokenizeResult.Error is not null)
+        if (tokenizeResult.Failure is not null)
         {
-            return CommandParseResult.Failed(input, tokenizeResult.Error.Value, "Command input contains an unclosed quoted string.");
+            return CommandParseResult.Failed(input, tokenizeResult.Failure);
         }
 
         IReadOnlyList<Token> tokens = tokenizeResult.Tokens;
         if (tokens.Count == 0)
         {
-            return CommandParseResult.Failed(input, CommandParseErrorCode.EmptyInput, "Command input cannot be blank.");
+            return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                ConsoleFailureCodes.CommandInputEmpty,
+                "Command input cannot be blank."));
         }
 
         StringComparer comparer = options.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
         CommandDefinition? command = FindCommand(commands, tokens[0].Text, comparer);
         if (command is null)
         {
-            return CommandParseResult.Failed(input, CommandParseErrorCode.UnknownCommand, $"Unknown command '{tokens[0].Text}'.");
+            return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                ConsoleFailureCodes.CommandUnknown,
+                $"Unknown command '{tokens[0].Text}'.",
+                source: tokens[0].Text));
         }
 
         return ParseCommandTokens(input, command, tokens, options, comparer);
@@ -64,12 +72,18 @@ internal static class CommandParser
         {
             if (tokenIndex >= tokens.Count || IsPrefixedName(tokens[tokenIndex], options.FlagAndOptionPrefix))
             {
-                return CommandParseResult.Failed(input, CommandParseErrorCode.MissingArgument, $"Missing required argument '{argument.Name}'.");
+                return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                    ConsoleFailureCodes.CommandArgumentMissing,
+                    $"Missing required argument '{argument.Name}'.",
+                    source: argument.Name));
             }
 
             if (!TryConvert(tokens[tokenIndex].Text, argument.ValueType, options, out object? convertedArgument, out string? message))
             {
-                return CommandParseResult.Failed(input, CommandParseErrorCode.InvalidValue, $"Invalid value for argument '{argument.Name}': {message}");
+                return CommandParseResult.Failed(input, ConsoleFailures.CommandBinding(
+                    ConsoleFailureCodes.CommandValueInvalid,
+                    $"Invalid value for argument '{argument.Name}': {message}",
+                    source: argument.Name));
             }
 
             argumentValues.Add(argument.Name, convertedArgument);
@@ -88,7 +102,9 @@ internal static class CommandParser
             Token token = tokens[tokenIndex];
             if (!IsPrefixedName(token, options.FlagAndOptionPrefix))
             {
-                return CommandParseResult.Failed(input, CommandParseErrorCode.ExtraArgument, $"Unexpected positional value '{token.Text}'.");
+                return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                    ConsoleFailureCodes.CommandArgumentUnexpected,
+                    $"Unexpected positional value '{token.Text}'."));
             }
 
             string nameAndMaybeValue = token.Text.Substring(options.FlagAndOptionPrefix.Length);
@@ -98,7 +114,10 @@ internal static class CommandParser
 
             if (string.IsNullOrEmpty(providedName))
             {
-                return CommandParseResult.Failed(input, CommandParseErrorCode.UnknownFlagOrOption, $"Unknown flag or option '{token.Text}'.");
+                return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                    ConsoleFailureCodes.CommandMemberUnknown,
+                    $"Unknown flag or option '{token.Text}'.",
+                    source: token.Text));
             }
 
             CommandFlagDefinition? flag = FindFlag(command.Flags, providedName, comparer);
@@ -106,19 +125,28 @@ internal static class CommandParser
 
             if (flag is null && option is null)
             {
-                return CommandParseResult.Failed(input, CommandParseErrorCode.UnknownFlagOrOption, $"Unknown flag or option '{token.Text}'.");
+                return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                    ConsoleFailureCodes.CommandMemberUnknown,
+                    $"Unknown flag or option '{token.Text}'.",
+                    source: providedName));
             }
 
             if (flag is not null)
             {
                 if (inlineValue is not null)
                 {
-                    return CommandParseResult.Failed(input, CommandParseErrorCode.OptionValueSyntaxNotAllowed, $"Flag '{providedName}' cannot use an option value.");
+                    return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                        ConsoleFailureCodes.CommandOptionValueSyntaxInvalid,
+                        $"Flag '{providedName}' cannot use an option value.",
+                        source: providedName));
                 }
 
                 if (!seenNamedMembers.Add(flag.Name))
                 {
-                    return CommandParseResult.Failed(input, CommandParseErrorCode.DuplicateFlagOrOption, $"Flag '{flag.Name}' was provided more than once.");
+                    return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                        ConsoleFailureCodes.CommandMemberDuplicate,
+                        $"Flag '{flag.Name}' was provided more than once.",
+                        source: flag.Name));
                 }
 
                 flagValues[flag.Name] = true;
@@ -134,17 +162,26 @@ internal static class CommandParser
 
             if (!seenNamedMembers.Add(option.Name))
             {
-                return CommandParseResult.Failed(input, CommandParseErrorCode.DuplicateFlagOrOption, $"Option '{option.Name}' was provided more than once.");
+                return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                    ConsoleFailureCodes.CommandMemberDuplicate,
+                    $"Option '{option.Name}' was provided more than once.",
+                    source: option.Name));
             }
 
             if (!TryReadOptionValue(input, tokens, tokenIndex, inlineValue, option, options, out string? rawValue, out int consumedTokens, out CommandParseResult? failure))
             {
-                return failure ?? CommandParseResult.Failed(input, CommandParseErrorCode.MissingOptionValue, $"Missing value for option '{option.Name}'.");
+                return failure ?? CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                    ConsoleFailureCodes.CommandOptionValueMissing,
+                    $"Missing value for option '{option.Name}'.",
+                    source: option.Name));
             }
 
             if (!TryConvert(rawValue!, option.ValueType, options, out object? convertedOption, out string? message))
             {
-                return CommandParseResult.Failed(input, CommandParseErrorCode.InvalidValue, $"Invalid value for option '{option.Name}': {message}");
+                return CommandParseResult.Failed(input, ConsoleFailures.CommandBinding(
+                    ConsoleFailureCodes.CommandValueInvalid,
+                    $"Invalid value for option '{option.Name}': {message}",
+                    source: option.Name));
             }
 
             optionValues.Add(option.Name, convertedOption);
@@ -168,7 +205,10 @@ internal static class CommandParser
 
         if (!TryCreateState(command.StateType, propertyValues, options.IsCaseSensitive, out object? state, out string? stateMessage))
         {
-            return CommandParseResult.Failed(input, CommandParseErrorCode.StateBindingFailed, stateMessage ?? "Could not create command state.");
+            return CommandParseResult.Failed(input, ConsoleFailures.CommandBinding(
+                ConsoleFailureCodes.CommandStateBindingFailed,
+                stateMessage ?? "Could not create command state.",
+                source: command.StateType?.Name));
         }
 
         return CommandParseResult.Succeeded(input, new BoundCommand(
@@ -200,8 +240,10 @@ internal static class CommandParser
             {
                 failure = CommandParseResult.Failed(
                     input,
-                    CommandParseErrorCode.OptionValueSyntaxNotAllowed,
-                    $"Option '{option.Name}' does not accept '=' values with the current option value style.");
+                    ConsoleFailures.CommandParsing(
+                        ConsoleFailureCodes.CommandOptionValueSyntaxInvalid,
+                        $"Option '{option.Name}' does not accept '=' values with the current option value style.",
+                        source: option.Name));
                 return false;
             }
 
@@ -213,8 +255,10 @@ internal static class CommandParser
         {
             failure = CommandParseResult.Failed(
                 input,
-                CommandParseErrorCode.OptionValueSyntaxNotAllowed,
-                $"Option '{option.Name}' requires '=' values with the current option value style.");
+                ConsoleFailures.CommandParsing(
+                    ConsoleFailureCodes.CommandOptionValueSyntaxInvalid,
+                    $"Option '{option.Name}' requires '=' values with the current option value style.",
+                    source: option.Name));
             return false;
         }
 
@@ -523,7 +567,9 @@ internal static class CommandParser
 
                 if (!closed)
                 {
-                    return TokenizeResult.Failed(CommandParseErrorCode.UnclosedQuote);
+                    return TokenizeResult.Failed(ConsoleFailures.CommandParsing(
+                        ConsoleFailureCodes.CommandQuoteUnclosed,
+                        "Command input contains an unclosed quoted string."));
                 }
 
                 tokens.Add(new Token(value.ToString(), wasQuoted));
@@ -557,24 +603,24 @@ internal static class CommandParser
 
     private sealed class TokenizeResult
     {
-        private TokenizeResult(IReadOnlyList<Token> tokens, CommandParseErrorCode? error)
+        private TokenizeResult(IReadOnlyList<Token> tokens, ConsoleFailure? failure)
         {
             Tokens = tokens;
-            Error = error;
+            Failure = failure;
         }
 
         public IReadOnlyList<Token> Tokens { get; }
 
-        public CommandParseErrorCode? Error { get; }
+        public ConsoleFailure? Failure { get; }
 
         public static TokenizeResult Succeeded(IReadOnlyList<Token> tokens)
         {
             return new TokenizeResult(tokens, null);
         }
 
-        public static TokenizeResult Failed(CommandParseErrorCode error)
+        public static TokenizeResult Failed(ConsoleFailure failure)
         {
-            return new TokenizeResult(Array.Empty<Token>(), error);
+            return new TokenizeResult(Array.Empty<Token>(), failure);
         }
     }
 }

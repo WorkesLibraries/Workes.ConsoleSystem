@@ -23,6 +23,8 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added typed command value binding for required positional arguments, flags, and options.
 - Added focused user-facing command parsing documentation.
 - Added configurable boolean literal aliases for boolean option parsing.
+- Added package-wide `ConsoleFailure`, failure codes, failure kinds, and project exception types.
+- Added focused user-facing failure handling documentation.
 
 ### Changed
 
@@ -32,4 +34,5 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Logging and command input recording now use manager-centered public methods.
 - Command flag and option schema names are now defined without their command-line prefix.
 - Command parsing options now control active parse behavior instead of being configuration placeholders only.
-- Planned failure and exception handling has been promoted to the next implementation stage before command output/execution work.
+- Failure and exception handling now uses the shared package model planned before command output/execution work.
+- Command parsing failures now use package-wide `ConsoleFailure` instead of parse-specific error types.

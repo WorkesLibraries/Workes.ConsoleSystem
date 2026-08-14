@@ -148,7 +148,7 @@ Boolean option values should be parsed through `CommandParsingOptions.BooleanLit
 
 Parsing is exposed through `ConsoleManager.ParseCommand(string input)`. It should return a structured success/failure result, not throw for normal user input mistakes. Parsing should not execute command handlers or write to history.
 
-Successful parse results should expose the matched definition, typed state object when present, and bound argument/flag/option values by schema name. Failed parse results should expose a stable `CommandParseErrorCode` and a human-readable message.
+Successful parse results should expose the matched definition, typed state object when present, and bound argument/flag/option values by schema name. Failed parse results should expose a `ConsoleFailure`.
 
 Synchronous command handlers should be the default. Leave API room for async handlers later without making async the initial baseline.
 
@@ -193,8 +193,7 @@ Actual Unity/Godot UI controls remain outside the package. Advanced UIs should b
 ## Error Handling And Validation
 
 - Throw `ArgumentNullException` for null values that cannot be represented safely.
-- Return structured parse errors for ordinary invalid user command input.
-- Add a package-wide failure model before broadening command output and execution behavior.
+- Return `ConsoleFailure` for ordinary invalid user command input.
 - Follow the `Workes.InventorySystem` split: expected domain rejection is structured failure data, expected-success wrappers may throw package-owned exceptions carrying that same failure, and programmer/setup misuse uses standard .NET exceptions.
 - Prefer stable failure kinds/codes for branching and keep human-readable messages as display/debug text.
 - Keep invalid-state rules close to the type that owns the state.

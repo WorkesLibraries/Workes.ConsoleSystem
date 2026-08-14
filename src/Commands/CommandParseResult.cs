@@ -1,4 +1,5 @@
 using System;
+using Workes.ConsoleSystem.Core;
 
 namespace Workes.ConsoleSystem.Commands;
 
@@ -7,11 +8,11 @@ namespace Workes.ConsoleSystem.Commands;
 /// </summary>
 public sealed class CommandParseResult
 {
-    private CommandParseResult(string input, BoundCommand? command, CommandParseError? error)
+    private CommandParseResult(string input, BoundCommand? command, ConsoleFailure? failure)
     {
         Input = input ?? throw new ArgumentNullException(nameof(input));
         Command = command;
-        Error = error;
+        Failure = failure;
     }
 
     /// <summary>
@@ -30,17 +31,17 @@ public sealed class CommandParseResult
     public BoundCommand? Command { get; }
 
     /// <summary>
-    /// Gets the parse error when parsing fails.
+    /// Gets the structured failure when parsing fails.
     /// </summary>
-    public CommandParseError? Error { get; }
+    public ConsoleFailure? Failure { get; }
 
     internal static CommandParseResult Succeeded(string input, BoundCommand command)
     {
         return new CommandParseResult(input, command ?? throw new ArgumentNullException(nameof(command)), null);
     }
 
-    internal static CommandParseResult Failed(string input, CommandParseErrorCode code, string message)
+    internal static CommandParseResult Failed(string input, ConsoleFailure failure)
     {
-        return new CommandParseResult(input, null, new CommandParseError(code, message));
+        return new CommandParseResult(input, null, failure ?? throw new ArgumentNullException(nameof(failure)));
     }
 }

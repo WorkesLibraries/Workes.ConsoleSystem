@@ -450,7 +450,7 @@ The package needs command input validation and value binding before command exec
 
 `ConsoleManager.ParseCommand(string input)` parses registered commands and returns `CommandParseResult`.
 
-Successful parse results expose the matched command definition, typed state object when present, and bound argument, flag, and option values. Failed parse results expose a stable `CommandParseErrorCode` and a human-readable message.
+Successful parse results expose the matched command definition, typed state object when present, and bound argument, flag, and option values. Failed parse results expose package-wide `ConsoleFailure` data with a stable failure kind, code, and human-readable message.
 
 Parsing does not write to `ConsoleHistory`, does not write to `CommandHistory`, does not evaluate constraints, and does not invoke stored command handlers.
 
@@ -512,4 +512,24 @@ Adding the shared failure model before output and execution prevents parse-only 
 
 #### Consequences
 
-The next implementation stage should replace or adapt parse-specific errors into the shared failure model before `CommandResult`, semantic output, constraints, and execution become more concrete.
+Parse-specific errors should be replaced by the shared failure model before `CommandResult`, semantic output, constraints, and execution become more concrete.
+
+### D-021: Parse Failures Use ConsoleFailure
+
+#### Context
+
+Stage 4 introduced `CommandParseError` and `CommandParseErrorCode` as a narrow result model for command parsing. Stage 5 introduced a package-wide failure model before command output, constraints, and execution broaden the number of expected rejection paths.
+
+#### Decision
+
+Command parsing failures should use `ConsoleFailure` directly.
+
+`CommandParseResult` should expose `Failure` rather than a parse-specific `Error`. The package should remove `CommandParseError` and `CommandParseErrorCode` while still pre-release.
+
+#### Reasoning
+
+Using one structured failure model avoids parallel public error concepts. It also makes parse failures consistent with future command constraint and execution failures.
+
+#### Consequences
+
+Callers should branch on `ConsoleFailure.Kind` or `ConsoleFailure.Code`. Parse failure messages remain human-readable display/debug text and should not be used for program logic.
