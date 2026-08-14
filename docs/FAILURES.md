@@ -40,7 +40,7 @@ if (!result.Success)
 }
 ```
 
-Use project-owned exceptions only for expected-success wrappers. Stage 5 adds the exception types before those wrappers exist, so future APIs can reuse the same failure object instead of inventing another error model.
+Use project-owned exceptions only for expected-success wrappers. The exception types exist before those wrappers, so future APIs can reuse the same failure object instead of inventing another error model.
 
 ```csharp
 try

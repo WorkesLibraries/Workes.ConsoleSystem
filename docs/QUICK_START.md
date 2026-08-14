@@ -68,7 +68,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 
 The manager snapshots supplied options during construction. Changing the options object afterwards does not change the manager.
 
-Current option areas are command parsing preferences, history capacities, command input duplicate handling, and presentation extension slots. Command parsing is active; command execution and concrete presentation formatting are planned later stages.
+Current option areas are command parsing preferences, history capacities, command input duplicate handling, and presentation defaults. Command parsing and semantic command output are available now. Command execution and autocomplete are not implemented yet.
 
 ## History
 
@@ -123,7 +123,7 @@ foreach (var entry in console.History.Entries)
 
 This example demonstrates the currently implemented behavior: logging writes `LogEntry` values into the shared chronological history.
 
-Command registration and parsing are implemented for schema definitions. Command execution, command output processing, constraints, permissions, and autocomplete are not implemented yet.
+Command registration, parsing, structured failures, and command result/output types are implemented. Command execution, constraint evaluation, permissions, and autocomplete are not implemented yet.
 
 ## Register A Command Schema
 
@@ -143,7 +143,7 @@ console.RegisterCommand(command);
 Console.WriteLine(console.Commands.Definitions.Count); // 1
 ```
 
-Registered commands can be inspected and parsed, but command execution is planned for a later stage.
+Registered commands can be inspected and parsed, but command execution is not implemented yet.
 
 ## Parse Command Input
 
@@ -181,6 +181,25 @@ else if (result.Failure?.Code == ConsoleFailureCodes.CommandUnknown)
 
 Parsing validates the command shape and creates typed state. It does not execute the stored handler or write to history yet.
 
+## Build Command Output
+
+Command handlers return `CommandResult`. A result can be an empty success, a success with output, or a failed result carrying a `ConsoleFailure`.
+
+```csharp
+using Workes.ConsoleSystem.Commands;
+
+CommandResult result = CommandResult.Success(
+    CommandOutput.Inline(defaultStyle: "Success")
+        .Text("Gave ")
+        .Value("10", style: "Amount", data: 10)
+        .Text(" gold.")
+        .Build());
+
+Console.WriteLine(result.Outputs[0].PlainText); // Gave 10 gold.
+```
+
+Command output stores semantic segments and derives plain text. Formatters can later render those segments into engine-specific UI text without storing Unity, Godot, HTML, or terminal markup in the core entry.
+
 ## What To Read Next
 
 - [ConsoleManager](CONSOLE_MANAGER.md) for the root object and ownership model.
@@ -190,5 +209,6 @@ Parsing validates the command shape and creates typed state. It does not execute
 - [Command Registration](COMMAND_REGISTRATION.md) for immutable command schemas.
 - [Command Parsing](COMMAND_PARSING.md) for parse results and typed value binding.
 - [Failure Handling](FAILURES.md) for structured failures and project exceptions.
+- [Command Results And Output](COMMAND_OUTPUT.md) for semantic command output and formatting.
 - [CHANGELOG.md](../CHANGELOG.md) for release history and migration-sensitive changes.
 

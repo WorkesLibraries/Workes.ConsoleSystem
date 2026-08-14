@@ -533,3 +533,31 @@ Using one structured failure model avoids parallel public error concepts. It als
 #### Consequences
 
 Callers should branch on `ConsoleFailure.Kind` or `ConsoleFailure.Code`. Parse failure messages remain human-readable display/debug text and should not be used for program logic.
+
+### D-022: Command Output Uses Semantic Styles Instead Of Output Levels
+
+#### Context
+
+The early placeholder `CommandOutputEntry` used `CommandOutputLevel` plus a message string. The settled output design needs semantic segments, default style inheritance, structured data, and engine-neutral formatting.
+
+#### Decision
+
+Command output should be represented by `CommandOutput` objects with inline/block kind, semantic text segments, optional default style ID, optional per-segment style IDs, optional segment data, and derived plain text.
+
+`CommandOutputEntry` should store `CommandOutput` directly. `CommandOutputLevel` should be removed while the package is still pre-release.
+
+Theme and formatter APIs should not be command-output-specific. They should be designed as package-wide presentation concepts that can apply to logs, command input entries, command output entries, and command failure entries.
+
+`CommandResult` should expose `Failure` as the structured failure property and use `CommandResult.Failed(...)` as the failure factory because C# does not allow a property and method with the same member name.
+
+#### Reasoning
+
+Semantic style IDs are more flexible than a fixed output-level enum. They cover broad output purpose such as `Error` or `Success` and domain-specific values such as `Amount`, `Item`, or `Player` without coupling the core package to a specific renderer.
+
+Keeping output semantic and deriving plain text lets simple consumers render output immediately while advanced hosts can preserve structure for Unity, Godot, terminal, or custom UI formatting.
+
+#### Consequences
+
+Command output no longer has a dedicated level enum. Callers should use output kind, default style IDs, segment style IDs, and custom segment data for output semantics.
+
+The core package still does not write engine-specific markup. A later package-wide theme and formatter design owns that conversion.

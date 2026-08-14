@@ -85,14 +85,14 @@ Both capacities must be greater than zero.
 
 ## Presentation Options
 
-Presentation options are extension slots for later output formatting work.
+Presentation options are extension slots for formatting and theming behavior.
 
 Defaults:
 
 - `Theme = null`
 - `Formatter = null`
 
-Concrete theme, style, semantic output, and formatter types are planned for later stages.
+Concrete package-wide theme, markup, and formatter APIs are not implemented yet. The core package does not hard-code Unity rich text, Godot BBCode, HTML, terminal escape codes, or UI control behavior.
 
 ## Related Guides
 
@@ -101,3 +101,4 @@ Concrete theme, style, semantic output, and formatter types are planned for late
 - [Command History](COMMAND_HISTORY.md)
 - [Command Registration](COMMAND_REGISTRATION.md)
 - [Command Parsing](COMMAND_PARSING.md)
+- [Command Results And Output](COMMAND_OUTPUT.md)

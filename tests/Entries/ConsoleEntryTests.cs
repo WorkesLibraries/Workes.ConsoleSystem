@@ -33,11 +33,20 @@ public sealed class ConsoleEntryTests
     public void CommandOutputEntry_PreservesConstructorValues()
     {
         var timestamp = new DateTimeOffset(2026, 6, 19, 12, 32, 0, TimeSpan.Zero);
+        var output = CommandOutput.InlineText("Unknown command.", "Error");
 
-        var entry = new CommandOutputEntry(timestamp, CommandOutputLevel.Error, "Unknown command.");
+        var entry = new CommandOutputEntry(timestamp, output);
 
         Assert.That(entry.Timestamp, Is.EqualTo(timestamp));
-        Assert.That(entry.Level, Is.EqualTo(CommandOutputLevel.Error));
-        Assert.That(entry.Message, Is.EqualTo("Unknown command."));
+        Assert.That(entry.Output, Is.SameAs(output));
+        Assert.That(entry.PlainText, Is.EqualTo("Unknown command."));
+    }
+
+    [Test]
+    public void CommandOutputEntry_NullOutputThrows()
+    {
+        var timestamp = new DateTimeOffset(2026, 6, 19, 12, 32, 0, TimeSpan.Zero);
+
+        Assert.Throws<ArgumentNullException>(() => new CommandOutputEntry(timestamp, null!));
     }
 }

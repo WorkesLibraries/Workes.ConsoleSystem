@@ -2,7 +2,7 @@
 
 Command registration defines command schemas for parsing and later execution.
 
-In the current package, commands can be created, validated, registered, inspected, and parsed. Command execution is planned for a later stage.
+In the current package, commands can be created, validated, registered, inspected, and parsed. Command execution is not implemented yet.
 
 ## Simple Commands
 

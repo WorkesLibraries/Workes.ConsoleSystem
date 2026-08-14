@@ -74,7 +74,7 @@ Flag and option schema names are defined without their command-line prefix. `Com
 
 History capacity options are active. When either retained history reaches capacity, adding a new item drops the oldest retained item. `CommandHistory` rejects consecutive duplicate command inputs by default using trimmed, case-insensitive comparison while preserving the originally submitted text for retained entries.
 
-Presentation options are still extension slots only. Concrete semantic-output/theme/formatter types are part of later command-output work.
+Presentation options currently remain nullable extension slots. Package-wide themes, markup parsing, and formatter integration are not implemented yet.
 
 ## Command Model
 
@@ -124,21 +124,21 @@ var restart = new CommandBuilder("server.restart")
 console.RegisterCommand(restart);
 ```
 
-Constraints currently carry error messages as metadata. Constraint evaluation is planned for a later stage.
+Constraints currently carry error messages as metadata. Constraint evaluation is not implemented yet.
 
 Synchronous command handlers should be the default. The design should leave room for intuitive async command handlers later, but the first implementation should prioritize synchronous debug/game-console commands.
 
-Commands should return `CommandResult`. A result can contain zero, one, or many command output entries. Intentional command output should be returned as result entries rather than written through an imperative output sink during execution.
+Commands should return `CommandResult`. A result can contain zero, one, or many command output objects and can carry a structured `ConsoleFailure` for expected command-level failure. Intentional command output should be returned through the result rather than written through an imperative output sink during execution.
 
 Framework-generated command failure entries should cover parse failures, constraint failures, and execution failures.
 
 The package uses a shared failure and exception model following the `Workes.InventorySystem` pattern: expected domain rejection is structured `ConsoleFailure` data, programmer/setup misuse uses standard .NET exceptions, and expected-success wrappers throw package-owned exceptions carrying the same structured failure.
 
-## Planned Output And Styling Model
+## Output And Styling Model
 
 Console entries should remain engine-neutral. Command output should support semantic content segments so styling can be applied by renderers without storing Unity rich text, Godot BBCode, HTML, or terminal-specific markup in the entry.
 
-Output content should support:
+Output content supports:
 
 - inline output;
 - block or multi-line output;
@@ -157,7 +157,7 @@ CommandResult
 -> plain text, Unity rich text, Godot BBCode, terminal output, or custom UI spans
 ```
 
-Themes should map semantic style IDs such as `Information`, `Warning`, `Error`, `Success`, `Amount`, `Item`, or `Player` to style values. Formatters decide how those style values become a string or UI representation.
+Themes should be package-wide and should map semantic style IDs such as `Information`, `Warning`, `Error`, `Success`, `Amount`, `Item`, or `Player` to style values. Formatters decide how those style values become a string or UI representation.
 
 Actual engine UI rendering remains outside this package.
 
@@ -169,7 +169,7 @@ Console UI code is expected to read `ConsoleManager.History.Entries` and render 
 
 Console UI code may use `ConsoleManager.RecordCommandInput(...)` to retain submitted command input strings for navigation. Command input history is separate from the shared console entry stream until command execution is implemented.
 
-Command registration and command input parsing are implemented. Execution, permissions, constraint evaluation, command output handling, and autocomplete are not part of the implemented flow yet.
+Command registration, command input parsing, structured failures, and semantic command output are implemented. Execution, permissions, constraint evaluation, automatic output history writes, and autocomplete are not part of the implemented flow yet.
 
 The current parse flow is:
 
@@ -208,6 +208,6 @@ Autocomplete should be schema-driven where possible. Command path, flag name, an
 - Keep simple commands simple.
 - Prefer typed state records for complex commands rather than string IDs or mutable parameter handles as the primary model.
 - Do not introduce separate public command-type hierarchies for each parameterization style.
-- Do not force log severity onto every console entry; severity belongs to log entries, while command output and custom entries should own their own metadata.
+- Do not force log severity onto every console entry; severity belongs to log entries, while command output uses output kind and semantic style IDs.
 - Do not hard-code engine-specific text styling into entries.
 - Prefer returned command output entries over imperative output writes during command execution.

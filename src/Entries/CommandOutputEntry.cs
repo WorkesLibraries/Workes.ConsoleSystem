@@ -12,25 +12,23 @@ public sealed class CommandOutputEntry : IConsoleEntry
     /// Initializes a new instance of the <see cref="CommandOutputEntry"/> class.
     /// </summary>
     /// <param name="timestamp">The time associated with the entry.</param>
-    /// <param name="level">The output severity or purpose.</param>
-    /// <param name="message">The output message.</param>
-    public CommandOutputEntry(DateTimeOffset timestamp, CommandOutputLevel level, string message)
+    /// <param name="output">The semantic command output.</param>
+    public CommandOutputEntry(DateTimeOffset timestamp, CommandOutput output)
     {
-        Message = message ?? throw new ArgumentNullException(nameof(message));
+        Output = output ?? throw new ArgumentNullException(nameof(output));
         Timestamp = timestamp;
-        Level = level;
     }
 
     /// <inheritdoc />
     public DateTimeOffset Timestamp { get; }
 
     /// <summary>
-    /// Gets the output severity or purpose.
+    /// Gets the semantic command output.
     /// </summary>
-    public CommandOutputLevel Level { get; }
+    public CommandOutput Output { get; }
 
     /// <summary>
-    /// Gets the output message.
+    /// Gets the derived plain text for the output.
     /// </summary>
-    public string Message { get; }
+    public string PlainText => Output.PlainText;
 }

@@ -25,6 +25,9 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added configurable boolean literal aliases for boolean option parsing.
 - Added package-wide `ConsoleFailure`, failure codes, failure kinds, and project exception types.
 - Added focused user-facing failure handling documentation.
+- Added `CommandResult` success/failure result data with ordered command outputs.
+- Added semantic `CommandOutput`, inline/block output, output segments, default style inheritance, and plain text derivation.
+- Added focused user-facing command result and output documentation.
 
 ### Changed
 
@@ -36,3 +39,8 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Command parsing options now control active parse behavior instead of being configuration placeholders only.
 - Failure and exception handling now uses the shared package model planned before command output/execution work.
 - Command parsing failures now use package-wide `ConsoleFailure` instead of parse-specific error types.
+- `CommandOutputEntry` now stores semantic `CommandOutput` instead of message text plus `CommandOutputLevel`.
+
+### Removed
+
+- Removed `CommandOutputLevel` in favor of semantic command output style IDs.

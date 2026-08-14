@@ -8,7 +8,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Workes.ConsoleSystem</PackageId>
     <Version>0.1.0</Version>
-    <PackageReleaseNotes>Initial package scaffold with a ConsoleManager root object, configurable bounded history, logging facade, command input history, immutable command registration, side-effect-free command parsing with configurable boolean literals, and structured failure handling.</PackageReleaseNotes>
+    <PackageReleaseNotes>Initial package scaffold with a ConsoleManager root object, configurable bounded history, logging facade, command input history, immutable command registration, side-effect-free command parsing with configurable boolean literals, structured failure handling, and semantic command output.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>Workes</Authors>
     <Company>Workes</Company>

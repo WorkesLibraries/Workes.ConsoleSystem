@@ -156,7 +156,9 @@ Synchronous command handlers should be the default. Leave API room for async han
 
 Commands should return `CommandResult`.
 
-`CommandResult` should support success/failure status and zero, one, or many output entries. Output entries may be inline or block/multi-line. A help command, for example, should be able to return one multi-line output entry rather than one timestamped entry per rendered line.
+`CommandResult` supports success/failure status and zero, one, or many output objects. Output may be inline or block/multi-line. A help command, for example, should be able to return one multi-line output object rather than one timestamped entry per rendered line.
+
+Use `CommandResult.Success(...)` for successful results with output and `CommandResult.Failed(...)` for expected command-level failures. The failure factory is named `Failed` because `CommandResult` already exposes a `Failure` property.
 
 Prefer returned command output entries over imperative output methods on `CommandContext`.
 
@@ -168,7 +170,7 @@ Prefer returned command output entries over imperative output methods on `Comman
 
 Built-in entry types should include log entries, command input entries, command output entries, and command failure/error entries. Users should be able to add custom entry types for game-specific console events.
 
-Keep `LogLevel` on `LogEntry`. Command output should use command-output-specific metadata such as `CommandOutputLevel`. Custom entries should be free to expose metadata that makes sense for their domain.
+Keep `LogLevel` on `LogEntry`. Command output should use semantic output kind and style IDs rather than log severity or a separate output-level enum. Custom entries should be free to expose metadata that makes sense for their domain.
 
 ## Styling And Formatting Direction
 
@@ -183,10 +185,11 @@ CommandOutput.Inline(defaultStyle: "Success")
     .Text(" ")
     .Value(state.ItemName, style: "Item", data: state.ItemName)
     .Text(" to ")
-    .Value(state.ReceiverName, style: "Player", data: state.ReceiverName);
+    .Value(state.ReceiverName, style: "Player", data: state.ReceiverName)
+    .Build();
 ```
 
-Themes should map semantic style IDs to style values. Formatters should convert semantic content and theme values into plain text, Unity rich text, Godot BBCode, terminal output, or custom UI representations.
+Themes should be package-wide rather than command-output-specific. Formatters should convert semantic content and theme values into plain text, Unity rich text, Godot BBCode, terminal output, or custom UI representations.
 
 Actual Unity/Godot UI controls remain outside the package. Advanced UIs should be able to consume semantic segments directly instead of relying on string markup.
 
