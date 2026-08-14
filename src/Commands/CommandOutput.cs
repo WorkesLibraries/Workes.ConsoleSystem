@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Text;
+using Workes.ConsoleSystem.Presentation;
 
 namespace Workes.ConsoleSystem.Commands;
 
@@ -9,43 +9,53 @@ namespace Workes.ConsoleSystem.Commands;
 /// </summary>
 public sealed class CommandOutput
 {
-    private readonly IReadOnlyList<CommandOutputSegment> _segments;
-
-    internal CommandOutput(CommandOutputKind kind, string? defaultStyleId, IEnumerable<CommandOutputSegment> segments)
+    internal CommandOutput(CommandOutputKind kind, ConsoleText content)
     {
-        if (defaultStyleId is not null && string.IsNullOrWhiteSpace(defaultStyleId))
+        Kind = kind;
+        Content = content ?? throw new ArgumentNullException(nameof(content));
+        DefaultStyleId = content.DefaultStyleId;
+        PlainText = content.PlainText;
+        Segments = content.Segments;
+    }
+
+    private CommandOutput(CommandOutputKind kind, string markup, string? defaultStyle)
+    {
+        if (markup is null)
         {
-            throw new ArgumentException("Default style identifiers cannot be empty.", nameof(defaultStyleId));
+            throw new ArgumentNullException(nameof(markup));
         }
 
-        if (segments is null)
+        if (defaultStyle is not null && string.IsNullOrWhiteSpace(defaultStyle))
         {
-            throw new ArgumentNullException(nameof(segments));
-        }
-
-        var segmentList = new List<CommandOutputSegment>();
-        var plainText = new StringBuilder();
-        foreach (CommandOutputSegment segment in segments)
-        {
-            if (segment is null)
-            {
-                throw new ArgumentException("Command output segments cannot contain null values.", nameof(segments));
-            }
-
-            segmentList.Add(segment);
-            plainText.Append(segment.Text);
+            throw new ArgumentException("Default style identifiers cannot be empty.", nameof(defaultStyle));
         }
 
         Kind = kind;
-        DefaultStyleId = defaultStyleId;
-        _segments = segmentList.AsReadOnly();
-        PlainText = plainText.ToString();
+        Markup = markup;
+        DefaultStyleId = defaultStyle;
+        PlainText = ConsoleTextMarkupParser.ToPlainText(markup);
+        Segments = Array.Empty<ConsoleTextSegment>();
     }
 
     /// <summary>
     /// Gets the structural output kind.
     /// </summary>
     public CommandOutputKind Kind { get; }
+
+    /// <summary>
+    /// Gets the semantic console text content.
+    /// </summary>
+    public ConsoleText? Content { get; }
+
+    /// <summary>
+    /// Gets unresolved formatting markup when the output was authored as markup.
+    /// </summary>
+    public string? Markup { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether this output was authored as markup.
+    /// </summary>
+    public bool IsMarkup => Markup is not null;
 
     /// <summary>
     /// Gets the optional semantic style identifier used by unstylized segments.
@@ -55,7 +65,7 @@ public sealed class CommandOutput
     /// <summary>
     /// Gets the semantic output segments.
     /// </summary>
-    public IReadOnlyList<CommandOutputSegment> Segments => _segments;
+    public IReadOnlyList<ConsoleTextSegment> Segments { get; }
 
     /// <summary>
     /// Gets the derived plain text for the output.
@@ -90,7 +100,7 @@ public sealed class CommandOutput
     /// <returns>The created command output.</returns>
     public static CommandOutput InlineText(string text, string? defaultStyle = null)
     {
-        return Inline(defaultStyle).Text(text).Build();
+        return new CommandOutput(CommandOutputKind.Inline, ConsoleText.Plain(text, defaultStyle));
     }
 
     /// <summary>
@@ -101,7 +111,39 @@ public sealed class CommandOutput
     /// <returns>The created command output.</returns>
     public static CommandOutput BlockText(string text, string? defaultStyle = null)
     {
-        return Block(defaultStyle).Text(text).Build();
+        return new CommandOutput(CommandOutputKind.Block, ConsoleText.Plain(text, defaultStyle));
+    }
+
+    /// <summary>
+    /// Creates inline command output from console text.
+    /// </summary>
+    public static CommandOutput InlineText(ConsoleText content)
+    {
+        return new CommandOutput(CommandOutputKind.Inline, content);
+    }
+
+    /// <summary>
+    /// Creates block command output from console text.
+    /// </summary>
+    public static CommandOutput BlockText(ConsoleText content)
+    {
+        return new CommandOutput(CommandOutputKind.Block, content);
+    }
+
+    /// <summary>
+    /// Creates inline command output from formatting-aware markup.
+    /// </summary>
+    public static CommandOutput InlineMarkup(string markup, string? defaultStyle = null)
+    {
+        return new CommandOutput(CommandOutputKind.Inline, markup, defaultStyle);
+    }
+
+    /// <summary>
+    /// Creates block command output from formatting-aware markup.
+    /// </summary>
+    public static CommandOutput BlockMarkup(string markup, string? defaultStyle = null)
+    {
+        return new CommandOutput(CommandOutputKind.Block, markup, defaultStyle);
     }
 
     /// <summary>
@@ -109,13 +151,13 @@ public sealed class CommandOutput
     /// </summary>
     /// <param name="segment">The segment to inspect.</param>
     /// <returns>The resolved semantic style identifier.</returns>
-    public string? ResolveStyleId(CommandOutputSegment segment)
+    public string? ResolveStyleId(ConsoleTextSegment segment)
     {
-        if (segment is null)
+        if (Content is null)
         {
-            throw new ArgumentNullException(nameof(segment));
+            throw new InvalidOperationException("Markup-authored command output must be resolved by a formatting-enabled ConsoleManager before segment styles can be inspected.");
         }
 
-        return segment.ResolveStyleId(DefaultStyleId);
+        return Content.ResolveStyleId(segment);
     }
 }

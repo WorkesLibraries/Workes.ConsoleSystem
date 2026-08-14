@@ -35,7 +35,7 @@ Update when the project's API design principles, naming conventions, consistency
 ## Naming And Structure
 
 - Use `ConsoleManager` as the root object for the package-level console system.
-- Keep namespaces grouped by responsibility: `Core`, `History`, `Logging`, `Entries`, and `Commands`.
+- Keep namespaces grouped by responsibility: `Core`, `History`, `Logging`, `Entries`, `Commands`, and `Presentation`.
 - Use clear domain names such as `ConsoleHistory`, `ConsoleLog`, `LogEntry`, and `CommandHistory`.
 - Avoid names that imply a game engine, UI framework, storage layer, or singleton lifecycle.
 
@@ -62,6 +62,8 @@ Changing one option should not require the caller to specify every other option.
 Options objects are mutable setup objects for convenient object-initializer use. `ConsoleManager` snapshots the supplied values during construction, so later caller mutations do not alter manager behavior. Null nested option sections resolve to defaults.
 
 History options control active retained history behavior. Histories are bounded and use drop-oldest retention. Command input history rejects consecutive duplicate submissions by default using trimmed, case-insensitive comparison.
+
+Formatting options control the optional console formatting subsystem. Execution options store behavior that later command execution uses, including command input echo defaults.
 
 ## History API Direction
 
@@ -176,7 +178,27 @@ Keep `LogLevel` on `LogEntry`. Command output should use semantic output kind an
 
 Entries should not store engine-specific formatted strings as their only representation.
 
-Command output should support semantic content segments:
+Use `ConsoleText` as the shared semantic text model for console-visible text. Log entries, command input entries, command output entries, command failure entries, and future custom entries should be able to expose semantic text while preserving plain text convenience properties.
+
+Plain text APIs must remain literal and must not parse markup implicitly. General-purpose markup parsing is manager-owned and requires formatting to be enabled:
+
+```csharp
+console.Markup(
+    "Gave <style=Player>Workes</style> <style=Amount>7</style> <style=Item>wood</style>",
+    defaultStyle: "Success");
+```
+
+Malformed markup in markup-specific APIs is programmer-authored setup misuse and should throw standard .NET exceptions.
+
+Command output should support markup as a first-class authoring path:
+
+```csharp
+CommandOutput.InlineMarkup(
+    "Gave <style=Player>Workes</style> <style=Amount>7</style> <style=Item>wood</style>",
+    defaultStyle: "Success");
+```
+
+Command output should also support semantic content segments for structured data:
 
 ```csharp
 CommandOutput.Inline(defaultStyle: "Success")
@@ -189,7 +211,7 @@ CommandOutput.Inline(defaultStyle: "Success")
     .Build();
 ```
 
-Themes should be package-wide rather than command-output-specific. Formatters should convert semantic content and theme values into plain text, Unity rich text, Godot BBCode, terminal output, or custom UI representations.
+Formatting is package-wide rather than command-output-specific. The root formatting setup contains a model, markup profile, theme, and formatter. Formatting enablement should be derived from the configured setup, not manually toggled. Built-in Unity and Godot presets should make common engine setup one option object, while custom models/profiles/formatters should remain possible for advanced hosts.
 
 Actual Unity/Godot UI controls remain outside the package. Advanced UIs should be able to consume semantic segments directly instead of relying on string markup.
 

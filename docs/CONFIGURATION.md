@@ -7,6 +7,7 @@ All options have defaults. You only need to set values that differ from the norm
 ```csharp
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.Core;
+using Workes.ConsoleSystem.Presentation;
 
 var console = new ConsoleManager(new ConsoleManagerOptions
 {
@@ -25,6 +26,18 @@ var console = new ConsoleManager(new ConsoleManagerOptions
         ConsoleHistoryCapacity = 200,
         CommandHistoryCapacity = 100,
         CommandHistoryDuplicatePolicy = CommandHistoryDuplicatePolicy.RejectConsecutive
+    },
+    Formatting = ConsoleFormattingOptions.UnityRichText(
+        new ConsoleTheme(new Dictionary<string, ConsoleStyle>
+        {
+            ["Success"] = ConsoleStyle.Standard(
+                foregroundColor: ConsoleColor.FromHex("#4ade80"),
+                bold: true)
+        })),
+    Execution = new CommandExecutionOptions
+    {
+        EchoInput = true,
+        EchoInputDefaultStyle = "CommandInput"
     }
 });
 ```
@@ -83,16 +96,32 @@ Defaults:
 
 Both capacities must be greater than zero.
 
-## Presentation Options
+## Formatting Options
 
-Presentation options are extension slots for formatting and theming behavior.
+Formatting options configure the optional formatting subsystem.
 
 Defaults:
 
+- formatting is disabled when no formatter is configured
+- `Model = null`
+- `MarkupProfile = null`
 - `Theme = null`
 - `Formatter = null`
 
-Concrete package-wide theme, markup, and formatter APIs are not implemented yet. The core package does not hard-code Unity rich text, Godot BBCode, HTML, terminal escape codes, or UI control behavior.
+Use `ConsoleFormattingOptions.UnityRichText()` or `ConsoleFormattingOptions.GodotBbCode()` for plug-and-play engine formatting. These presets configure a formatter, so formatting is enabled automatically. Advanced users can use `ConsoleFormattingOptions.Custom(...)` with a custom model, markup profile, theme, and formatter.
+
+The core entries store semantic content and plain text, not engine-specific markup.
+
+## Command Execution Options
+
+Execution options configure behavior that later command execution will use.
+
+Defaults:
+
+- `EchoInput = true`
+- `EchoInputDefaultStyle = null`
+
+`EchoInputDefaultStyle = null` means echoed command input is plain/un-styled unless a command-specific override or future execution code applies another style.
 
 ## Related Guides
 
@@ -102,3 +131,4 @@ Concrete package-wide theme, markup, and formatter APIs are not implemented yet.
 - [Command Registration](COMMAND_REGISTRATION.md)
 - [Command Parsing](COMMAND_PARSING.md)
 - [Command Results And Output](COMMAND_OUTPUT.md)
+- [Formatting](FORMATTING.md)

@@ -4,6 +4,7 @@ using Workes.ConsoleSystem.Commands;
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.History;
 using Workes.ConsoleSystem.Logging;
+using Workes.ConsoleSystem.Presentation;
 
 namespace Workes.ConsoleSystem.Core;
 
@@ -82,6 +83,60 @@ public sealed class ConsoleManager
     }
 
     /// <summary>
+    /// Parses styled console markup using the configured formatting subsystem.
+    /// </summary>
+    /// <param name="markup">The markup text.</param>
+    /// <param name="defaultStyle">The optional default semantic style identifier.</param>
+    /// <returns>The parsed console text.</returns>
+    public ConsoleText Markup(string markup, string? defaultStyle = null)
+    {
+        EnsureFormattingEnabled();
+        return ConsoleText.Markup(markup, defaultStyle, _options.Formatting.MarkupProfile!);
+    }
+
+    /// <summary>
+    /// Formats console text using the configured formatting subsystem.
+    /// </summary>
+    /// <param name="text">The text to format.</param>
+    /// <returns>The formatted text.</returns>
+    public string Format(ConsoleText text)
+    {
+        EnsureFormattingEnabled();
+        return _options.Formatting.Formatter!.Format(text, _options.Formatting.CreateContext());
+    }
+
+    /// <summary>
+    /// Resolves command output into console text using the configured formatting subsystem when needed.
+    /// </summary>
+    /// <param name="output">The command output.</param>
+    /// <returns>The resolved console text.</returns>
+    public ConsoleText ResolveOutput(CommandOutput output)
+    {
+        if (output is null)
+        {
+            throw new ArgumentNullException(nameof(output));
+        }
+
+        if (!output.IsMarkup)
+        {
+            return output.Content!;
+        }
+
+        EnsureFormattingEnabled();
+        return ConsoleText.Markup(output.Markup!, output.DefaultStyleId, _options.Formatting.MarkupProfile!);
+    }
+
+    /// <summary>
+    /// Formats command output using the configured formatting subsystem.
+    /// </summary>
+    /// <param name="output">The command output to format.</param>
+    /// <returns>The formatted output text.</returns>
+    public string Format(CommandOutput output)
+    {
+        return Format(ResolveOutput(output));
+    }
+
+    /// <summary>
     /// Registers a command definition.
     /// </summary>
     /// <param name="command">The command definition.</param>
@@ -152,12 +207,30 @@ public sealed class ConsoleManager
     }
 
     /// <summary>
+    /// Adds trace log content to the shared console history.
+    /// </summary>
+    /// <param name="content">The log content.</param>
+    public void LogTrace(ConsoleText content)
+    {
+        Log.Trace(content);
+    }
+
+    /// <summary>
     /// Adds a debug log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
     public void LogDebug(string message)
     {
         Log.Debug(message);
+    }
+
+    /// <summary>
+    /// Adds debug log content to the shared console history.
+    /// </summary>
+    /// <param name="content">The log content.</param>
+    public void LogDebug(ConsoleText content)
+    {
+        Log.Debug(content);
     }
 
     /// <summary>
@@ -170,12 +243,30 @@ public sealed class ConsoleManager
     }
 
     /// <summary>
+    /// Adds informational log content to the shared console history.
+    /// </summary>
+    /// <param name="content">The log content.</param>
+    public void LogInformation(ConsoleText content)
+    {
+        Log.Information(content);
+    }
+
+    /// <summary>
     /// Adds a warning log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
     public void LogWarning(string message)
     {
         Log.Warning(message);
+    }
+
+    /// <summary>
+    /// Adds warning log content to the shared console history.
+    /// </summary>
+    /// <param name="content">The log content.</param>
+    public void LogWarning(ConsoleText content)
+    {
+        Log.Warning(content);
     }
 
     /// <summary>
@@ -188,12 +279,30 @@ public sealed class ConsoleManager
     }
 
     /// <summary>
+    /// Adds error log content to the shared console history.
+    /// </summary>
+    /// <param name="content">The log content.</param>
+    public void LogError(ConsoleText content)
+    {
+        Log.Error(content);
+    }
+
+    /// <summary>
     /// Adds a critical log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
     public void LogCritical(string message)
     {
         Log.Critical(message);
+    }
+
+    /// <summary>
+    /// Adds critical log content to the shared console history.
+    /// </summary>
+    /// <param name="content">The log content.</param>
+    public void LogCritical(ConsoleText content)
+    {
+        Log.Critical(content);
     }
 
     private void ValidateBatch(IReadOnlyList<CommandDefinition> commands)
@@ -267,6 +376,15 @@ public sealed class ConsoleManager
         if (!seenNamedMembers.Add(name))
         {
             throw new InvalidOperationException($"Duplicate flag or option name or alias '{name}' for the configured command parsing comparer.");
+        }
+    }
+
+    private void EnsureFormattingEnabled()
+    {
+        if (!_options.Formatting.IsEnabled)
+        {
+            throw new InvalidOperationException(
+                "The console formatting system is disabled. Enable it with ConsoleFormattingOptions.UnityRichText(), ConsoleFormattingOptions.GodotBbCode(), or custom formatting options.");
         }
     }
 }

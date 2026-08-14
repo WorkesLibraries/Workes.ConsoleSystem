@@ -1,4 +1,5 @@
 using Workes.ConsoleSystem.Commands;
+using Workes.ConsoleSystem.Presentation;
 
 namespace Workes.ConsoleSystem.Tests.Commands;
 
@@ -70,6 +71,68 @@ public sealed class CommandOutputTests
     public void BlankStyleIdsThrow(string styleId)
     {
         Assert.Throws<ArgumentException>(() => CommandOutput.Inline(styleId));
-        Assert.Throws<ArgumentException>(() => new CommandOutputSegment("value", styleId));
+        Assert.Throws<ArgumentException>(() => new ConsoleTextSegment("value", styleId));
+    }
+
+    [Test]
+    public void InlineText_FromConsoleTextPreservesStyledContent()
+    {
+        var content = ConsoleText.Build("Success")
+            .Text("Gave ")
+            .Value("10", "Amount")
+            .Text(" gold.")
+            .Build();
+
+        var output = CommandOutput.InlineText(content);
+
+        Assert.That(output.Kind, Is.EqualTo(CommandOutputKind.Inline));
+        Assert.That(output.DefaultStyleId, Is.EqualTo("Success"));
+        Assert.That(output.PlainText, Is.EqualTo("Gave 10 gold."));
+        Assert.That(output.Segments[1].StyleId, Is.EqualTo("Amount"));
+    }
+
+    [Test]
+    public void BlockText_FromConsoleTextCreatesBlockOutput()
+    {
+        var content = ConsoleText.Build()
+            .Text("help\n")
+            .Value("noclip", "Command")
+            .Build();
+
+        var output = CommandOutput.BlockText(content);
+
+        Assert.That(output.Kind, Is.EqualTo(CommandOutputKind.Block));
+        Assert.That(output.PlainText, Is.EqualTo("help\nnoclip"));
+    }
+
+    [Test]
+    public void InlineMarkup_StoresMarkupAndDerivesPlainText()
+    {
+        var output = CommandOutput.InlineMarkup("Gave <style=Amount><b>10</b></style> gold.", "Success");
+
+        Assert.That(output.Kind, Is.EqualTo(CommandOutputKind.Inline));
+        Assert.That(output.IsMarkup, Is.True);
+        Assert.That(output.Markup, Is.EqualTo("Gave <style=Amount><b>10</b></style> gold."));
+        Assert.That(output.DefaultStyleId, Is.EqualTo("Success"));
+        Assert.That(output.PlainText, Is.EqualTo("Gave 10 gold."));
+        Assert.That(output.Content, Is.Null);
+        Assert.That(output.Segments, Is.Empty);
+    }
+
+    [Test]
+    public void BlockMarkup_StoresMarkupAndDerivesPlainText()
+    {
+        var output = CommandOutput.BlockMarkup("help\n<style=Command>noclip</style>");
+
+        Assert.That(output.Kind, Is.EqualTo(CommandOutputKind.Block));
+        Assert.That(output.PlainText, Is.EqualTo("help\nnoclip"));
+    }
+
+    [TestCase("<b>missing")]
+    [TestCase("</b>")]
+    [TestCase("<b><i>x</b></i>")]
+    public void Markup_InvalidMarkupShapeThrows(string markup)
+    {
+        Assert.Throws<FormatException>(() => CommandOutput.InlineMarkup(markup));
     }
 }

@@ -1,19 +1,16 @@
 using System;
 
-namespace Workes.ConsoleSystem.Commands;
+namespace Workes.ConsoleSystem.Presentation;
 
 /// <summary>
-/// Represents one semantic segment of command output.
+/// Represents one semantic segment of console text.
 /// </summary>
-public sealed class CommandOutputSegment
+public sealed class ConsoleTextSegment
 {
     /// <summary>
-    /// Initializes a new instance of the <see cref="CommandOutputSegment"/> class.
+    /// Initializes a new instance of the <see cref="ConsoleTextSegment"/> class.
     /// </summary>
-    /// <param name="text">The plain text for the segment.</param>
-    /// <param name="styleId">The optional semantic style identifier.</param>
-    /// <param name="data">The optional structured value represented by the segment.</param>
-    public CommandOutputSegment(string text, string? styleId = null, object? data = null)
+    public ConsoleTextSegment(string text, string? styleId = null, object? data = null, ConsoleStyle? inlineStyle = null)
     {
         if (text is null)
         {
@@ -28,6 +25,7 @@ public sealed class CommandOutputSegment
         Text = text;
         StyleId = styleId;
         Data = data;
+        InlineStyle = inlineStyle;
     }
 
     /// <summary>
@@ -46,10 +44,13 @@ public sealed class CommandOutputSegment
     public object? Data { get; }
 
     /// <summary>
-    /// Resolves the segment style against an output default style.
+    /// Gets direct inline style overrides.
     /// </summary>
-    /// <param name="defaultStyleId">The output default style identifier.</param>
-    /// <returns>The segment style identifier, or the default style identifier when the segment has no explicit style.</returns>
+    public ConsoleStyle? InlineStyle { get; }
+
+    /// <summary>
+    /// Resolves the segment style identifier against a default style.
+    /// </summary>
     public string? ResolveStyleId(string? defaultStyleId)
     {
         return StyleId ?? defaultStyleId;

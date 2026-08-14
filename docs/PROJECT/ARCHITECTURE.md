@@ -36,6 +36,7 @@ Workes.ConsoleSystem is currently a small engine-neutral package centered on `Co
 - `CommandHistory` stores bounded submitted command input strings for future UI navigation.
 - `CommandSystem` is the read-only command registry used by parsing and future execution.
 - Entry types under `Workes.ConsoleSystem.Entries` represent log entries, command input, and command output.
+- Presentation types under `Workes.ConsoleSystem.Presentation` represent semantic console text, formatting models, markup profiles, themes, colors, and formatters.
 
 ## Root Options
 
@@ -45,7 +46,8 @@ Implemented option areas:
 
 - command parsing;
 - history capacity/overflow behavior;
-- presentation theme and output formatting defaults.
+- optional formatting subsystem defaults;
+- command execution defaults such as future input echo behavior.
 
 Command parsing options should include an option value syntax setting:
 
@@ -74,7 +76,7 @@ Flag and option schema names are defined without their command-line prefix. `Com
 
 History capacity options are active. When either retained history reaches capacity, adding a new item drops the oldest retained item. `CommandHistory` rejects consecutive duplicate command inputs by default using trimmed, case-insensitive comparison while preserving the originally submitted text for retained entries.
 
-Presentation options currently remain nullable extension slots. Package-wide themes, markup parsing, and formatter integration are not implemented yet.
+Formatting options are disabled by default and become enabled when a formatter-backed setup is configured. When enabled, they carry a `ConsoleFormatModel`, `ConsoleMarkupProfile`, `ConsoleTheme`, and `IConsoleTextFormatter`. Execution options include future command input echo defaults and default echo style.
 
 ## Command Model
 
@@ -134,30 +136,29 @@ Framework-generated command failure entries should cover parse failures, constra
 
 The package uses a shared failure and exception model following the `Workes.InventorySystem` pattern: expected domain rejection is structured `ConsoleFailure` data, programmer/setup misuse uses standard .NET exceptions, and expected-success wrappers throw package-owned exceptions carrying the same structured failure.
 
-## Output And Styling Model
+## Presentation Model
 
-Console entries should remain engine-neutral. Command output should support semantic content segments so styling can be applied by renderers without storing Unity rich text, Godot BBCode, HTML, or terminal-specific markup in the entry.
+Console entries remain engine-neutral. Console-visible text should use `ConsoleText` so formatting can be applied by renderers without storing Unity rich text, Godot BBCode, HTML, or terminal-specific markup as the source of truth.
 
-Output content supports:
+Console text supports:
 
-- inline output;
-- block or multi-line output;
 - plain text derivation;
-- structured command-specific data when useful;
-- optional default style for an output object;
-- per-segment style overrides.
+- semantic style IDs;
+- manager-owned nested markup parsing when formatting is enabled;
+- direct color/bold/italic/underline markup;
+- optional structured segment data when useful.
 
 Conceptual output flow:
 
 ```text
 CommandResult
 -> CommandOutputEntry
--> semantic text content segments
--> formatter/theme
+-> ConsoleText
+-> optional formatting context
 -> plain text, Unity rich text, Godot BBCode, terminal output, or custom UI spans
 ```
 
-Themes should be package-wide and should map semantic style IDs such as `Information`, `Warning`, `Error`, `Success`, `Amount`, `Item`, or `Player` to style values. Formatters decide how those style values become a string or UI representation.
+The optional formatting subsystem is made of a model, markup profile, theme, and formatter. The model defines available formatting attributes. The markup profile maps tags such as `<color=#4ade80>` or `<b>` to those attributes. Themes map semantic style IDs such as `Information`, `Warning`, `Error`, `Success`, `Amount`, `Item`, or `Player` to style values. Formatters decide how those style values become a string or UI representation.
 
 Actual engine UI rendering remains outside this package.
 
@@ -169,7 +170,7 @@ Console UI code is expected to read `ConsoleManager.History.Entries` and render 
 
 Console UI code may use `ConsoleManager.RecordCommandInput(...)` to retain submitted command input strings for navigation. Command input history is separate from the shared console entry stream until command execution is implemented.
 
-Command registration, command input parsing, structured failures, and semantic command output are implemented. Execution, permissions, constraint evaluation, automatic output history writes, and autocomplete are not part of the implemented flow yet.
+Command registration, command input parsing, structured failures, semantic command output, and optional package-wide formatting are implemented. Execution, permissions, constraint evaluation, automatic output history writes, and autocomplete are not part of the implemented flow yet.
 
 The current parse flow is:
 

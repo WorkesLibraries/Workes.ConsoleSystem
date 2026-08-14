@@ -16,6 +16,8 @@ public sealed class CommandDefinition
         IReadOnlyList<CommandFlagDefinition> flags,
         IReadOnlyList<CommandOptionDefinition> options,
         IReadOnlyList<CommandConstraintDefinition> constraints,
+        CommandEchoInputDefinition echoInput,
+        IReadOnlyList<CommandSuccessOutputDefinition> successOutputs,
         Delegate handler)
     {
         Path = path ?? throw new ArgumentNullException(nameof(path));
@@ -25,6 +27,8 @@ public sealed class CommandDefinition
         Flags = flags ?? throw new ArgumentNullException(nameof(flags));
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Constraints = constraints ?? throw new ArgumentNullException(nameof(constraints));
+        EchoInput = echoInput ?? throw new ArgumentNullException(nameof(echoInput));
+        SuccessOutputs = successOutputs ?? throw new ArgumentNullException(nameof(successOutputs));
         Handler = handler ?? throw new ArgumentNullException(nameof(handler));
     }
 
@@ -62,6 +66,16 @@ public sealed class CommandDefinition
     /// Gets the constraint metadata definitions.
     /// </summary>
     public IReadOnlyList<CommandConstraintDefinition> Constraints { get; }
+
+    /// <summary>
+    /// Gets command-specific input echo metadata.
+    /// </summary>
+    public CommandEchoInputDefinition EchoInput { get; }
+
+    /// <summary>
+    /// Gets declared success output metadata.
+    /// </summary>
+    public IReadOnlyList<CommandSuccessOutputDefinition> SuccessOutputs { get; }
 
     /// <summary>
     /// Gets a value indicating whether the command has a stored execution handler.

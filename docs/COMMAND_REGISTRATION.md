@@ -56,6 +56,24 @@ console.RegisterCommand(restart);
 
 Arguments, flags, and options are parsed and bound by `ConsoleManager.ParseCommand(...)`. Constraints remain metadata until constraint evaluation is implemented.
 
+## Command Echo And Success Output
+
+Command definitions can store command-specific echo and success-output metadata for later execution.
+
+By default, command execution is expected to echo submitted command input according to manager execution options. A command can override that behavior:
+
+```csharp
+CommandDefinition command = new CommandBuilder("noclip")
+    .EchoInput("CommandInput")
+    .SuccessOutputInlineMarkup("<style=Success>Noclip enabled.</style>")
+    .Execute(ctx => new CommandResult())
+    .Build();
+```
+
+Use `DoNotEchoInput()` when a command should not echo submitted input.
+
+Plain success output helpers treat strings literally. Markup success output helpers include `Markup` in the method name. Dynamic output can still be returned from the command handler through `CommandResult`.
+
 ## Flag And Option Names
 
 Flag and option names are defined without their command-line prefix.
@@ -145,3 +163,5 @@ foreach (CommandDefinition command in console.Commands.Definitions)
 - [Configuration](CONFIGURATION.md)
 - [Command History](COMMAND_HISTORY.md)
 - [Command Parsing](COMMAND_PARSING.md)
+- [Command Results And Output](COMMAND_OUTPUT.md)
+- [Formatting](FORMATTING.md)

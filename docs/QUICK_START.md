@@ -68,7 +68,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 
 The manager snapshots supplied options during construction. Changing the options object afterwards does not change the manager.
 
-Current option areas are command parsing preferences, history capacities, command input duplicate handling, and presentation defaults. Command parsing and semantic command output are available now. Command execution and autocomplete are not implemented yet.
+Current option areas are command parsing preferences, history capacities, command input duplicate handling, optional formatting, and command execution defaults. Command parsing and semantic command output are available now. Command execution and autocomplete are not implemented yet.
 
 ## History
 
@@ -189,16 +189,52 @@ Command handlers return `CommandResult`. A result can be an empty success, a suc
 using Workes.ConsoleSystem.Commands;
 
 CommandResult result = CommandResult.Success(
-    CommandOutput.Inline(defaultStyle: "Success")
-        .Text("Gave ")
-        .Value("10", style: "Amount", data: 10)
-        .Text(" gold.")
-        .Build());
+    CommandOutput.InlineMarkup(
+        "Gave <style=Amount>10</style> gold.",
+        defaultStyle: "Success"));
 
 Console.WriteLine(result.Outputs[0].PlainText); // Gave 10 gold.
 ```
 
-Command output stores semantic segments and derives plain text. Formatters can later render those segments into engine-specific UI text without storing Unity, Godot, HTML, or terminal markup in the core entry.
+Command output derives plain text immediately. A formatting-enabled manager can later resolve markup into engine-specific UI text. Use the output builder when a command needs structured segment data.
+
+## Optional Formatting
+
+Formatting is disabled by default. Plain strings and `ConsoleText.Plain(...)` work without any formatter.
+
+Enable formatting when you want package-managed markup and engine-specific output strings:
+
+```csharp
+using Workes.ConsoleSystem.Configuration;
+using Workes.ConsoleSystem.Core;
+using Workes.ConsoleSystem.Presentation;
+
+var console = new ConsoleManager(new ConsoleManagerOptions
+{
+    Formatting = ConsoleFormattingOptions.UnityRichText()
+});
+
+console.LogInformation(console.Markup(
+    "<style=Success><b>Console ready.</b></style>"));
+```
+
+Themes map style IDs to formatting attributes:
+
+```csharp
+var theme = new ConsoleTheme(new Dictionary<string, ConsoleStyle>
+{
+    ["Success"] = ConsoleStyle.Standard(
+        foregroundColor: ConsoleColor.FromHex("#4ade80"))
+});
+
+var themedConsole = new ConsoleManager(new ConsoleManagerOptions
+{
+    Formatting = ConsoleFormattingOptions.UnityRichText(theme)
+});
+
+string unityText = themedConsole.Format(
+    themedConsole.Markup("<style=Success><b>Saved</b></style>"));
+```
 
 ## What To Read Next
 
@@ -210,5 +246,6 @@ Command output stores semantic segments and derives plain text. Formatters can l
 - [Command Parsing](COMMAND_PARSING.md) for parse results and typed value binding.
 - [Failure Handling](FAILURES.md) for structured failures and project exceptions.
 - [Command Results And Output](COMMAND_OUTPUT.md) for semantic command output and formatting.
+- [Formatting](FORMATTING.md) for opt-in markup, themes, and formatters.
 - [CHANGELOG.md](../CHANGELOG.md) for release history and migration-sensitive changes.
 

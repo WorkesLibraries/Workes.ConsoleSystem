@@ -561,3 +561,79 @@ Keeping output semantic and deriving plain text lets simple consumers render out
 Command output no longer has a dedicated level enum. Callers should use output kind, default style IDs, segment style IDs, and custom segment data for output semantics.
 
 The core package still does not write engine-specific markup. A later package-wide theme and formatter design owns that conversion.
+
+### D-023: Console Formatting Is Package-Wide And Opt-In
+
+#### Context
+
+Command output needed semantic styling, but styling is not unique to command output. Logs, echoed command input, command failures, and custom entries also need to render consistently in one console history.
+
+The package also needs a convenient authoring format. Segment builders are precise and can carry structured data, but common styled text is easier to write as lightweight markup. At the same time, some games may not need package-managed formatting at all.
+
+#### Decision
+
+Use `ConsoleText` as the package-wide semantic text model.
+
+`LogEntry`, `CommandInputEntry`, and `CommandOutput` should expose `ConsoleText` while preserving their plain text convenience properties.
+
+Formatting should be optional and disabled by default. Formatting enablement should be derived from the configured formatting setup rather than manually toggled. Plain string APIs and `ConsoleText.Plain(...)` stay literal and do not parse markup.
+
+General-purpose markup parsing should be manager-owned through formatting-enabled `ConsoleManager` instances. Formatting options should carry a format model, markup profile, theme, and formatter.
+
+Command output should keep markup as a first-class authoring path through explicit `CommandOutput.InlineMarkup(...)` and `CommandOutput.BlockMarkup(...)` helpers. Markup-authored command output stores unresolved markup and derives plain text immediately; a formatting-enabled manager resolves it through the active markup profile when formatted.
+
+Supported initial markup tags are:
+
+- `<style=Name>...</style>` for semantic style IDs;
+- `<color=#RGB>...</color>`, `<color=#RRGGBB>...</color>`, and `<color=#RRGGBBAA>...</color>` for direct foreground color;
+- `<b>...</b>`;
+- `<i>...</i>`;
+- `<u>...</u>`.
+
+Markup supports nested tags. Direct color is a literal formatting override and is not tied to theme lookup.
+
+The standard format model supports foreground color, bold, italic, and underline. The standard markup profile maps markup tags to that model. Themes are package-wide `ConsoleTheme` values. Formatters consume `ConsoleText` through the active formatting context. The package includes plain text, Unity rich text, and Godot BBCode string formatters.
+
+#### Reasoning
+
+A shared text model keeps the console history coherent. It avoids command-output-only styling and lets every visible entry type participate in the same formatting pipeline.
+
+Markup makes the normal styled-output workflow compact while keeping builders available for structured data.
+
+Keeping formatting opt-in means plain/console-only hosts do not pay API setup cost for features they cannot render, while Unity and Godot hosts still get one-option presets.
+
+Explicit markup APIs make developer intent clear. Treating malformed markup as an exception is appropriate because markup is developer-authored configuration/output, not ordinary user command input.
+
+#### Consequences
+
+Future console-visible entry types should prefer `ConsoleText` for visible text.
+
+Formatter outputs are render targets, not stored source truth. Unity rich text and Godot BBCode are supported as formatter outputs without making the core package depend on Unity or Godot.
+
+Custom formatting models, markup profiles, themes, and formatters are supported as the extension path. Built-in background color is deferred until there is a stronger cross-engine need.
+
+### D-024: Command Echo Defaults Are Manager-Owned With Command Overrides
+
+#### Context
+
+Console history should usually show both the command a user submitted and the result it produced, preserving causality in the visible log. Some commands may still need to suppress or restyle the echoed input.
+
+#### Decision
+
+Command execution options should include `EchoInput`, defaulting to `true`, and an optional echo input default style.
+
+Command definitions may store command-specific echo overrides through builder methods such as `EchoInput(...)` and `DoNotEchoInput()`.
+
+Command definitions may also store static success-output metadata. Plain text success output is available for literal output. Formatting-aware markup success output should be explicit and resolved later through a formatting-enabled manager. Dynamic success output remains the responsibility of returned `CommandResult` values.
+
+#### Reasoning
+
+Manager-owned defaults keep console behavior consistent. Per-command overrides preserve flexibility without forcing every command to repeat the same setup.
+
+Storing this metadata before execution is implemented keeps command definitions ready for the execution stage without adding handler side effects early.
+
+#### Consequences
+
+Command execution should later echo submitted input by default unless manager options or command overrides disable it.
+
+Static success output declarations should be appended during future successful execution, alongside any dynamic `CommandResult` outputs.

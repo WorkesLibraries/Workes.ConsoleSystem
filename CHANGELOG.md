@@ -7,7 +7,7 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 ### Added
 
 - Initial package scaffold.
-- Added `ConsoleManagerOptions` and nested command parsing, history, and presentation option objects.
+- Added `ConsoleManagerOptions` and nested command parsing, history, formatting, and execution option objects.
 - Added `OptionValueStyle` for future command option parsing syntax.
 - Added resolved `ConsoleManager.Options` snapshot access.
 - Added bounded `ConsoleHistory` and `CommandHistory` retention.
@@ -28,6 +28,11 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added `CommandResult` success/failure result data with ordered command outputs.
 - Added semantic `CommandOutput`, inline/block output, output segments, default style inheritance, and plain text derivation.
 - Added focused user-facing command result and output documentation.
+- Added package-wide `ConsoleText`, opt-in markup parsing, formatting models, markup profiles, themes, styles, colors, and formatter abstractions.
+- Added plain text, Unity rich text, and Godot BBCode console text formatters.
+- Added `CommandExecutionOptions` for future command input echo behavior.
+- Added command definition metadata for input echo overrides and static success output.
+- Added focused user-facing formatting documentation.
 
 ### Changed
 
@@ -40,6 +45,13 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Failure and exception handling now uses the shared package model planned before command output/execution work.
 - Command parsing failures now use package-wide `ConsoleFailure` instead of parse-specific error types.
 - `CommandOutputEntry` now stores semantic `CommandOutput` instead of message text plus `CommandOutputLevel`.
+- `CommandOutput` now uses package-wide `ConsoleText` internally.
+- `LogEntry` and `CommandInputEntry` now expose semantic `ConsoleText` while preserving plain text properties.
+- Formatting is now configured through `ConsoleFormattingOptions`, disabled by default, with Unity rich text and Godot BBCode presets.
+- Markup parsing is now manager-owned through formatting-enabled `ConsoleManager` instances.
+- Formatting enabled state is now derived from configured formatting options instead of being manually toggled.
+- Command builder success-output string helpers now create plain text output by default; markup success-output helpers are explicit.
+- `CommandOutput.InlineMarkup(...)` and `CommandOutput.BlockMarkup(...)` are available for markup-authored command output resolved through `ConsoleManager`.
 
 ### Removed
 

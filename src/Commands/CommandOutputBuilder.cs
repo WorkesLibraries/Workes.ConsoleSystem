@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using Workes.ConsoleSystem.Presentation;
 
 namespace Workes.ConsoleSystem.Commands;
 
@@ -9,8 +9,7 @@ namespace Workes.ConsoleSystem.Commands;
 public sealed class CommandOutputBuilder
 {
     private readonly CommandOutputKind _kind;
-    private readonly string? _defaultStyle;
-    private readonly List<CommandOutputSegment> _segments = new List<CommandOutputSegment>();
+    private readonly ConsoleTextBuilder _textBuilder;
 
     internal CommandOutputBuilder(CommandOutputKind kind, string? defaultStyle)
     {
@@ -20,7 +19,7 @@ public sealed class CommandOutputBuilder
         }
 
         _kind = kind;
-        _defaultStyle = defaultStyle;
+        _textBuilder = ConsoleText.Build(defaultStyle);
     }
 
     /// <summary>
@@ -30,7 +29,7 @@ public sealed class CommandOutputBuilder
     /// <returns>The same builder.</returns>
     public CommandOutputBuilder Text(string text)
     {
-        _segments.Add(new CommandOutputSegment(text));
+        _textBuilder.Text(text);
         return this;
     }
 
@@ -43,7 +42,7 @@ public sealed class CommandOutputBuilder
     /// <returns>The same builder.</returns>
     public CommandOutputBuilder Value(string text, string? style = null, object? data = null)
     {
-        _segments.Add(new CommandOutputSegment(text, style, data));
+        _textBuilder.Value(text, style, data);
         return this;
     }
 
@@ -53,6 +52,6 @@ public sealed class CommandOutputBuilder
     /// <returns>The created command output.</returns>
     public CommandOutput Build()
     {
-        return new CommandOutput(_kind, _defaultStyle, _segments);
+        return new CommandOutput(_kind, _textBuilder.Build());
     }
 }

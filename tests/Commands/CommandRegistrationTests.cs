@@ -19,6 +19,8 @@ public sealed class CommandRegistrationTests
         Assert.That(command.Description, Is.EqualTo("Toggle noclip."));
         Assert.That(command.StateType, Is.Null);
         Assert.That(command.HasHandler, Is.True);
+        Assert.That(command.EchoInput.EchoInput, Is.Null);
+        Assert.That(command.SuccessOutputs, Is.Empty);
     }
 
     [Test]
@@ -50,6 +52,40 @@ public sealed class CommandRegistrationTests
         Assert.That(command.Options[0].AllowedValues, Is.EqualTo(new object[] { 0, 10, 30, 60 }));
         Assert.That(command.Constraints, Has.Count.EqualTo(1));
         Assert.That(command.Constraints[0].Message, Is.EqualTo("Delay cannot be combined with ignore players."));
+    }
+
+    [Test]
+    public void Build_CommandEchoInputAndSuccessOutputMetadata_Succeeds()
+    {
+        CommandDefinition command = new CommandBuilder("noclip")
+            .EchoInput("CommandInput")
+            .SuccessOutputInline("Noclip enabled.", "Success")
+            .SuccessOutputBlock("Line 1\nLine 2", "Success")
+            .SuccessOutputInlineMarkup("<style=Success>Noclip enabled.</style>")
+            .Execute(ctx => new CommandResult())
+            .Build();
+
+        Assert.That(command.EchoInput.EchoInput, Is.True);
+        Assert.That(command.EchoInput.DefaultStyleId, Is.EqualTo("CommandInput"));
+        Assert.That(command.SuccessOutputs, Has.Count.EqualTo(3));
+        Assert.That(command.SuccessOutputs[0].Output!.Kind, Is.EqualTo(CommandOutputKind.Inline));
+        Assert.That(command.SuccessOutputs[0].Output!.PlainText, Is.EqualTo("Noclip enabled."));
+        Assert.That(command.SuccessOutputs[1].Output!.Kind, Is.EqualTo(CommandOutputKind.Block));
+        Assert.That(command.SuccessOutputs[1].Output!.PlainText, Is.EqualTo("Line 1\nLine 2"));
+        Assert.That(command.SuccessOutputs[2].Output.IsMarkup, Is.True);
+        Assert.That(command.SuccessOutputs[2].Output.Markup, Is.EqualTo("<style=Success>Noclip enabled.</style>"));
+    }
+
+    [Test]
+    public void Build_DoNotEchoInputStoresOverride()
+    {
+        CommandDefinition command = new CommandBuilder("quiet")
+            .DoNotEchoInput()
+            .Execute(ctx => new CommandResult())
+            .Build();
+
+        Assert.That(command.EchoInput.EchoInput, Is.False);
+        Assert.That(command.EchoInput.DefaultStyleId, Is.Null);
     }
 
     [Test]

@@ -1,5 +1,6 @@
 using Workes.ConsoleSystem.Core;
 using Workes.ConsoleSystem.Configuration;
+using Workes.ConsoleSystem.Presentation;
 
 namespace Workes.ConsoleSystem.Tests.Core;
 
@@ -42,16 +43,19 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(200));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(100));
         Assert.That(console.Options.History.CommandHistoryDuplicatePolicy, Is.EqualTo(CommandHistoryDuplicatePolicy.RejectConsecutive));
-        Assert.That(console.Options.Presentation, Is.Not.Null);
-        Assert.That(console.Options.Presentation.Theme, Is.Null);
-        Assert.That(console.Options.Presentation.Formatter, Is.Null);
+        Assert.That(console.Options.Formatting, Is.Not.Null);
+        Assert.That(console.Options.Formatting.IsEnabled, Is.False);
+        Assert.That(console.Options.Formatting.Model, Is.Null);
+        Assert.That(console.Options.Formatting.MarkupProfile, Is.Null);
+        Assert.That(console.Options.Formatting.Theme, Is.Null);
+        Assert.That(console.Options.Formatting.Formatter, Is.Null);
     }
 
     [Test]
     public void Constructor_AppliesPartialOptions()
     {
-        var theme = new object();
-        var formatter = new object();
+        var theme = new ConsoleTheme();
+        var formatter = new PlainTextConsoleFormatter();
         var console = new ConsoleManager(new ConsoleManagerOptions
         {
             CommandParsing = new CommandParsingOptions
@@ -73,11 +77,7 @@ public sealed class ConsoleSystemTests
                 CommandHistoryCapacity = 25,
                 CommandHistoryDuplicatePolicy = CommandHistoryDuplicatePolicy.Allow
             },
-            Presentation = new PresentationOptions
-            {
-                Theme = theme,
-                Formatter = formatter
-            }
+            Formatting = ConsoleFormattingOptions.Standard(formatter, theme)
         });
 
         Assert.That(console.Options.CommandParsing.OptionValueStyle, Is.EqualTo(OptionValueStyle.AnySeparated));
@@ -90,8 +90,13 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(50));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(25));
         Assert.That(console.Options.History.CommandHistoryDuplicatePolicy, Is.EqualTo(CommandHistoryDuplicatePolicy.Allow));
-        Assert.That(console.Options.Presentation.Theme, Is.SameAs(theme));
-        Assert.That(console.Options.Presentation.Formatter, Is.SameAs(formatter));
+        Assert.That(console.Options.Formatting.IsEnabled, Is.True);
+        Assert.That(console.Options.Formatting.Model, Is.SameAs(ConsoleFormatModel.Standard));
+        Assert.That(console.Options.Formatting.MarkupProfile, Is.SameAs(ConsoleMarkupProfile.Standard));
+        Assert.That(console.Options.Formatting.Theme, Is.SameAs(theme));
+        Assert.That(console.Options.Formatting.Formatter, Is.SameAs(formatter));
+        Assert.That(console.Options.Execution.EchoInput, Is.True);
+        Assert.That(console.Options.Execution.EchoInputDefaultStyle, Is.Null);
     }
 
     [Test]
@@ -137,7 +142,8 @@ public sealed class ConsoleSystemTests
         {
             CommandParsing = null!,
             History = null!,
-            Presentation = null!
+            Formatting = null!,
+            Execution = null!
         });
 
         Assert.That(console.Options.CommandParsing.OptionValueStyle, Is.EqualTo(OptionValueStyle.SpaceSeparated));
@@ -145,8 +151,10 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "false" }));
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(200));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(100));
-        Assert.That(console.Options.Presentation.Theme, Is.Null);
-        Assert.That(console.Options.Presentation.Formatter, Is.Null);
+        Assert.That(console.Options.Formatting.IsEnabled, Is.False);
+        Assert.That(console.Options.Formatting.Theme, Is.Null);
+        Assert.That(console.Options.Formatting.Formatter, Is.Null);
+        Assert.That(console.Options.Execution.EchoInput, Is.True);
     }
 
     [Test]
@@ -251,5 +259,64 @@ public sealed class ConsoleSystemTests
 
         Assert.That(console.History.Capacity, Is.EqualTo(2));
         Assert.That(console.CommandHistory.Capacity, Is.EqualTo(3));
+    }
+
+    [Test]
+    public void Constructor_AppliesExecutionOptions()
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            Execution = new CommandExecutionOptions
+            {
+                EchoInput = false,
+                EchoInputDefaultStyle = "CommandInput"
+            }
+        });
+
+        Assert.That(console.Options.Execution.EchoInput, Is.False);
+        Assert.That(console.Options.Execution.EchoInputDefaultStyle, Is.EqualTo("CommandInput"));
+    }
+
+    [Test]
+    public void Constructor_FormattingWithoutFormatterResolvesToDisabled()
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            Formatting = new ConsoleFormattingOptions
+            {
+                Theme = new ConsoleTheme()
+            }
+        });
+
+        Assert.That(console.Options.Formatting.IsEnabled, Is.False);
+        Assert.That(console.Options.Formatting.Theme, Is.Null);
+    }
+
+    [Test]
+    public void Constructor_UnityFormattingPresetAppliesStandardModelProfileThemeAndFormatter()
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            Formatting = ConsoleFormattingOptions.UnityRichText()
+        });
+
+        Assert.That(console.Options.Formatting.IsEnabled, Is.True);
+        Assert.That(console.Options.Formatting.Model, Is.SameAs(ConsoleFormatModel.Standard));
+        Assert.That(console.Options.Formatting.MarkupProfile, Is.SameAs(ConsoleMarkupProfile.Standard));
+        Assert.That(console.Options.Formatting.Theme, Is.Not.Null);
+        Assert.That(console.Options.Formatting.Formatter, Is.TypeOf<UnityRichTextConsoleFormatter>());
+    }
+
+    [TestCase("")]
+    [TestCase("   ")]
+    public void Constructor_InvalidEchoInputStyleThrows(string style)
+    {
+        Assert.Throws<ArgumentException>(() => new ConsoleManager(new ConsoleManagerOptions
+        {
+            Execution = new CommandExecutionOptions
+            {
+                EchoInputDefaultStyle = style
+            }
+        }));
     }
 }

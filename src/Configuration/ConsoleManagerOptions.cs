@@ -18,7 +18,8 @@ public sealed class ConsoleManagerOptions
     {
         CommandParsing = CommandParsingOptions.CreateSnapshot(source.CommandParsing);
         History = HistoryOptions.CreateSnapshot(source.History);
-        Presentation = PresentationOptions.CreateSnapshot(source.Presentation);
+        Formatting = ConsoleFormattingOptions.CreateSnapshot(source.Formatting);
+        Execution = CommandExecutionOptions.CreateSnapshot(source.Execution);
     }
 
     /// <summary>
@@ -32,9 +33,14 @@ public sealed class ConsoleManagerOptions
     public HistoryOptions History { get; set; } = new HistoryOptions();
 
     /// <summary>
-    /// Gets or sets presentation extension-point options.
+    /// Gets or sets formatting subsystem options.
     /// </summary>
-    public PresentationOptions Presentation { get; set; } = new PresentationOptions();
+    public ConsoleFormattingOptions Formatting { get; set; } = new ConsoleFormattingOptions();
+
+    /// <summary>
+    /// Gets or sets command execution options.
+    /// </summary>
+    public CommandExecutionOptions Execution { get; set; } = new CommandExecutionOptions();
 
     internal static ConsoleManagerOptions CreateSnapshot(ConsoleManagerOptions source)
     {

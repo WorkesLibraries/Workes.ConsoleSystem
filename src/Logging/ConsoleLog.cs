@@ -1,6 +1,7 @@
 using System;
 using Workes.ConsoleSystem.Entries;
 using Workes.ConsoleSystem.History;
+using Workes.ConsoleSystem.Presentation;
 
 namespace Workes.ConsoleSystem.Logging;
 
@@ -25,6 +26,11 @@ public sealed class ConsoleLog
         Write(LogLevel.Trace, message);
     }
 
+    internal void Trace(ConsoleText content)
+    {
+        Write(LogLevel.Trace, content);
+    }
+
     /// <summary>
     /// Adds a debug log message to the shared console history.
     /// </summary>
@@ -32,6 +38,11 @@ public sealed class ConsoleLog
     internal void Debug(string message)
     {
         Write(LogLevel.Debug, message);
+    }
+
+    internal void Debug(ConsoleText content)
+    {
+        Write(LogLevel.Debug, content);
     }
 
     /// <summary>
@@ -43,6 +54,11 @@ public sealed class ConsoleLog
         Write(LogLevel.Information, message);
     }
 
+    internal void Information(ConsoleText content)
+    {
+        Write(LogLevel.Information, content);
+    }
+
     /// <summary>
     /// Adds a warning log message to the shared console history.
     /// </summary>
@@ -50,6 +66,11 @@ public sealed class ConsoleLog
     internal void Warning(string message)
     {
         Write(LogLevel.Warning, message);
+    }
+
+    internal void Warning(ConsoleText content)
+    {
+        Write(LogLevel.Warning, content);
     }
 
     /// <summary>
@@ -61,6 +82,11 @@ public sealed class ConsoleLog
         Write(LogLevel.Error, message);
     }
 
+    internal void Error(ConsoleText content)
+    {
+        Write(LogLevel.Error, content);
+    }
+
     /// <summary>
     /// Adds a critical log message to the shared console history.
     /// </summary>
@@ -70,6 +96,11 @@ public sealed class ConsoleLog
         Write(LogLevel.Critical, message);
     }
 
+    internal void Critical(ConsoleText content)
+    {
+        Write(LogLevel.Critical, content);
+    }
+
     /// <summary>
     /// Adds a log message with the specified severity to the shared console history.
     /// </summary>
@@ -77,6 +108,14 @@ public sealed class ConsoleLog
     /// <param name="message">The log message.</param>
     internal void Write(LogLevel level, string message)
     {
-        _history.Add(new LogEntry(DateTimeOffset.UtcNow, level, message));
+        Write(level, ConsoleText.Plain(message));
+    }
+
+    /// <summary>
+    /// Adds log content with the specified severity to the shared console history.
+    /// </summary>
+    internal void Write(LogLevel level, ConsoleText content)
+    {
+        _history.Add(new LogEntry(DateTimeOffset.UtcNow, level, content));
     }
 }

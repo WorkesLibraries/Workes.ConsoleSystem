@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using Workes.ConsoleSystem.Presentation;
 
 namespace Workes.ConsoleSystem.Commands;
 
@@ -15,10 +16,13 @@ public sealed class CommandBuilder
     private readonly List<FlagDraft> _flags = new List<FlagDraft>();
     private readonly List<OptionDraft> _options = new List<OptionDraft>();
     private readonly List<CommandConstraintDefinition> _constraints = new List<CommandConstraintDefinition>();
+    private readonly List<CommandSuccessOutputDefinition> _successOutputs = new List<CommandSuccessOutputDefinition>();
     private string _description = string.Empty;
     private Type? _stateType;
     private Delegate? _handler;
     private OptionDraft? _lastOption;
+    private bool? _echoInput;
+    private string? _echoInputDefaultStyle;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandBuilder"/> class.
@@ -144,6 +148,119 @@ public sealed class CommandBuilder
     }
 
     /// <summary>
+    /// Echoes submitted input for this command using manager defaults.
+    /// </summary>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder EchoInput()
+    {
+        _echoInput = true;
+        _echoInputDefaultStyle = null;
+        _lastOption = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Echoes submitted input for this command using a command-specific default style.
+    /// </summary>
+    /// <param name="defaultStyle">The default style identifier.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder EchoInput(string defaultStyle)
+    {
+        _echoInput = true;
+        _echoInputDefaultStyle = ValidateName(defaultStyle, nameof(defaultStyle));
+        _lastOption = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Disables echoed input for this command.
+    /// </summary>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder DoNotEchoInput()
+    {
+        _echoInput = false;
+        _echoInputDefaultStyle = null;
+        _lastOption = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Adds declared inline success output from plain text.
+    /// </summary>
+    /// <param name="text">The output text.</param>
+    /// <param name="defaultStyle">The optional default style identifier.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder SuccessOutputInline(string text, string? defaultStyle = null)
+    {
+        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.InlineText(text, defaultStyle)));
+        _lastOption = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Adds declared inline success output from console text.
+    /// </summary>
+    /// <param name="content">The output content.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder SuccessOutputInline(ConsoleText content)
+    {
+        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.InlineText(content)));
+        _lastOption = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Adds declared block success output from plain text.
+    /// </summary>
+    /// <param name="text">The output text.</param>
+    /// <param name="defaultStyle">The optional default style identifier.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder SuccessOutputBlock(string text, string? defaultStyle = null)
+    {
+        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.BlockText(text, defaultStyle)));
+        _lastOption = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Adds declared block success output from console text.
+    /// </summary>
+    /// <param name="content">The output content.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder SuccessOutputBlock(ConsoleText content)
+    {
+        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.BlockText(content)));
+        _lastOption = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Adds declared inline success output from formatting-aware markup metadata.
+    /// </summary>
+    /// <param name="markup">The output markup.</param>
+    /// <param name="defaultStyle">The optional default style identifier.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder SuccessOutputInlineMarkup(string markup, string? defaultStyle = null)
+    {
+        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.InlineMarkup(markup, defaultStyle)));
+        _lastOption = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Adds declared block success output from formatting-aware markup metadata.
+    /// </summary>
+    /// <param name="markup">The output markup.</param>
+    /// <param name="defaultStyle">The optional default style identifier.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder SuccessOutputBlockMarkup(string markup, string? defaultStyle = null)
+    {
+        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.BlockMarkup(markup, defaultStyle)));
+        _lastOption = null;
+        return this;
+    }
+
+    /// <summary>
     /// Stores a simple command handler.
     /// </summary>
     /// <param name="handler">The command handler.</param>
@@ -212,6 +329,8 @@ public sealed class CommandBuilder
                 x.RangeMaximum,
                 new List<object?>(x.AllowedValues).AsReadOnly())).AsReadOnly(),
             new List<CommandConstraintDefinition>(_constraints).AsReadOnly(),
+            new CommandEchoInputDefinition(_echoInput, _echoInputDefaultStyle),
+            new List<CommandSuccessOutputDefinition>(_successOutputs).AsReadOnly(),
             _handler);
     }
 
