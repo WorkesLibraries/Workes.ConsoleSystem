@@ -137,7 +137,21 @@ The parser supports:
 - enums
 - nullable versions of supported value types
 
-Bool option values accept `true` and `false` case-insensitively.
+Bool option values accept configured boolean literals. Defaults are `true` and `false`, matched case-insensitively by default.
+
+```csharp
+var console = new ConsoleManager(new ConsoleManagerOptions
+{
+    CommandParsing = new CommandParsingOptions
+    {
+        BooleanLiterals = new BooleanLiteralOptions
+        {
+            TrueLiterals = new[] { "true", "yes", "on" },
+            FalseLiterals = new[] { "false", "no", "off" }
+        }
+    }
+});
+```
 
 Flags bind to `true` when present and `false` when absent. Missing options bind to their configured `.Default(...)` metadata when present, otherwise to the target type default.
 

@@ -13,7 +13,12 @@ var console = new ConsoleManager(new ConsoleManagerOptions
     CommandParsing = new CommandParsingOptions
     {
         OptionValueStyle = OptionValueStyle.AnySeparated,
-        FlagAndOptionPrefix = "--"
+        FlagAndOptionPrefix = "--",
+        BooleanLiterals = new BooleanLiteralOptions
+        {
+            TrueLiterals = new[] { "true", "yes", "on" },
+            FalseLiterals = new[] { "false", "no", "off" }
+        }
     },
     History = new HistoryOptions
     {
@@ -59,8 +64,12 @@ Defaults:
 - `IsCaseSensitive = false`
 - `AllowQuotedStrings = true`
 - `AllowFlagsAndOptionsInAnyOrder = true`
+- `BooleanLiterals.TrueLiterals = [ "true" ]`
+- `BooleanLiterals.FalseLiterals = [ "false" ]`
 
 Flag and option schema names are defined without this prefix. The parser applies the prefix to command input.
+
+Boolean literals configure accepted values for boolean options. Matching follows `IsCaseSensitive`, so aliases are case-insensitive by default. The true and false literal lists cannot be empty and cannot overlap.
 
 ## History Options
 

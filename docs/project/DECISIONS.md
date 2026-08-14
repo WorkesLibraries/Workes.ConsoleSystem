@@ -461,3 +461,55 @@ A side-effect-free parse API is useful for validation, UI feedback, tests, and f
 #### Consequences
 
 Command execution must explicitly decide when to record command input, command failures, and command output. Parser behavior should remain deterministic and driven by `ConsoleManagerOptions`.
+
+### D-019: Boolean Option Values Use Configurable Literal Aliases
+
+#### Context
+
+Boolean option values initially accepted hard-coded `true` and `false` values. That is a reasonable default, but game-console users may prefer aliases such as `yes`/`no`, `on`/`off`, or project-specific wording.
+
+#### Decision
+
+Boolean option parsing should use `CommandParsingOptions.BooleanLiterals`.
+
+The option contains separate true and false literal lists. The defaults are:
+
+```text
+true:  [ "true" ]
+false: [ "false" ]
+```
+
+Literal matching follows `CommandParsingOptions.IsCaseSensitive`, so matching is case-insensitive by default.
+
+#### Reasoning
+
+Alias lists make the parser flexible without hard-coding surprising extra values into the default behavior. A small options object is clearer public API than an unnamed tuple and leaves room for later validation or documentation.
+
+#### Consequences
+
+The parser should not call `bool.TryParse` directly for command option values. Boolean literal configuration is validated during `ConsoleManager` construction; empty lists, blank literals, and overlapping true/false literals are setup errors.
+
+### D-020: ConsoleSystem Should Use A Package-Wide Failure Model
+
+#### Context
+
+Stage 4 introduced parse-specific error types. Upcoming work will add command output, constraints, execution, autocomplete, and extension paths, all of which can fail in expected ways. `Workes.InventorySystem` already has a clean distinction between expected domain rejection and programmer misuse.
+
+#### Decision
+
+Before adding command output and execution behavior, add a dedicated implementation stage for a package-wide failure and exception model.
+
+The model should follow the `Workes.InventorySystem` approach:
+
+- expected console-system rejection is structured failure data;
+- programmer/setup misuse uses standard .NET exceptions;
+- expected-success wrappers throw package-owned exceptions carrying the same structured failure;
+- callers branch on stable kinds/codes rather than human-readable messages.
+
+#### Reasoning
+
+Adding the shared failure model before output and execution prevents parse-only error concepts from spreading through the public API. It also keeps this package consistent with other Workes packages.
+
+#### Consequences
+
+The next implementation stage should replace or adapt parse-specific errors into the shared failure model before `CommandResult`, semantic output, constraints, and execution become more concrete.

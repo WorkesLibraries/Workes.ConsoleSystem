@@ -50,7 +50,12 @@ var console = new ConsoleManager(new ConsoleManagerOptions
     {
         OptionValueStyle = OptionValueStyle.AnySeparated,
         FlagAndOptionPrefix = "--",
-        IsCaseSensitive = false
+        IsCaseSensitive = false,
+        BooleanLiterals = new BooleanLiteralOptions
+        {
+            TrueLiterals = new[] { "true", "yes" },
+            FalseLiterals = new[] { "false", "no" }
+        }
     },
     History = new HistoryOptions
     {

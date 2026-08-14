@@ -36,6 +36,8 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.CommandParsing.IsCaseSensitive, Is.False);
         Assert.That(console.Options.CommandParsing.AllowQuotedStrings, Is.True);
         Assert.That(console.Options.CommandParsing.AllowFlagsAndOptionsInAnyOrder, Is.True);
+        Assert.That(console.Options.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "true" }));
+        Assert.That(console.Options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "false" }));
         Assert.That(console.Options.History, Is.Not.Null);
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(200));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(100));
@@ -58,7 +60,12 @@ public sealed class ConsoleSystemTests
                 FlagAndOptionPrefix = "-",
                 IsCaseSensitive = true,
                 AllowQuotedStrings = false,
-                AllowFlagsAndOptionsInAnyOrder = false
+                AllowFlagsAndOptionsInAnyOrder = false,
+                BooleanLiterals = new BooleanLiteralOptions
+                {
+                    TrueLiterals = new[] { "yes", "on" },
+                    FalseLiterals = new[] { "no", "off" }
+                }
             },
             History = new HistoryOptions
             {
@@ -78,6 +85,8 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.CommandParsing.IsCaseSensitive, Is.True);
         Assert.That(console.Options.CommandParsing.AllowQuotedStrings, Is.False);
         Assert.That(console.Options.CommandParsing.AllowFlagsAndOptionsInAnyOrder, Is.False);
+        Assert.That(console.Options.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "yes", "on" }));
+        Assert.That(console.Options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "no", "off" }));
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(50));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(25));
         Assert.That(console.Options.History.CommandHistoryDuplicatePolicy, Is.EqualTo(CommandHistoryDuplicatePolicy.Allow));
@@ -92,7 +101,12 @@ public sealed class ConsoleSystemTests
         {
             CommandParsing = new CommandParsingOptions
             {
-                OptionValueStyle = OptionValueStyle.EqualSeparated
+                OptionValueStyle = OptionValueStyle.EqualSeparated,
+                BooleanLiterals = new BooleanLiteralOptions
+                {
+                    TrueLiterals = new[] { "yes" },
+                    FalseLiterals = new[] { "no" }
+                }
             },
             History = new HistoryOptions
             {
@@ -104,10 +118,14 @@ public sealed class ConsoleSystemTests
         var console = new ConsoleManager(options);
 
         options.CommandParsing.OptionValueStyle = OptionValueStyle.AnySeparated;
+        options.CommandParsing.BooleanLiterals.TrueLiterals[0] = "on";
         options.History.ConsoleHistoryCapacity = 30;
+        console.Options.CommandParsing.BooleanLiterals.FalseLiterals[0] = "off";
         console.Options.History.CommandHistoryCapacity = 40;
 
         Assert.That(console.Options.CommandParsing.OptionValueStyle, Is.EqualTo(OptionValueStyle.EqualSeparated));
+        Assert.That(console.Options.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "yes" }));
+        Assert.That(console.Options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "no" }));
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(20));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(10));
     }
@@ -123,6 +141,8 @@ public sealed class ConsoleSystemTests
         });
 
         Assert.That(console.Options.CommandParsing.OptionValueStyle, Is.EqualTo(OptionValueStyle.SpaceSeparated));
+        Assert.That(console.Options.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "true" }));
+        Assert.That(console.Options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "false" }));
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(200));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(100));
         Assert.That(console.Options.Presentation.Theme, Is.Null);
@@ -182,6 +202,39 @@ public sealed class ConsoleSystemTests
         };
 
         Assert.That(() => new ConsoleManager(options), Throws.InstanceOf<Exception>());
+    }
+
+    [Test]
+    public void Constructor_NullBooleanLiteralsResolveToDefaults()
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            CommandParsing = new CommandParsingOptions
+            {
+                BooleanLiterals = null!
+            }
+        });
+
+        Assert.That(console.Options.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "true" }));
+        Assert.That(console.Options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "false" }));
+    }
+
+    [Test]
+    public void Constructor_InvalidBooleanLiteralsThrow()
+    {
+        var options = new ConsoleManagerOptions
+        {
+            CommandParsing = new CommandParsingOptions
+            {
+                BooleanLiterals = new BooleanLiteralOptions
+                {
+                    TrueLiterals = new[] { "yes" },
+                    FalseLiterals = new[] { "YES" }
+                }
+            }
+        };
+
+        Assert.Throws<ArgumentException>(() => new ConsoleManager(options));
     }
 
     [Test]

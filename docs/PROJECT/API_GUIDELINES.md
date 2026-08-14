@@ -144,6 +144,8 @@ public enum OptionValueStyle
 
 Default command parsing uses `SpaceSeparated`, `FlagAndOptionPrefix = "--"`, case-insensitive matching, quoted string support, and order-independent flags/options after the path and required positional arguments. Prefixes such as `"-"` should be configurable for callers whose command schemas can safely support them.
 
+Boolean option values should be parsed through `CommandParsingOptions.BooleanLiterals`, not through hard-coded `bool.TryParse` behavior. Defaults should remain strict and unsurprising: `true` means true, `false` means false, and aliases are opt-in.
+
 Parsing is exposed through `ConsoleManager.ParseCommand(string input)`. It should return a structured success/failure result, not throw for normal user input mistakes. Parsing should not execute command handlers or write to history.
 
 Successful parse results should expose the matched definition, typed state object when present, and bound argument/flag/option values by schema name. Failed parse results should expose a stable `CommandParseErrorCode` and a human-readable message.
@@ -192,8 +194,10 @@ Actual Unity/Godot UI controls remain outside the package. Advanced UIs should b
 
 - Throw `ArgumentNullException` for null values that cannot be represented safely.
 - Return structured parse errors for ordinary invalid user command input.
+- Add a package-wide failure model before broadening command output and execution behavior.
+- Follow the `Workes.InventorySystem` split: expected domain rejection is structured failure data, expected-success wrappers may throw package-owned exceptions carrying that same failure, and programmer/setup misuse uses standard .NET exceptions.
+- Prefer stable failure kinds/codes for branching and keep human-readable messages as display/debug text.
 - Keep invalid-state rules close to the type that owns the state.
-- Do not add broad exception hierarchies until command behavior or history policies create real error cases.
 
 ## Examples Of Preferred API Shape
 

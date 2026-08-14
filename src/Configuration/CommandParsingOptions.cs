@@ -21,6 +21,7 @@ public sealed class CommandParsingOptions
         IsCaseSensitive = source.IsCaseSensitive;
         AllowQuotedStrings = source.AllowQuotedStrings;
         AllowFlagsAndOptionsInAnyOrder = source.AllowFlagsAndOptionsInAnyOrder;
+        BooleanLiterals = BooleanLiteralOptions.CreateSnapshot(source.BooleanLiterals, IsCaseSensitive);
     }
 
     /// <summary>
@@ -47,6 +48,11 @@ public sealed class CommandParsingOptions
     /// Gets or sets a value indicating whether flags and options may appear in any order after positional arguments.
     /// </summary>
     public bool AllowFlagsAndOptionsInAnyOrder { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the boolean option value literals accepted by the parser.
+    /// </summary>
+    public BooleanLiteralOptions BooleanLiterals { get; set; } = new BooleanLiteralOptions();
 
     internal static CommandParsingOptions CreateSnapshot(CommandParsingOptions? source)
     {

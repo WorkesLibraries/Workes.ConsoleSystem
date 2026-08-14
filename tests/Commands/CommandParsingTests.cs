@@ -268,6 +268,62 @@ public sealed class CommandParsingTests
     }
 
     [Test]
+    public void ParseCommand_UsesConfiguredBooleanLiteralAliases()
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            CommandParsing = new CommandParsingOptions
+            {
+                BooleanLiterals = new BooleanLiteralOptions
+                {
+                    TrueLiterals = new[] { "yes", "on" },
+                    FalseLiterals = new[] { "no", "off" }
+                }
+            }
+        });
+        console.RegisterCommand(new CommandBuilder("configure")
+            .Option<ConfigureState>(x => x.Enabled, "enabled")
+            .Option<ConfigureState>(x => x.Count, "count")
+            .Option<ConfigureState>(x => x.Mode, "mode")
+            .Option<ConfigureState>(x => x.OptionalAmount, "amount")
+            .Execute<ConfigureState>((ctx, state) => new CommandResult())
+            .Build());
+
+        CommandParseResult result = console.ParseCommand("configure --enabled ON --count 12 --mode Fast --amount 3.5");
+
+        Assert.That(result.Success, Is.True);
+        Assert.That(result.Command!.GetState<ConfigureState>()!.Enabled, Is.True);
+    }
+
+    [Test]
+    public void ParseCommand_UnconfiguredBooleanLiteral_Fails()
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            CommandParsing = new CommandParsingOptions
+            {
+                BooleanLiterals = new BooleanLiteralOptions
+                {
+                    TrueLiterals = new[] { "yes" },
+                    FalseLiterals = new[] { "no" }
+                }
+            }
+        });
+        console.RegisterCommand(new CommandBuilder("configure")
+            .Option<ConfigureState>(x => x.Enabled, "enabled")
+            .Option<ConfigureState>(x => x.Count, "count")
+            .Option<ConfigureState>(x => x.Mode, "mode")
+            .Option<ConfigureState>(x => x.OptionalAmount, "amount")
+            .Execute<ConfigureState>((ctx, state) => new CommandResult())
+            .Build());
+
+        CommandParseResult result = console.ParseCommand("configure --enabled true --count 12 --mode Fast --amount 3.5");
+
+        Assert.That(result.Success, Is.False);
+        Assert.That(result.Error!.Code, Is.EqualTo(CommandParseErrorCode.InvalidValue));
+    }
+
+    [Test]
     public void ParseCommand_QuotedStringsSupportSingleDoubleAndEscapes()
     {
         var console = new ConsoleManager();

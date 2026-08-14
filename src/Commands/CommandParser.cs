@@ -67,7 +67,7 @@ internal static class CommandParser
                 return CommandParseResult.Failed(input, CommandParseErrorCode.MissingArgument, $"Missing required argument '{argument.Name}'.");
             }
 
-            if (!TryConvert(tokens[tokenIndex].Text, argument.ValueType, options.IsCaseSensitive, out object? convertedArgument, out string? message))
+            if (!TryConvert(tokens[tokenIndex].Text, argument.ValueType, options, out object? convertedArgument, out string? message))
             {
                 return CommandParseResult.Failed(input, CommandParseErrorCode.InvalidValue, $"Invalid value for argument '{argument.Name}': {message}");
             }
@@ -142,7 +142,7 @@ internal static class CommandParser
                 return failure ?? CommandParseResult.Failed(input, CommandParseErrorCode.MissingOptionValue, $"Missing value for option '{option.Name}'.");
             }
 
-            if (!TryConvert(rawValue!, option.ValueType, options.IsCaseSensitive, out object? convertedOption, out string? message))
+            if (!TryConvert(rawValue!, option.ValueType, options, out object? convertedOption, out string? message))
             {
                 return CommandParseResult.Failed(input, CommandParseErrorCode.InvalidValue, $"Invalid value for option '{option.Name}': {message}");
             }
@@ -160,7 +160,7 @@ internal static class CommandParser
             }
 
             object? value = option.DefaultValue is not null
-                ? NormalizeDefaultValue(option.DefaultValue, option.ValueType, options.IsCaseSensitive)
+                ? NormalizeDefaultValue(option.DefaultValue, option.ValueType, options)
                 : GetDefaultValue(option.ValueType);
             optionValues.Add(option.Name, value);
             propertyValues[option.PropertyName] = value;
@@ -295,7 +295,7 @@ internal static class CommandParser
     private static bool TryConvert(
         string rawValue,
         Type targetType,
-        bool isCaseSensitive,
+        CommandParsingOptions options,
         out object? value,
         out string? message)
     {
@@ -313,19 +313,19 @@ internal static class CommandParser
 
             if (conversionType == typeof(bool))
             {
-                if (bool.TryParse(rawValue, out bool boolValue))
+                if (TryParseBoolean(rawValue, options, out bool boolValue))
                 {
                     value = boolValue;
                     return true;
                 }
 
-                message = "expected true or false.";
+                message = $"expected one of: {FormatExpectedBooleanLiterals(options.BooleanLiterals)}.";
                 return false;
             }
 
             if (conversionType.IsEnum)
             {
-                value = Enum.Parse(conversionType, rawValue, ignoreCase: !isCaseSensitive);
+                value = Enum.Parse(conversionType, rawValue, ignoreCase: !options.IsCaseSensitive);
                 return true;
             }
 
@@ -419,11 +419,42 @@ internal static class CommandParser
         return type.IsValueType ? Activator.CreateInstance(type) : null;
     }
 
-    private static object? NormalizeDefaultValue(object defaultValue, Type targetType, bool isCaseSensitive)
+    private static bool TryParseBoolean(string rawValue, CommandParsingOptions options, out bool value)
+    {
+        StringComparer comparer = options.IsCaseSensitive ? StringComparer.Ordinal : StringComparer.OrdinalIgnoreCase;
+
+        foreach (string literal in options.BooleanLiterals.TrueLiterals)
+        {
+            if (comparer.Equals(rawValue, literal))
+            {
+                value = true;
+                return true;
+            }
+        }
+
+        foreach (string literal in options.BooleanLiterals.FalseLiterals)
+        {
+            if (comparer.Equals(rawValue, literal))
+            {
+                value = false;
+                return true;
+            }
+        }
+
+        value = false;
+        return false;
+    }
+
+    private static string FormatExpectedBooleanLiterals(BooleanLiteralOptions options)
+    {
+        return string.Join(", ", options.TrueLiterals) + ", " + string.Join(", ", options.FalseLiterals);
+    }
+
+    private static object? NormalizeDefaultValue(object defaultValue, Type targetType, CommandParsingOptions options)
     {
         if (defaultValue is string rawDefault)
         {
-            return TryConvert(rawDefault, targetType, isCaseSensitive, out object? converted, out _)
+            return TryConvert(rawDefault, targetType, options, out object? converted, out _)
                 ? converted
                 : defaultValue;
         }

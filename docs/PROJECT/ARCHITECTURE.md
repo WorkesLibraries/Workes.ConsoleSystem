@@ -64,6 +64,7 @@ Default command parsing behavior:
 - case-insensitive matching for command paths, flags, and options;
 - quoted string support;
 - flags and options may appear in any order after path and required positional arguments.
+- boolean option values accept configured true/false literal aliases, defaulting to `true` and `false`.
 
 If strict flag/option ordering is added, it should use schema/builder order.
 
@@ -130,6 +131,8 @@ Synchronous command handlers should be the default. The design should leave room
 Commands should return `CommandResult`. A result can contain zero, one, or many command output entries. Intentional command output should be returned as result entries rather than written through an imperative output sink during execution.
 
 Framework-generated command failure entries should cover parse errors, constraint errors, and execution errors.
+
+Before command output and execution are implemented, the package should gain a shared failure and exception model. That model should follow the `Workes.InventorySystem` pattern: expected domain rejection is structured failure data, programmer/setup misuse uses standard .NET exceptions, and expected-success wrappers throw package-owned exceptions carrying the same structured failure.
 
 ## Planned Output And Styling Model
 
