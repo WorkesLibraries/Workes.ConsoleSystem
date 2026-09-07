@@ -19,13 +19,13 @@ public sealed class ConsoleTextTests
     }
 
     [Test]
-    public void Markup_ParsesNestedTags()
+    public void CreateText_WithFormattingEnabledParsesNestedTags()
     {
         var console = new ConsoleManager(new ConsoleManagerOptions
         {
             Formatting = ConsoleFormattingOptions.UnityRichText()
         });
-        var text = console.Markup("Gave <style=Amount><color=#4ade80><b>7</b></color></style> wood");
+        var text = console.CreateText("Gave <style=Amount><color=#4ade80><b>7</b></color></style> wood");
 
         Assert.That(text.PlainText, Is.EqualTo("Gave 7 wood"));
         Assert.That(text.Segments, Has.Count.EqualTo(3));
@@ -36,31 +36,70 @@ public sealed class ConsoleTextTests
     }
 
     [Test]
-    public void Markup_DecodesEntities()
+    public void CreateText_WithFormattingEnabledDecodesEntities()
     {
         var console = new ConsoleManager(new ConsoleManagerOptions
         {
             Formatting = ConsoleFormattingOptions.UnityRichText()
         });
-        var text = console.Markup("&lt;b&gt; &amp;");
+        var text = console.CreateText("&lt;b&gt; &amp;");
 
         Assert.That(text.PlainText, Is.EqualTo("<b> &"));
+    }
+
+    [Test]
+    public void CreateText_WithFormattingDisabledKeepsMarkupLiteral()
+    {
+        var console = new ConsoleManager();
+
+        var text = console.CreateText("<b>literal</b>", "Information");
+
+        Assert.That(text.PlainText, Is.EqualTo("<b>literal</b>"));
+        Assert.That(text.DefaultStyleId, Is.EqualTo("Information"));
+    }
+
+    [TestCase("Use <something> here")]
+    [TestCase("value < 10")]
+    [TestCase("List<string>")]
+    [TestCase("a < b > c")]
+    public void CreateText_UnknownTagsAndOrdinaryAnglesStayLiteral(string textValue)
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            Formatting = ConsoleFormattingOptions.UnityRichText()
+        });
+
+        var text = console.CreateText(textValue);
+
+        Assert.That(text.PlainText, Is.EqualTo(textValue));
+    }
+
+    [Test]
+    public void CreateText_UnknownTagsAroundKnownMarkupStayLiteral()
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            Formatting = ConsoleFormattingOptions.UnityRichText()
+        });
+
+        var text = console.CreateText("Use <something><b>this</b></something> here");
+
+        Assert.That(text.PlainText, Is.EqualTo("Use <something>this</something> here"));
     }
 
     [TestCase("<b>missing")]
     [TestCase("</b>")]
     [TestCase("<b><i>x</b></i>")]
-    [TestCase("<unknown>x</unknown>")]
     [TestCase("<style=>x</style>")]
     [TestCase("<color=red>x</color>")]
-    public void Markup_InvalidMarkupThrows(string markup)
+    public void CreateText_KnownInvalidMarkupThrows(string markup)
     {
         var console = new ConsoleManager(new ConsoleManagerOptions
         {
             Formatting = ConsoleFormattingOptions.UnityRichText()
         });
 
-        Assert.Throws<FormatException>(() => console.Markup(markup));
+        Assert.Throws<FormatException>(() => console.CreateText(markup));
     }
 
     [TestCase("")]

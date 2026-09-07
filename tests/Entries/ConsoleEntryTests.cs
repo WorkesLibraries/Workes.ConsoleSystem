@@ -60,7 +60,7 @@ public sealed class ConsoleEntryTests
     public void CommandOutputEntry_PreservesConstructorValues()
     {
         var timestamp = new DateTimeOffset(2026, 6, 19, 12, 32, 0, TimeSpan.Zero);
-        var output = CommandOutput.InlineText("Unknown command.", "Error");
+        var output = CommandOutput.Inline("Unknown command.", "Error");
 
         var entry = new CommandOutputEntry(timestamp, output);
 

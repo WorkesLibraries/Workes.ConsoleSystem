@@ -61,7 +61,7 @@ public sealed class CommandRegistrationTests
             .EchoInput("CommandInput")
             .SuccessOutputInline("Noclip enabled.", "Success")
             .SuccessOutputBlock("Line 1\nLine 2", "Success")
-            .SuccessOutputInlineMarkup("<style=Success>Noclip enabled.</style>")
+            .SuccessOutputInline("<style=Success>Noclip enabled.</style>")
             .Execute(ctx => new CommandResult())
             .Build();
 
@@ -72,8 +72,8 @@ public sealed class CommandRegistrationTests
         Assert.That(command.SuccessOutputs[0].Output!.PlainText, Is.EqualTo("Noclip enabled."));
         Assert.That(command.SuccessOutputs[1].Output!.Kind, Is.EqualTo(CommandOutputKind.Block));
         Assert.That(command.SuccessOutputs[1].Output!.PlainText, Is.EqualTo("Line 1\nLine 2"));
-        Assert.That(command.SuccessOutputs[2].Output.IsMarkup, Is.True);
-        Assert.That(command.SuccessOutputs[2].Output.Markup, Is.EqualTo("<style=Success>Noclip enabled.</style>"));
+        Assert.That(command.SuccessOutputs[2].Output.IsText, Is.True);
+        Assert.That(command.SuccessOutputs[2].Output.Text, Is.EqualTo("<style=Success>Noclip enabled.</style>"));
     }
 
     [Test]

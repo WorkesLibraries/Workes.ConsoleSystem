@@ -15,7 +15,7 @@ public sealed class ConsoleFormatterTests
         {
             Formatting = ConsoleFormattingOptions.Standard(new PlainTextConsoleFormatter())
         });
-        var text = console.Markup("<style=Success><b>Saved</b></style>");
+        var text = console.CreateText("<style=Success><b>Saved</b></style>");
 
         string formatted = console.Format(text);
 
@@ -33,7 +33,7 @@ public sealed class ConsoleFormatterTests
         {
             Formatting = ConsoleFormattingOptions.UnityRichText(theme)
         });
-        var text = console.Markup("<style=Success><b>Saved</b></style>");
+        var text = console.CreateText("<style=Success><b>Saved</b></style>");
 
         string formatted = console.Format(text);
 
@@ -47,7 +47,7 @@ public sealed class ConsoleFormatterTests
         {
             Formatting = ConsoleFormattingOptions.UnityRichText()
         });
-        var text = console.Markup("<u>Saved</u>");
+        var text = console.CreateText("<u>Saved</u>");
 
         string formatted = console.Format(text);
 
@@ -65,7 +65,7 @@ public sealed class ConsoleFormatterTests
         {
             Formatting = ConsoleFormattingOptions.GodotBbCode(theme)
         });
-        var text = console.Markup("<style=Success><u>Saved</u></style>");
+        var text = console.CreateText("<style=Success><u>Saved</u></style>");
 
         string formatted = console.Format(text);
 
@@ -83,7 +83,7 @@ public sealed class ConsoleFormatterTests
         {
             Formatting = ConsoleFormattingOptions.UnityRichText(theme)
         });
-        var text = console.Markup("<style=Success><color=#ff0000>Saved</color></style>");
+        var text = console.CreateText("<style=Success><color=#ff0000>Saved</color></style>");
 
         string formatted = console.Format(text);
 
@@ -106,23 +106,23 @@ public sealed class ConsoleFormatterTests
     }
 
     [Test]
-    public void FormattingDisabled_MarkupAndFormatThrow()
+    public void FormattingDisabled_FormattingAwareStringsStayLiteral()
     {
         var console = new ConsoleManager();
 
-        Assert.Throws<InvalidOperationException>(() => console.Markup("<b>x</b>"));
-        Assert.Throws<InvalidOperationException>(() => console.Format(ConsoleText.Plain("x")));
-        Assert.Throws<InvalidOperationException>(() => console.Format(CommandOutput.InlineMarkup("<b>x</b>")));
+        Assert.That(console.CreateText("<b>x</b>").PlainText, Is.EqualTo("<b>x</b>"));
+        Assert.That(console.Format(ConsoleText.Plain("x")), Is.EqualTo("x"));
+        Assert.That(console.Format(CommandOutput.Inline("<b>x</b>")), Is.EqualTo("<b>x</b>"));
     }
 
     [Test]
-    public void Manager_FormatsMarkupCommandOutput()
+    public void Manager_FormatsStringAuthoredCommandOutput()
     {
         var console = new ConsoleManager(new ConsoleManagerOptions
         {
             Formatting = ConsoleFormattingOptions.UnityRichText()
         });
-        var output = CommandOutput.InlineMarkup("<b>Saved</b>");
+        var output = CommandOutput.Inline("<b>Saved</b>");
 
         string formatted = console.Format(output);
 
@@ -130,13 +130,13 @@ public sealed class ConsoleFormatterTests
     }
 
     [Test]
-    public void Manager_ResolvesMarkupCommandOutput()
+    public void Manager_ResolvesStringAuthoredCommandOutput()
     {
         var console = new ConsoleManager(new ConsoleManagerOptions
         {
             Formatting = ConsoleFormattingOptions.UnityRichText()
         });
-        var output = CommandOutput.InlineMarkup("<style=Success><b>Saved</b></style>");
+        var output = CommandOutput.Inline("<style=Success><b>Saved</b></style>");
 
         ConsoleText text = console.ResolveOutput(output);
 

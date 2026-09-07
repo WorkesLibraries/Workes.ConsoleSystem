@@ -30,6 +30,7 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added focused user-facing command result and output documentation.
 - Added package-wide `ConsoleText`, opt-in markup parsing, formatting models, markup profiles, themes, styles, colors, and formatter abstractions.
 - Added plain text, Unity rich text, and Godot BBCode console text formatters.
+- Added `ConsoleManager.CreateText(...)` for manager-owned formatting-aware text creation.
 - Added `CommandExecutionOptions` for future command input echo behavior.
 - Added command definition metadata for input echo overrides and static success output.
 - Added focused user-facing formatting documentation.
@@ -48,11 +49,13 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - `CommandOutput` now uses package-wide `ConsoleText` internally.
 - `LogEntry` and `CommandInputEntry` now expose semantic `ConsoleText` while preserving plain text properties.
 - Formatting is now configured through `ConsoleFormattingOptions`, disabled by default, with Unity rich text and Godot BBCode presets.
-- Markup parsing is now manager-owned through formatting-enabled `ConsoleManager` instances.
+- Markup parsing is now manager-owned through normal string APIs on `ConsoleManager` and command output.
 - Formatting enabled state is now derived from configured formatting options instead of being manually toggled.
-- Command builder success-output string helpers now create plain text output by default; markup success-output helpers are explicit.
-- `CommandOutput.InlineMarkup(...)` and `CommandOutput.BlockMarkup(...)` are available for markup-authored command output resolved through `ConsoleManager`.
+- Formatting-aware strings now stay literal when formatting is disabled and parse known markup tags when formatting is enabled.
+- Markup parsing is now lenient: unknown tags and ordinary angle-bracket text stay literal, while malformed known tags still throw `FormatException`.
+- Command output builder factories are now `CommandOutput.BuildInline(...)` and `CommandOutput.BuildBlock(...)`.
 
 ### Removed
 
 - Removed `CommandOutputLevel` in favor of semantic command output style IDs.
+- Removed explicit markup-specific public helpers in favor of formatting-aware strings.

@@ -180,20 +180,20 @@ Entries should not store engine-specific formatted strings as their only represe
 
 Use `ConsoleText` as the shared semantic text model for console-visible text. Log entries, command input entries, command output entries, command failure entries, and future custom entries should be able to expose semantic text while preserving plain text convenience properties.
 
-Plain text APIs must remain literal and must not parse markup implicitly. General-purpose markup parsing is manager-owned and requires formatting to be enabled:
+Formatting-aware string APIs are manager-owned. With formatting disabled, strings remain literal. With formatting enabled, known markup tags are parsed leniently while unknown tags and ordinary angle-bracket text remain literal:
 
 ```csharp
-console.Markup(
+console.CreateText(
     "Gave <style=Player>Workes</style> <style=Amount>7</style> <style=Item>wood</style>",
     defaultStyle: "Success");
 ```
 
-Malformed markup in markup-specific APIs is programmer-authored setup misuse and should throw standard .NET exceptions.
+Malformed known markup in formatting-aware APIs is programmer-authored setup misuse and should throw standard .NET exceptions.
 
-Command output should support markup as a first-class authoring path:
+Command output should support formatting-aware strings as the primary authoring path:
 
 ```csharp
-CommandOutput.InlineMarkup(
+CommandOutput.Inline(
     "Gave <style=Player>Workes</style> <style=Amount>7</style> <style=Item>wood</style>",
     defaultStyle: "Success");
 ```
@@ -201,7 +201,7 @@ CommandOutput.InlineMarkup(
 Command output should also support semantic content segments for structured data:
 
 ```csharp
-CommandOutput.Inline(defaultStyle: "Success")
+CommandOutput.BuildInline(defaultStyle: "Success")
     .Text("Gave ")
     .Value(state.Amount.ToString(), style: "Amount", data: state.Amount)
     .Text(" ")

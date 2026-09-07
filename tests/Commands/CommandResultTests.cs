@@ -18,8 +18,8 @@ public sealed class CommandResultTests
     [Test]
     public void Success_PreservesOutputsInOrder()
     {
-        var first = CommandOutput.InlineText("one");
-        var second = CommandOutput.BlockText("two");
+        var first = CommandOutput.Inline("one");
+        var second = CommandOutput.Block("two");
 
         var result = CommandResult.Success(first, second);
 
@@ -35,7 +35,7 @@ public sealed class CommandResultTests
             ConsoleFailureKind.CommandExecution,
             ConsoleFailureCodes.CommandExecutionRejected,
             "Command failed.");
-        var output = CommandOutput.InlineText("Could not run command.", "Error");
+        var output = CommandOutput.Inline("Could not run command.", "Error");
 
         var result = CommandResult.Failed(failure, output);
 

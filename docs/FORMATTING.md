@@ -25,7 +25,13 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 
 ## Plain Text
 
-Plain text never parses markup:
+Formatting is string-aware through `ConsoleManager`. When formatting is disabled, strings are stored literally. When formatting is enabled, known markup tags are parsed:
+
+```csharp
+console.LogInformation("<style=Success>Console ready.</style>");
+```
+
+Use `ConsoleText.Plain(...)` when text must stay literal even if the manager has formatting enabled:
 
 ```csharp
 var text = ConsoleText.Plain("<b>not bold</b>", defaultStyle: "Information");
@@ -37,15 +43,15 @@ Use `ConsoleText.EscapeMarkup(...)` when literal text must be inserted inside ma
 
 ## Markup
 
-Markup parsing is manager-owned:
+Markup parsing is manager-owned through normal string APIs:
 
 ```csharp
-var text = console.Markup(
+var text = console.CreateText(
     "Gave <style=Player>Workes</style> <style=Amount>7</style> <style=Item>wood</style>",
     defaultStyle: "Success");
 ```
 
-If formatting is disabled, `console.Markup(...)` and `console.Format(...)` throw `InvalidOperationException` with guidance to enable formatting.
+If formatting is disabled, the same call returns literal plain text.
 
 The standard markup profile supports:
 
@@ -71,7 +77,15 @@ Supported color formats:
 
 Use `&lt;`, `&gt;`, and `&amp;` for literal `<`, `>`, and `&` inside markup text.
 
-Malformed markup throws `FormatException`.
+The parser is lenient for ordinary angle-bracket text. Unknown tags and non-tag angle-bracket text remain literal:
+
+```csharp
+console.LogInformation("Use <something> here");
+console.LogInformation("value < 10");
+console.LogInformation("List<string>");
+```
+
+Known malformed markup throws `FormatException`, such as unclosed `<b>` tags, mismatched known tags, empty style IDs, or invalid color values.
 
 ## Themes
 
@@ -98,15 +112,15 @@ The built-in standard model supports foreground color, bold, italic, and underli
 Use the manager to format text through the configured formatter:
 
 ```csharp
-string rendered = console.Format(console.Markup("<style=Success><b>Saved</b></style>"));
+string rendered = console.Format(console.CreateText("<style=Success><b>Saved</b></style>"));
 ```
 
 Unity formatting emits Unity rich text. Godot formatting emits BBCode. Plain text, semantic entries, and command output remain the stored source of truth.
 
-Command output markup can be formatted through the manager too:
+String-authored command output can be formatted through the manager too:
 
 ```csharp
-var output = CommandOutput.InlineMarkup("<style=Success><b>Saved</b></style>");
+var output = CommandOutput.Inline("<style=Success><b>Saved</b></style>");
 string rendered = console.Format(output);
 ```
 
@@ -115,7 +129,7 @@ string rendered = console.Format(output);
 Log entries and command input entries expose semantic content while preserving plain text convenience properties:
 
 ```csharp
-console.LogInformation(console.Markup("<style=Success>Console ready.</style>"));
+console.LogInformation("<style=Success>Console ready.</style>");
 
 if (console.History.Entries[0] is LogEntry log)
 {

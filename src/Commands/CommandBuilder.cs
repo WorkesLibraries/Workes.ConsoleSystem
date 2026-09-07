@@ -185,14 +185,14 @@ public sealed class CommandBuilder
     }
 
     /// <summary>
-    /// Adds declared inline success output from plain text.
+    /// Adds declared inline success output from formatting-aware text.
     /// </summary>
     /// <param name="text">The output text.</param>
     /// <param name="defaultStyle">The optional default style identifier.</param>
     /// <returns>The current builder.</returns>
     public CommandBuilder SuccessOutputInline(string text, string? defaultStyle = null)
     {
-        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.InlineText(text, defaultStyle)));
+        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Inline(text, defaultStyle)));
         _lastOption = null;
         return this;
     }
@@ -204,20 +204,20 @@ public sealed class CommandBuilder
     /// <returns>The current builder.</returns>
     public CommandBuilder SuccessOutputInline(ConsoleText content)
     {
-        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.InlineText(content)));
+        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Inline(content)));
         _lastOption = null;
         return this;
     }
 
     /// <summary>
-    /// Adds declared block success output from plain text.
+    /// Adds declared block success output from formatting-aware text.
     /// </summary>
     /// <param name="text">The output text.</param>
     /// <param name="defaultStyle">The optional default style identifier.</param>
     /// <returns>The current builder.</returns>
     public CommandBuilder SuccessOutputBlock(string text, string? defaultStyle = null)
     {
-        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.BlockText(text, defaultStyle)));
+        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Block(text, defaultStyle)));
         _lastOption = null;
         return this;
     }
@@ -229,33 +229,7 @@ public sealed class CommandBuilder
     /// <returns>The current builder.</returns>
     public CommandBuilder SuccessOutputBlock(ConsoleText content)
     {
-        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.BlockText(content)));
-        _lastOption = null;
-        return this;
-    }
-
-    /// <summary>
-    /// Adds declared inline success output from formatting-aware markup metadata.
-    /// </summary>
-    /// <param name="markup">The output markup.</param>
-    /// <param name="defaultStyle">The optional default style identifier.</param>
-    /// <returns>The current builder.</returns>
-    public CommandBuilder SuccessOutputInlineMarkup(string markup, string? defaultStyle = null)
-    {
-        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.InlineMarkup(markup, defaultStyle)));
-        _lastOption = null;
-        return this;
-    }
-
-    /// <summary>
-    /// Adds declared block success output from formatting-aware markup metadata.
-    /// </summary>
-    /// <param name="markup">The output markup.</param>
-    /// <param name="defaultStyle">The optional default style identifier.</param>
-    /// <returns>The current builder.</returns>
-    public CommandBuilder SuccessOutputBlockMarkup(string markup, string? defaultStyle = null)
-    {
-        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.BlockMarkup(markup, defaultStyle)));
+        _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Block(content)));
         _lastOption = null;
         return this;
     }

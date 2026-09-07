@@ -83,30 +83,33 @@ public sealed class ConsoleMarkupProfile
     /// </summary>
     public string UnderlineAttribute { get; }
 
-    internal MarkupScope ParseOpeningTag(string tag)
+    internal MarkupTagParseResult TryParseOpeningTag(string tag, out MarkupScope? scope)
     {
         if (string.Equals(tag, BoldTagName, StringComparison.Ordinal))
         {
-            return new MarkupScope(BoldTagName, null, new ConsoleStyle(new Dictionary<string, object?>
+            scope = new MarkupScope(BoldTagName, null, new ConsoleStyle(new Dictionary<string, object?>
             {
                 [BoldAttribute] = true
             }));
+            return MarkupTagParseResult.Known;
         }
 
         if (string.Equals(tag, ItalicTagName, StringComparison.Ordinal))
         {
-            return new MarkupScope(ItalicTagName, null, new ConsoleStyle(new Dictionary<string, object?>
+            scope = new MarkupScope(ItalicTagName, null, new ConsoleStyle(new Dictionary<string, object?>
             {
                 [ItalicAttribute] = true
             }));
+            return MarkupTagParseResult.Known;
         }
 
         if (string.Equals(tag, UnderlineTagName, StringComparison.Ordinal))
         {
-            return new MarkupScope(UnderlineTagName, null, new ConsoleStyle(new Dictionary<string, object?>
+            scope = new MarkupScope(UnderlineTagName, null, new ConsoleStyle(new Dictionary<string, object?>
             {
                 [UnderlineAttribute] = true
             }));
+            return MarkupTagParseResult.Known;
         }
 
         string stylePrefix = StyleTagName + "=";
@@ -118,20 +121,25 @@ public sealed class ConsoleMarkupProfile
                 throw new FormatException("Style tags require a non-empty style identifier.");
             }
 
-            return new MarkupScope(StyleTagName, styleId, null);
+            scope = new MarkupScope(StyleTagName, styleId, null);
+            return MarkupTagParseResult.Known;
         }
 
         string colorPrefix = ColorTagName + "=";
         if (tag.StartsWith(colorPrefix, StringComparison.Ordinal))
         {
             string color = tag.Substring(colorPrefix.Length).Trim();
-            return new MarkupScope(ColorTagName, null, new ConsoleStyle(new Dictionary<string, object?>
+            scope = new MarkupScope(ColorTagName, null, new ConsoleStyle(new Dictionary<string, object?>
             {
                 [ForegroundColorAttribute] = ConsoleColor.FromHex(color)
             }));
+            return MarkupTagParseResult.Known;
         }
 
-        throw new FormatException($"Unknown markup tag '{tag}'.");
+        scope = null;
+        return IsKnownTagName(ReadTagName(tag))
+            ? MarkupTagParseResult.InvalidKnown
+            : MarkupTagParseResult.Unknown;
     }
 
     /// <summary>
@@ -201,6 +209,29 @@ public sealed class ConsoleMarkupProfile
         {
             throw new ArgumentException($"Markup profile attribute '{id}' must target values of type '{expectedValueType.Name}'.");
         }
+    }
+
+    internal bool IsKnownTagName(string tagName)
+    {
+        return string.Equals(tagName, StyleTagName, StringComparison.Ordinal) ||
+            string.Equals(tagName, ColorTagName, StringComparison.Ordinal) ||
+            string.Equals(tagName, BoldTagName, StringComparison.Ordinal) ||
+            string.Equals(tagName, ItalicTagName, StringComparison.Ordinal) ||
+            string.Equals(tagName, UnderlineTagName, StringComparison.Ordinal);
+    }
+
+    private static string ReadTagName(string tag)
+    {
+        int equalsIndex = tag.IndexOf('=');
+        string name = equalsIndex < 0 ? tag : tag.Substring(0, equalsIndex).Trim();
+        return name;
+    }
+
+    internal enum MarkupTagParseResult
+    {
+        Unknown,
+        Known,
+        InvalidKnown
     }
 
     internal sealed class MarkupScope

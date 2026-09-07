@@ -83,15 +83,21 @@ public sealed class ConsoleManager
     }
 
     /// <summary>
-    /// Parses styled console markup using the configured formatting subsystem.
+    /// Creates console text from a string using the configured formatting subsystem when enabled.
     /// </summary>
-    /// <param name="markup">The markup text.</param>
+    /// <param name="text">The source text.</param>
     /// <param name="defaultStyle">The optional default semantic style identifier.</param>
-    /// <returns>The parsed console text.</returns>
-    public ConsoleText Markup(string markup, string? defaultStyle = null)
+    /// <returns>The created console text.</returns>
+    public ConsoleText CreateText(string text, string? defaultStyle = null)
     {
-        EnsureFormattingEnabled();
-        return ConsoleText.Markup(markup, defaultStyle, _options.Formatting.MarkupProfile!);
+        if (text is null)
+        {
+            throw new ArgumentNullException(nameof(text));
+        }
+
+        return _options.Formatting.IsEnabled
+            ? ConsoleText.Markup(text, defaultStyle, _options.Formatting.MarkupProfile!)
+            : ConsoleText.Plain(text, defaultStyle);
     }
 
     /// <summary>
@@ -101,7 +107,16 @@ public sealed class ConsoleManager
     /// <returns>The formatted text.</returns>
     public string Format(ConsoleText text)
     {
-        EnsureFormattingEnabled();
+        if (text is null)
+        {
+            throw new ArgumentNullException(nameof(text));
+        }
+
+        if (!_options.Formatting.IsEnabled)
+        {
+            return text.PlainText;
+        }
+
         return _options.Formatting.Formatter!.Format(text, _options.Formatting.CreateContext());
     }
 
@@ -117,13 +132,12 @@ public sealed class ConsoleManager
             throw new ArgumentNullException(nameof(output));
         }
 
-        if (!output.IsMarkup)
+        if (!output.IsText)
         {
             return output.Content!;
         }
 
-        EnsureFormattingEnabled();
-        return ConsoleText.Markup(output.Markup!, output.DefaultStyleId, _options.Formatting.MarkupProfile!);
+        return CreateText(output.Text!, output.DefaultStyleId);
     }
 
     /// <summary>
@@ -203,7 +217,7 @@ public sealed class ConsoleManager
     /// <param name="message">The log message.</param>
     public void LogTrace(string message)
     {
-        Log.Trace(message);
+        Log.Trace(CreateText(message));
     }
 
     /// <summary>
@@ -221,7 +235,7 @@ public sealed class ConsoleManager
     /// <param name="message">The log message.</param>
     public void LogDebug(string message)
     {
-        Log.Debug(message);
+        Log.Debug(CreateText(message));
     }
 
     /// <summary>
@@ -239,7 +253,7 @@ public sealed class ConsoleManager
     /// <param name="message">The log message.</param>
     public void LogInformation(string message)
     {
-        Log.Information(message);
+        Log.Information(CreateText(message));
     }
 
     /// <summary>
@@ -257,7 +271,7 @@ public sealed class ConsoleManager
     /// <param name="message">The log message.</param>
     public void LogWarning(string message)
     {
-        Log.Warning(message);
+        Log.Warning(CreateText(message));
     }
 
     /// <summary>
@@ -275,7 +289,7 @@ public sealed class ConsoleManager
     /// <param name="message">The log message.</param>
     public void LogError(string message)
     {
-        Log.Error(message);
+        Log.Error(CreateText(message));
     }
 
     /// <summary>
@@ -293,7 +307,7 @@ public sealed class ConsoleManager
     /// <param name="message">The log message.</param>
     public void LogCritical(string message)
     {
-        Log.Critical(message);
+        Log.Critical(CreateText(message));
     }
 
     /// <summary>
@@ -379,12 +393,4 @@ public sealed class ConsoleManager
         }
     }
 
-    private void EnsureFormattingEnabled()
-    {
-        if (!_options.Formatting.IsEnabled)
-        {
-            throw new InvalidOperationException(
-                "The console formatting system is disabled. Enable it with ConsoleFormattingOptions.UnityRichText(), ConsoleFormattingOptions.GodotBbCode(), or custom formatting options.");
-        }
-    }
 }

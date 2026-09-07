@@ -189,7 +189,7 @@ Command handlers return `CommandResult`. A result can be an empty success, a suc
 using Workes.ConsoleSystem.Commands;
 
 CommandResult result = CommandResult.Success(
-    CommandOutput.InlineMarkup(
+    CommandOutput.Inline(
         "Gave <style=Amount>10</style> gold.",
         defaultStyle: "Success"));
 
@@ -214,8 +214,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
     Formatting = ConsoleFormattingOptions.UnityRichText()
 });
 
-console.LogInformation(console.Markup(
-    "<style=Success><b>Console ready.</b></style>"));
+console.LogInformation("<style=Success><b>Console ready.</b></style>");
 ```
 
 Themes map style IDs to formatting attributes:
@@ -233,7 +232,7 @@ var themedConsole = new ConsoleManager(new ConsoleManagerOptions
 });
 
 string unityText = themedConsole.Format(
-    themedConsole.Markup("<style=Success><b>Saved</b></style>"));
+    themedConsole.CreateText("<style=Success><b>Saved</b></style>"));
 ```
 
 ## What To Read Next

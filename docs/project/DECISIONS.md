@@ -576,11 +576,11 @@ Use `ConsoleText` as the package-wide semantic text model.
 
 `LogEntry`, `CommandInputEntry`, and `CommandOutput` should expose `ConsoleText` while preserving their plain text convenience properties.
 
-Formatting should be optional and disabled by default. Formatting enablement should be derived from the configured formatting setup rather than manually toggled. Plain string APIs and `ConsoleText.Plain(...)` stay literal and do not parse markup.
+Formatting should be optional and disabled by default. Formatting enablement should be derived from the configured formatting setup rather than manually toggled. This first decision kept plain string APIs literal; D-025 revises that part so manager-owned string APIs become formatting-aware while `ConsoleText.Plain(...)` stays literal.
 
 General-purpose markup parsing should be manager-owned through formatting-enabled `ConsoleManager` instances. Formatting options should carry a format model, markup profile, theme, and formatter.
 
-Command output should keep markup as a first-class authoring path through explicit `CommandOutput.InlineMarkup(...)` and `CommandOutput.BlockMarkup(...)` helpers. Markup-authored command output stores unresolved markup and derives plain text immediately; a formatting-enabled manager resolves it through the active markup profile when formatted.
+Command output should keep styled strings as a first-class authoring path. String-authored command output stores unresolved text and derives plain text immediately; a formatting-enabled manager resolves known markup through the active markup profile when formatted.
 
 Supported initial markup tags are:
 
@@ -602,7 +602,7 @@ Markup makes the normal styled-output workflow compact while keeping builders av
 
 Keeping formatting opt-in means plain/console-only hosts do not pay API setup cost for features they cannot render, while Unity and Godot hosts still get one-option presets.
 
-Explicit markup APIs make developer intent clear. Treating malformed markup as an exception is appropriate because markup is developer-authored configuration/output, not ordinary user command input.
+Formatting-aware string APIs keep the normal authoring path compact. Treating malformed known markup as an exception is appropriate because markup is developer-authored configuration/output, not ordinary user command input.
 
 #### Consequences
 
@@ -637,3 +637,38 @@ Storing this metadata before execution is implemented keeps command definitions 
 Command execution should later echo submitted input by default unless manager options or command overrides disable it.
 
 Static success output declarations should be appended during future successful execution, alongside any dynamic `CommandResult` outputs.
+
+### D-025: Formatting-Aware Strings Use Lenient Markup Parsing
+
+#### Context
+
+The formatting subsystem initially separated explicit markup APIs from plain string APIs. That made intent obvious, but normal styled usage became more awkward than necessary, especially for logs and command output. It also made simple examples feel unlike the rest of the package's manager-centered API.
+
+#### Decision
+
+Normal string APIs should be formatting-aware when they flow through `ConsoleManager`.
+
+When formatting is disabled, strings remain literal plain text. When formatting is enabled, known tags from the active `ConsoleMarkupProfile` are parsed, unknown tags remain literal, and ordinary angle-bracket text remains literal.
+
+The normal usage should be:
+
+```csharp
+console.LogInformation("<style=Success>Noclip enabled.</style>");
+
+return CommandResult.Success(
+    CommandOutput.Inline("<style=Success>Noclip enabled.</style>"));
+```
+
+`ConsoleManager.CreateText(...)` is the reusable manager-owned helper for creating formatting-aware `ConsoleText`. `CommandOutput.Inline(...)` and `CommandOutput.Block(...)` create string-authored command output. The segment builder escape hatch uses `CommandOutput.BuildInline(...)` and `CommandOutput.BuildBlock(...)`.
+
+#### Reasoning
+
+Formatting remains opt-in at the manager level, so users who do not need it are not forced to configure or think about it. Users who do enable formatting get a natural workflow where log strings and command output strings can contain markup directly.
+
+Lenient parsing prevents ordinary text such as `value < 10`, `List<string>`, or `Use <something> here` from breaking just because formatting is enabled. Known malformed markup still throws because those tags are developer-authored formatting instructions.
+
+#### Consequences
+
+Formatting-aware string APIs are the recommended public path for authored styled text. Explicit literal text is still available through `ConsoleText.Plain(...)`, and structured output remains available through builders for segment data.
+
+Command output resolution is manager-owned. `ConsoleManager.ResolveOutput(...)` converts string-authored output into `ConsoleText`; `ConsoleManager.Format(...)` resolves and formats in one step. Formatter output remains a render target, not the stored source of truth.

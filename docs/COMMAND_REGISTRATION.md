@@ -65,14 +65,14 @@ By default, command execution is expected to echo submitted command input accord
 ```csharp
 CommandDefinition command = new CommandBuilder("noclip")
     .EchoInput("CommandInput")
-    .SuccessOutputInlineMarkup("<style=Success>Noclip enabled.</style>")
+    .SuccessOutputInline("<style=Success>Noclip enabled.</style>")
     .Execute(ctx => new CommandResult())
     .Build();
 ```
 
 Use `DoNotEchoInput()` when a command should not echo submitted input.
 
-Plain success output helpers treat strings literally. Markup success output helpers include `Markup` in the method name. Dynamic output can still be returned from the command handler through `CommandResult`.
+Success output helpers use formatting-aware strings. With formatting disabled, strings stay literal. With formatting enabled, known markup tags are parsed by the manager when output is resolved or formatted. Dynamic output can still be returned from the command handler through `CommandResult`.
 
 ## Flag And Option Names
 

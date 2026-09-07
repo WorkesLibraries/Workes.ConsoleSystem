@@ -18,11 +18,11 @@ public sealed class CommandOutput
         Segments = content.Segments;
     }
 
-    private CommandOutput(CommandOutputKind kind, string markup, string? defaultStyle)
+    private CommandOutput(CommandOutputKind kind, string text, string? defaultStyle)
     {
-        if (markup is null)
+        if (text is null)
         {
-            throw new ArgumentNullException(nameof(markup));
+            throw new ArgumentNullException(nameof(text));
         }
 
         if (defaultStyle is not null && string.IsNullOrWhiteSpace(defaultStyle))
@@ -31,9 +31,9 @@ public sealed class CommandOutput
         }
 
         Kind = kind;
-        Markup = markup;
+        Text = text;
         DefaultStyleId = defaultStyle;
-        PlainText = ConsoleTextMarkupParser.ToPlainText(markup);
+        PlainText = ConsoleTextMarkupParser.ToPlainText(text);
         Segments = Array.Empty<ConsoleTextSegment>();
     }
 
@@ -48,14 +48,14 @@ public sealed class CommandOutput
     public ConsoleText? Content { get; }
 
     /// <summary>
-    /// Gets unresolved formatting markup when the output was authored as markup.
+    /// Gets unresolved text when the output was authored from a string.
     /// </summary>
-    public string? Markup { get; }
+    public string? Text { get; }
 
     /// <summary>
-    /// Gets a value indicating whether this output was authored as markup.
+    /// Gets a value indicating whether this output was authored from a string.
     /// </summary>
-    public bool IsMarkup => Markup is not null;
+    public bool IsText => Text is not null;
 
     /// <summary>
     /// Gets the optional semantic style identifier used by unstylized segments.
@@ -77,7 +77,7 @@ public sealed class CommandOutput
     /// </summary>
     /// <param name="defaultStyle">The optional default semantic style identifier.</param>
     /// <returns>The output builder.</returns>
-    public static CommandOutputBuilder Inline(string? defaultStyle = null)
+    public static CommandOutputBuilder BuildInline(string? defaultStyle = null)
     {
         return new CommandOutputBuilder(CommandOutputKind.Inline, defaultStyle);
     }
@@ -87,37 +87,37 @@ public sealed class CommandOutput
     /// </summary>
     /// <param name="defaultStyle">The optional default semantic style identifier.</param>
     /// <returns>The output builder.</returns>
-    public static CommandOutputBuilder Block(string? defaultStyle = null)
+    public static CommandOutputBuilder BuildBlock(string? defaultStyle = null)
     {
         return new CommandOutputBuilder(CommandOutputKind.Block, defaultStyle);
     }
 
     /// <summary>
-    /// Creates simple inline command output from plain text.
+    /// Creates simple inline command output from formatting-aware text.
     /// </summary>
     /// <param name="text">The output text.</param>
     /// <param name="defaultStyle">The optional default semantic style identifier.</param>
     /// <returns>The created command output.</returns>
-    public static CommandOutput InlineText(string text, string? defaultStyle = null)
+    public static CommandOutput Inline(string text, string? defaultStyle = null)
     {
-        return new CommandOutput(CommandOutputKind.Inline, ConsoleText.Plain(text, defaultStyle));
+        return new CommandOutput(CommandOutputKind.Inline, text, defaultStyle);
     }
 
     /// <summary>
-    /// Creates simple block command output from plain text.
+    /// Creates simple block command output from formatting-aware text.
     /// </summary>
     /// <param name="text">The output text.</param>
     /// <param name="defaultStyle">The optional default semantic style identifier.</param>
     /// <returns>The created command output.</returns>
-    public static CommandOutput BlockText(string text, string? defaultStyle = null)
+    public static CommandOutput Block(string text, string? defaultStyle = null)
     {
-        return new CommandOutput(CommandOutputKind.Block, ConsoleText.Plain(text, defaultStyle));
+        return new CommandOutput(CommandOutputKind.Block, text, defaultStyle);
     }
 
     /// <summary>
     /// Creates inline command output from console text.
     /// </summary>
-    public static CommandOutput InlineText(ConsoleText content)
+    public static CommandOutput Inline(ConsoleText content)
     {
         return new CommandOutput(CommandOutputKind.Inline, content);
     }
@@ -125,25 +125,9 @@ public sealed class CommandOutput
     /// <summary>
     /// Creates block command output from console text.
     /// </summary>
-    public static CommandOutput BlockText(ConsoleText content)
+    public static CommandOutput Block(ConsoleText content)
     {
         return new CommandOutput(CommandOutputKind.Block, content);
-    }
-
-    /// <summary>
-    /// Creates inline command output from formatting-aware markup.
-    /// </summary>
-    public static CommandOutput InlineMarkup(string markup, string? defaultStyle = null)
-    {
-        return new CommandOutput(CommandOutputKind.Inline, markup, defaultStyle);
-    }
-
-    /// <summary>
-    /// Creates block command output from formatting-aware markup.
-    /// </summary>
-    public static CommandOutput BlockMarkup(string markup, string? defaultStyle = null)
-    {
-        return new CommandOutput(CommandOutputKind.Block, markup, defaultStyle);
     }
 
     /// <summary>
@@ -155,7 +139,7 @@ public sealed class CommandOutput
     {
         if (Content is null)
         {
-            throw new InvalidOperationException("Markup-authored command output must be resolved by a formatting-enabled ConsoleManager before segment styles can be inspected.");
+            throw new InvalidOperationException("String-authored command output must be resolved by a ConsoleManager before segment styles can be inspected.");
         }
 
         return Content.ResolveStyleId(segment);

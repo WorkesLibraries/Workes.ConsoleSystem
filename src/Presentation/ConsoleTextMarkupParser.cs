@@ -27,29 +27,31 @@ internal static class ConsoleTextMarkupParser
             char current = markup[index];
             if (current == '<')
             {
+                if (!TryReadRawTag(markup, index, profile, out RawTag rawTag))
+                {
+                    text.Append(current);
+                    index++;
+                    continue;
+                }
+
+                if (!rawTag.IsKnown)
+                {
+                    text.Append(rawTag.RawText);
+                    index += rawTag.RawText.Length;
+                    continue;
+                }
+
                 FlushText(text, segments, stack);
-                int closeIndex = markup.IndexOf('>', index + 1);
-                if (closeIndex < 0)
+                if (rawTag.IsClosing)
                 {
-                    throw new FormatException("Markup tag is not closed.");
-                }
-
-                string tag = markup.Substring(index + 1, closeIndex - index - 1).Trim();
-                if (tag.Length == 0)
-                {
-                    throw new FormatException("Markup tags cannot be empty.");
-                }
-
-                if (tag[0] == '/')
-                {
-                    CloseTag(stack, tag.Substring(1).Trim());
+                    CloseTag(stack, rawTag.Name);
                 }
                 else
                 {
-                    stack.Push(profile.ParseOpeningTag(tag));
+                    stack.Push(rawTag.Scope!);
                 }
 
-                index = closeIndex + 1;
+                index += rawTag.RawText.Length;
                 continue;
             }
 
@@ -78,9 +80,19 @@ internal static class ConsoleTextMarkupParser
 
     public static string ToPlainText(string markup)
     {
+        return ToPlainText(markup, ConsoleMarkupProfile.Standard);
+    }
+
+    public static string ToPlainText(string markup, ConsoleMarkupProfile profile)
+    {
         if (markup is null)
         {
             throw new ArgumentNullException(nameof(markup));
+        }
+
+        if (profile is null)
+        {
+            throw new ArgumentNullException(nameof(profile));
         }
 
         var text = new StringBuilder();
@@ -91,38 +103,39 @@ internal static class ConsoleTextMarkupParser
             char current = markup[index];
             if (current == '<')
             {
-                int closeIndex = markup.IndexOf('>', index + 1);
-                if (closeIndex < 0)
+                if (!TryReadRawTag(markup, index, profile, out RawTag rawTag))
                 {
-                    throw new FormatException("Markup tag is not closed.");
+                    text.Append(current);
+                    index++;
+                    continue;
                 }
 
-                string tag = markup.Substring(index + 1, closeIndex - index - 1).Trim();
-                if (tag.Length == 0)
+                if (!rawTag.IsKnown)
                 {
-                    throw new FormatException("Markup tags cannot be empty.");
+                    text.Append(rawTag.RawText);
+                    index += rawTag.RawText.Length;
+                    continue;
                 }
 
-                if (tag[0] == '/')
+                if (rawTag.IsClosing)
                 {
-                    string closingName = tag.Substring(1).Trim();
                     if (stack.Count == 0)
                     {
-                        throw new FormatException($"Closing tag '{closingName}' has no matching opening tag.");
+                        throw new FormatException($"Closing tag '{rawTag.Name}' has no matching opening tag.");
                     }
 
                     string openingName = stack.Pop();
-                    if (!string.Equals(openingName, closingName, StringComparison.Ordinal))
+                    if (!string.Equals(openingName, rawTag.Name, StringComparison.Ordinal))
                     {
-                        throw new FormatException($"Closing tag '{closingName}' does not match opening tag '{openingName}'.");
+                        throw new FormatException($"Closing tag '{rawTag.Name}' does not match opening tag '{openingName}'.");
                     }
                 }
                 else
                 {
-                    stack.Push(ReadTagName(tag));
+                    stack.Push(rawTag.Name);
                 }
 
-                index = closeIndex + 1;
+                index += rawTag.RawText.Length;
                 continue;
             }
 
@@ -193,6 +206,101 @@ internal static class ConsoleTextMarkupParser
         }
     }
 
+    private static bool TryReadRawTag(
+        string markup,
+        int index,
+        ConsoleMarkupProfile profile,
+        out RawTag rawTag)
+    {
+        rawTag = default;
+        int closeIndex = markup.IndexOf('>', index + 1);
+        if (closeIndex < 0)
+        {
+            if (LooksLikeKnownTagStart(markup, index, profile))
+            {
+                throw new FormatException("Markup tag is not closed.");
+            }
+
+            return false;
+        }
+
+        string rawText = markup.Substring(index, closeIndex - index + 1);
+        string tag = markup.Substring(index + 1, closeIndex - index - 1);
+        if (!string.Equals(tag, tag.Trim(), StringComparison.Ordinal))
+        {
+            rawTag = RawTag.Unknown(rawText);
+            return true;
+        }
+
+        if (tag.Length == 0)
+        {
+            rawTag = RawTag.Unknown(rawText);
+            return true;
+        }
+
+        if (tag[0] == '/')
+        {
+            string closingName = tag.Substring(1);
+            if (!profile.IsKnownTagName(closingName))
+            {
+                rawTag = RawTag.Unknown(rawText);
+                return true;
+            }
+
+            rawTag = RawTag.Closing(rawText, closingName);
+            return true;
+        }
+
+        ConsoleMarkupProfile.MarkupTagParseResult result = profile.TryParseOpeningTag(tag, out ConsoleMarkupProfile.MarkupScope? scope);
+        if (result == ConsoleMarkupProfile.MarkupTagParseResult.Unknown)
+        {
+            rawTag = RawTag.Unknown(rawText);
+            return true;
+        }
+
+        if (result == ConsoleMarkupProfile.MarkupTagParseResult.InvalidKnown)
+        {
+            throw new FormatException($"Invalid markup tag '{tag}'.");
+        }
+
+        rawTag = RawTag.Opening(rawText, scope!);
+        return true;
+    }
+
+    private static bool LooksLikeKnownTagStart(string markup, int index, ConsoleMarkupProfile profile)
+    {
+        if (index + 1 >= markup.Length)
+        {
+            return false;
+        }
+
+        int nameStart = markup[index + 1] == '/' ? index + 2 : index + 1;
+        if (nameStart >= markup.Length)
+        {
+            return false;
+        }
+
+        int nameEnd = nameStart;
+        while (nameEnd < markup.Length)
+        {
+            char character = markup[nameEnd];
+            if (character == '=' || character == '>' || char.IsWhiteSpace(character))
+            {
+                break;
+            }
+
+            nameEnd++;
+        }
+
+        if (nameEnd == nameStart)
+        {
+            return false;
+        }
+
+        string name = markup.Substring(nameStart, nameEnd - nameStart);
+        return profile.IsKnownTagName(name);
+    }
+
     private static bool TryReadEntity(string markup, int index, out char decoded, out int consumed)
     {
         if (StartsWith(markup, index, "&lt;"))
@@ -239,15 +347,40 @@ internal static class ConsoleTextMarkupParser
         return true;
     }
 
-    private static string ReadTagName(string tag)
+    private struct RawTag
     {
-        int equalsIndex = tag.IndexOf('=');
-        string name = equalsIndex < 0 ? tag : tag.Substring(0, equalsIndex).Trim();
-        if (string.IsNullOrWhiteSpace(name))
+        private RawTag(string rawText, bool isKnown, bool isClosing, string name, ConsoleMarkupProfile.MarkupScope? scope)
         {
-            throw new FormatException("Markup tags cannot be empty.");
+            RawText = rawText;
+            IsKnown = isKnown;
+            IsClosing = isClosing;
+            Name = name;
+            Scope = scope;
         }
 
-        return name;
+        public string RawText { get; }
+
+        public bool IsKnown { get; }
+
+        public bool IsClosing { get; }
+
+        public string Name { get; }
+
+        public ConsoleMarkupProfile.MarkupScope? Scope { get; }
+
+        public static RawTag Unknown(string rawText)
+        {
+            return new RawTag(rawText, false, false, string.Empty, null);
+        }
+
+        public static RawTag Opening(string rawText, ConsoleMarkupProfile.MarkupScope scope)
+        {
+            return new RawTag(rawText, true, false, scope.Name, scope);
+        }
+
+        public static RawTag Closing(string rawText, string name)
+        {
+            return new RawTag(rawText, true, true, name, null);
+        }
     }
 }

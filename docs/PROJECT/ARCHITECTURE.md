@@ -144,7 +144,7 @@ Console text supports:
 
 - plain text derivation;
 - semantic style IDs;
-- manager-owned nested markup parsing when formatting is enabled;
+- manager-owned lenient nested markup parsing for formatting-aware strings when formatting is enabled;
 - direct color/bold/italic/underline markup;
 - optional structured segment data when useful.
 
@@ -158,7 +158,7 @@ CommandResult
 -> plain text, Unity rich text, Godot BBCode, terminal output, or custom UI spans
 ```
 
-The optional formatting subsystem is made of a model, markup profile, theme, and formatter. The model defines available formatting attributes. The markup profile maps tags such as `<color=#4ade80>` or `<b>` to those attributes. Themes map semantic style IDs such as `Information`, `Warning`, `Error`, `Success`, `Amount`, `Item`, or `Player` to style values. Formatters decide how those style values become a string or UI representation.
+The optional formatting subsystem is made of a model, markup profile, theme, and formatter. The model defines available formatting attributes. The markup profile maps known tags such as `<color=#4ade80>` or `<b>` to those attributes. Unknown tags and ordinary angle-bracket text stay literal. Themes map semantic style IDs such as `Information`, `Warning`, `Error`, `Success`, `Amount`, `Item`, or `Player` to style values. Formatters decide how those style values become a string or UI representation.
 
 Actual engine UI rendering remains outside this package.
 
