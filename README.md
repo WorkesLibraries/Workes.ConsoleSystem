@@ -5,16 +5,18 @@
 
 Workes.ConsoleSystem is an engine-neutral .NET package for building an in-game or tool-facing console around one shared chronological history.
 
-The initial package shape provides the console root, configuration foundation, log facade, entry model, command registration schema, command input parsing, structured failures, and semantic command output.
+The initial package shape provides the console root, configuration foundation, log facade, entry model, command registration schema, command input parsing, stateless autocomplete, structured failures, and semantic command output.
 
 ## Highlights
 
 - Create one `ConsoleManager` to coordinate console state.
 - Configure parsing, history, optional formatting, and future execution defaults through `ConsoleManagerOptions`.
+- Configure autocomplete path behavior for whole-path or dot-segment completion.
 - Write log messages into a bounded shared chronological `ConsoleHistory`.
 - Keep bounded command input history separate from the rendered console entry stream.
 - Register immutable command definitions without binding the package to a specific UI or engine.
 - Parse registered commands into structured success/failure results and typed command state.
+- Get stateless autocomplete candidates for paths, flags, options, and command-provided values.
 - Branch on package-wide structured failures instead of parsing messages.
 - Return semantic command output with plain text derivation and style IDs.
 - Opt into package-managed markup, themes, and Unity/Godot formatters when a host wants them.
@@ -78,10 +80,11 @@ Focused guides:
 - [Command History](docs/COMMAND_HISTORY.md)
 - [Command Registration](docs/COMMAND_REGISTRATION.md)
 - [Command Parsing](docs/COMMAND_PARSING.md)
+- [Command Autocomplete](docs/COMMAND_AUTOCOMPLETE.md)
 - [Failure Handling](docs/FAILURES.md)
 - [Command Results And Output](docs/COMMAND_OUTPUT.md)
 - [Formatting](docs/FORMATTING.md)
-- Additional focused guides will be added as execution and autocomplete become stable.
+- Additional focused guides will be added as execution becomes stable.
 
 See the [Changelog](CHANGELOG.md) for release history and migration-sensitive changes.
 

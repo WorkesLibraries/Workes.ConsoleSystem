@@ -21,6 +21,10 @@ var console = new ConsoleManager(new ConsoleManagerOptions
             FalseLiterals = new[] { "false", "no", "off" }
         }
     },
+    Autocomplete = new CommandAutocompleteOptions
+    {
+        PathCompletionMode = CommandPathCompletionMode.DotSegment
+    },
     History = new HistoryOptions
     {
         ConsoleHistoryCapacity = 200,
@@ -84,6 +88,16 @@ Flag and option schema names are defined without this prefix. The parser applies
 
 Boolean literals configure accepted values for boolean options. Matching follows `IsCaseSensitive`, so aliases are case-insensitive by default. The true and false literal lists cannot be empty and cannot overlap.
 
+## Command Autocomplete Options
+
+Command autocomplete options control active `ConsoleManager.GetAutocomplete(...)` behavior.
+
+Defaults:
+
+- `PathCompletionMode = CommandPathCompletionMode.FullPath`
+
+`FullPath` suggests whole command paths. `DotSegment` completes one dot-separated path segment at a time, which is useful for large command path trees such as `Player.AddItem`, `Player.ModAv`, and `Player.Inventory.SetModifier`.
+
 ## History Options
 
 History options are active now.
@@ -130,5 +144,6 @@ Defaults:
 - [Command History](COMMAND_HISTORY.md)
 - [Command Registration](COMMAND_REGISTRATION.md)
 - [Command Parsing](COMMAND_PARSING.md)
+- [Command Autocomplete](COMMAND_AUTOCOMPLETE.md)
 - [Command Results And Output](COMMAND_OUTPUT.md)
 - [Formatting](FORMATTING.md)

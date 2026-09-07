@@ -49,8 +49,9 @@ The currently implemented manager behavior is:
 - histories are bounded and drop the oldest retained item when full.
 - immutable command definitions can be registered through `console.RegisterCommand(...)`.
 - registered command input can be parsed through `console.ParseCommand(...)`.
+- registered command schemas can provide autocomplete through `console.GetAutocomplete(...)`.
 
-Command execution and autocomplete are planned but not implemented yet.
+Command execution is planned but not implemented yet.
 
 ## Related Guides
 
@@ -59,3 +60,4 @@ Command execution and autocomplete are planned but not implemented yet.
 - [Command History](COMMAND_HISTORY.md)
 - [Command Registration](COMMAND_REGISTRATION.md)
 - [Command Parsing](COMMAND_PARSING.md)
+- [Command Autocomplete](COMMAND_AUTOCOMPLETE.md)

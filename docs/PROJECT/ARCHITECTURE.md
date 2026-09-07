@@ -170,7 +170,7 @@ Console UI code is expected to read `ConsoleManager.History.Entries` and render 
 
 Console UI code may use `ConsoleManager.RecordCommandInput(...)` to retain submitted command input strings for navigation. Command input history is separate from the shared console entry stream until command execution is implemented.
 
-Command registration, command input parsing, structured failures, semantic command output, and optional package-wide formatting are implemented. Execution, permissions, constraint evaluation, automatic output history writes, and autocomplete are not part of the implemented flow yet.
+Command registration, command input parsing, stateless autocomplete, structured failures, semantic command output, and optional package-wide formatting are implemented. Execution, permissions, constraint evaluation, and automatic output history writes are not part of the implemented flow yet.
 
 The current parse flow is:
 
@@ -199,7 +199,19 @@ raw input
 -> append command input, output, and failure entries to console history
 ```
 
-Autocomplete should be schema-driven where possible. Command path, flag name, and option name completion should come from registered command definitions. Positional argument values and option values should require command-provided candidate functions.
+The current autocomplete flow is:
+
+```text
+raw input + cursor index
+-> tolerant token-fragment analysis
+-> resolve command path when possible
+-> complete path/member/value from schema
+-> return replacement range and candidates
+```
+
+Autocomplete is schema-driven. Command path, flag name, and option name completion comes from registered command definitions. Positional argument values and option values require command-provided candidate functions.
+
+Path completion defaults to whole command paths. Hosts with large dot-separated command namespaces can configure dot-segment completion so `Pl` completes to `Player` or `Platoon`, then `Player.Add` completes the current segment to `AddItem`.
 
 ## Important Constraints
 

@@ -56,6 +56,22 @@ console.RegisterCommand(restart);
 
 Arguments, flags, and options are parsed and bound by `ConsoleManager.ParseCommand(...)`. Constraints remain metadata until constraint evaluation is implemented.
 
+## Value Autocomplete
+
+Positional arguments and options can provide autocomplete candidates:
+
+```csharp
+CommandDefinition give = new CommandBuilder("player.give")
+    .Argument<GiveState>(x => x.Player, "player")
+        .ValueCandidates(ctx => new[] { "@me", "Anthony5172" })
+    .Argument<GiveState>(x => x.Item, "item")
+        .ValueCandidates(ctx => new[] { "wood", "stone", "gold" })
+    .Execute<GiveState>((ctx, state) => new CommandResult())
+    .Build();
+```
+
+Path, flag, and option name candidates come from command schema. Argument and option value candidates are opt-in through `ValueCandidates(...)`.
+
 ## Command Echo And Success Output
 
 Command definitions can store command-specific echo and success-output metadata for later execution.
@@ -163,5 +179,6 @@ foreach (CommandDefinition command in console.Commands.Definitions)
 - [Configuration](CONFIGURATION.md)
 - [Command History](COMMAND_HISTORY.md)
 - [Command Parsing](COMMAND_PARSING.md)
+- [Command Autocomplete](COMMAND_AUTOCOMPLETE.md)
 - [Command Results And Output](COMMAND_OUTPUT.md)
 - [Formatting](FORMATTING.md)

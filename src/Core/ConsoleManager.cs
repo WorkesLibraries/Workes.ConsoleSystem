@@ -83,6 +83,22 @@ public sealed class ConsoleManager
     }
 
     /// <summary>
+    /// Gets autocomplete candidates for command input at a cursor position.
+    /// </summary>
+    /// <param name="input">The command input.</param>
+    /// <param name="cursorIndex">The cursor index.</param>
+    /// <returns>The autocomplete result.</returns>
+    public CommandAutocompleteResult GetAutocomplete(string input, int cursorIndex)
+    {
+        return CommandAutocomplete.GetAutocomplete(
+            input,
+            cursorIndex,
+            Commands.Definitions,
+            _options.CommandParsing,
+            _options.Autocomplete);
+    }
+
+    /// <summary>
     /// Creates console text from a string using the configured formatting subsystem when enabled.
     /// </summary>
     /// <param name="text">The source text.</param>

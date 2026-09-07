@@ -21,6 +21,7 @@ public sealed class CommandBuilder
     private Type? _stateType;
     private Delegate? _handler;
     private OptionDraft? _lastOption;
+    private ValueMemberDraft? _lastValueMember;
     private bool? _echoInput;
     private string? _echoInputDefaultStyle;
 
@@ -41,6 +42,8 @@ public sealed class CommandBuilder
     public CommandBuilder Description(string description)
     {
         _description = description ?? throw new ArgumentNullException(nameof(description));
+        _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -55,8 +58,10 @@ public sealed class CommandBuilder
     {
         PropertyInfo property = GetProperty(propertySelector);
         UseStateType(typeof(TState));
-        _arguments.Add(new ArgumentDraft(property, ValidateName(name, nameof(name)), string.Empty));
+        var argument = new ArgumentDraft(property, ValidateName(name, nameof(name)), string.Empty);
+        _arguments.Add(argument);
         _lastOption = null;
+        _lastValueMember = argument;
         return this;
     }
 
@@ -74,6 +79,7 @@ public sealed class CommandBuilder
         UseStateType(typeof(TState));
         _flags.Add(new FlagDraft(property, ValidateName(name, nameof(name)), ValidateAliases(aliases), string.Empty));
         _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -91,6 +97,7 @@ public sealed class CommandBuilder
         UseStateType(typeof(TState));
         _lastOption = new OptionDraft(property, ValidateName(name, nameof(name)), ValidateAliases(aliases), string.Empty);
         _options.Add(_lastOption);
+        _lastValueMember = _lastOption;
         return this;
     }
 
@@ -102,6 +109,7 @@ public sealed class CommandBuilder
     public CommandBuilder Default(object? value)
     {
         RequireLastOption().DefaultValue = value;
+        _lastValueMember = _lastOption;
         return this;
     }
 
@@ -116,6 +124,7 @@ public sealed class CommandBuilder
         OptionDraft option = RequireLastOption();
         option.RangeMinimum = minimum;
         option.RangeMaximum = maximum;
+        _lastValueMember = option;
         return this;
     }
 
@@ -129,6 +138,23 @@ public sealed class CommandBuilder
         RequireLastOption().AllowedValues = values is null
             ? throw new ArgumentNullException(nameof(values))
             : new List<object?>(values);
+        _lastValueMember = _lastOption;
+        return this;
+    }
+
+    /// <summary>
+    /// Sets value autocomplete candidates on the most recently added positional argument or option.
+    /// </summary>
+    /// <param name="provider">The value candidate provider.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder ValueCandidates(Func<CommandAutocompleteContext, IEnumerable<string>> provider)
+    {
+        if (provider is null)
+        {
+            throw new ArgumentNullException(nameof(provider));
+        }
+
+        RequireLastValueMember().ValueCandidateProvider = provider;
         return this;
     }
 
@@ -144,6 +170,7 @@ public sealed class CommandBuilder
             ValidateName(name, nameof(name)),
             message ?? throw new ArgumentNullException(nameof(message))));
         _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -156,6 +183,7 @@ public sealed class CommandBuilder
         _echoInput = true;
         _echoInputDefaultStyle = null;
         _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -169,6 +197,7 @@ public sealed class CommandBuilder
         _echoInput = true;
         _echoInputDefaultStyle = ValidateName(defaultStyle, nameof(defaultStyle));
         _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -181,6 +210,7 @@ public sealed class CommandBuilder
         _echoInput = false;
         _echoInputDefaultStyle = null;
         _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -194,6 +224,7 @@ public sealed class CommandBuilder
     {
         _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Inline(text, defaultStyle)));
         _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -206,6 +237,7 @@ public sealed class CommandBuilder
     {
         _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Inline(content)));
         _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -219,6 +251,7 @@ public sealed class CommandBuilder
     {
         _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Block(text, defaultStyle)));
         _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -247,6 +280,8 @@ public sealed class CommandBuilder
         }
 
         _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -260,6 +295,8 @@ public sealed class CommandBuilder
     {
         UseStateType(typeof(TState));
         _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        _lastOption = null;
+        _lastValueMember = null;
         return this;
     }
 
@@ -286,7 +323,8 @@ public sealed class CommandBuilder
                 x.Property.Name,
                 x.Property.PropertyType,
                 x.Name,
-                x.Description)).AsReadOnly(),
+                x.Description,
+                x.ValueCandidateProvider)).AsReadOnly(),
             _flags.ConvertAll(x => new CommandFlagDefinition(
                 x.Property.Name,
                 x.Name,
@@ -301,7 +339,8 @@ public sealed class CommandBuilder
                 x.DefaultValue,
                 x.RangeMinimum,
                 x.RangeMaximum,
-                new List<object?>(x.AllowedValues).AsReadOnly())).AsReadOnly(),
+                new List<object?>(x.AllowedValues).AsReadOnly(),
+                x.ValueCandidateProvider)).AsReadOnly(),
             new List<CommandConstraintDefinition>(_constraints).AsReadOnly(),
             new CommandEchoInputDefinition(_echoInput, _echoInputDefaultStyle),
             new List<CommandSuccessOutputDefinition>(_successOutputs).AsReadOnly(),
@@ -386,6 +425,11 @@ public sealed class CommandBuilder
         return _lastOption ?? throw new InvalidOperationException("Option metadata must follow an option definition.");
     }
 
+    private ValueMemberDraft RequireLastValueMember()
+    {
+        return _lastValueMember ?? throw new InvalidOperationException("Value candidate metadata must follow a positional argument or option definition.");
+    }
+
     private void ValidateUniqueMemberNames()
     {
         var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -422,7 +466,12 @@ public sealed class CommandBuilder
         }
     }
 
-    private sealed class ArgumentDraft
+    private abstract class ValueMemberDraft
+    {
+        public Func<CommandAutocompleteContext, IEnumerable<string>>? ValueCandidateProvider { get; set; }
+    }
+
+    private sealed class ArgumentDraft : ValueMemberDraft
     {
         public ArgumentDraft(PropertyInfo property, string name, string description)
         {
@@ -462,7 +511,7 @@ public sealed class CommandBuilder
         public string Description { get; }
     }
 
-    private sealed class OptionDraft
+    private sealed class OptionDraft : ValueMemberDraft
     {
         public OptionDraft(PropertyInfo property, string name, List<string> aliases, string description)
         {

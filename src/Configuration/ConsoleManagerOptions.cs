@@ -17,6 +17,7 @@ public sealed class ConsoleManagerOptions
     private ConsoleManagerOptions(ConsoleManagerOptions source)
     {
         CommandParsing = CommandParsingOptions.CreateSnapshot(source.CommandParsing);
+        Autocomplete = CommandAutocompleteOptions.CreateSnapshot(source.Autocomplete);
         History = HistoryOptions.CreateSnapshot(source.History);
         Formatting = ConsoleFormattingOptions.CreateSnapshot(source.Formatting);
         Execution = CommandExecutionOptions.CreateSnapshot(source.Execution);
@@ -26,6 +27,11 @@ public sealed class ConsoleManagerOptions
     /// Gets or sets command parsing options.
     /// </summary>
     public CommandParsingOptions CommandParsing { get; set; } = new CommandParsingOptions();
+
+    /// <summary>
+    /// Gets or sets command autocomplete options.
+    /// </summary>
+    public CommandAutocompleteOptions Autocomplete { get; set; } = new CommandAutocompleteOptions();
 
     /// <summary>
     /// Gets or sets retained history options.

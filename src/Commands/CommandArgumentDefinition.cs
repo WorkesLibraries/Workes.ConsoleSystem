@@ -8,8 +8,13 @@ namespace Workes.ConsoleSystem.Commands;
 /// </summary>
 public sealed class CommandArgumentDefinition : CommandMemberDefinition
 {
-    internal CommandArgumentDefinition(string propertyName, Type valueType, string name, string description)
-        : base(propertyName, valueType, name, Array.Empty<string>(), description)
+    internal CommandArgumentDefinition(
+        string propertyName,
+        Type valueType,
+        string name,
+        string description,
+        Func<CommandAutocompleteContext, IEnumerable<string>>? valueCandidateProvider)
+        : base(propertyName, valueType, name, Array.Empty<string>(), description, valueCandidateProvider)
     {
     }
 }

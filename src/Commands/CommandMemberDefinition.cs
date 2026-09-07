@@ -13,13 +13,15 @@ public abstract class CommandMemberDefinition
         Type valueType,
         string name,
         IReadOnlyList<string> aliases,
-        string description)
+        string description,
+        Func<CommandAutocompleteContext, IEnumerable<string>>? valueCandidateProvider)
     {
         PropertyName = propertyName ?? throw new ArgumentNullException(nameof(propertyName));
         ValueType = valueType ?? throw new ArgumentNullException(nameof(valueType));
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Aliases = aliases ?? throw new ArgumentNullException(nameof(aliases));
         Description = description ?? throw new ArgumentNullException(nameof(description));
+        ValueCandidateProvider = valueCandidateProvider;
     }
 
     /// <summary>
@@ -46,4 +48,11 @@ public abstract class CommandMemberDefinition
     /// Gets the optional member description.
     /// </summary>
     public string Description { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether this member has a value autocomplete provider.
+    /// </summary>
+    public bool HasValueCandidates => ValueCandidateProvider is not null;
+
+    internal Func<CommandAutocompleteContext, IEnumerable<string>>? ValueCandidateProvider { get; }
 }

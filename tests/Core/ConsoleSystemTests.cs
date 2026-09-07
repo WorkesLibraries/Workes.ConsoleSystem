@@ -39,6 +39,8 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.CommandParsing.AllowFlagsAndOptionsInAnyOrder, Is.True);
         Assert.That(console.Options.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "true" }));
         Assert.That(console.Options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "false" }));
+        Assert.That(console.Options.Autocomplete, Is.Not.Null);
+        Assert.That(console.Options.Autocomplete.PathCompletionMode, Is.EqualTo(CommandPathCompletionMode.FullPath));
         Assert.That(console.Options.History, Is.Not.Null);
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(200));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(100));
@@ -71,6 +73,10 @@ public sealed class ConsoleSystemTests
                     FalseLiterals = new[] { "no", "off" }
                 }
             },
+            Autocomplete = new CommandAutocompleteOptions
+            {
+                PathCompletionMode = CommandPathCompletionMode.DotSegment
+            },
             History = new HistoryOptions
             {
                 ConsoleHistoryCapacity = 50,
@@ -87,6 +93,7 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.CommandParsing.AllowFlagsAndOptionsInAnyOrder, Is.False);
         Assert.That(console.Options.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "yes", "on" }));
         Assert.That(console.Options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "no", "off" }));
+        Assert.That(console.Options.Autocomplete.PathCompletionMode, Is.EqualTo(CommandPathCompletionMode.DotSegment));
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(50));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(25));
         Assert.That(console.Options.History.CommandHistoryDuplicatePolicy, Is.EqualTo(CommandHistoryDuplicatePolicy.Allow));
@@ -117,6 +124,10 @@ public sealed class ConsoleSystemTests
             {
                 ConsoleHistoryCapacity = 20,
                 CommandHistoryCapacity = 10
+            },
+            Autocomplete = new CommandAutocompleteOptions
+            {
+                PathCompletionMode = CommandPathCompletionMode.DotSegment
             }
         };
 
@@ -124,6 +135,7 @@ public sealed class ConsoleSystemTests
 
         options.CommandParsing.OptionValueStyle = OptionValueStyle.AnySeparated;
         options.CommandParsing.BooleanLiterals.TrueLiterals[0] = "on";
+        options.Autocomplete.PathCompletionMode = CommandPathCompletionMode.FullPath;
         options.History.ConsoleHistoryCapacity = 30;
         console.Options.CommandParsing.BooleanLiterals.FalseLiterals[0] = "off";
         console.Options.History.CommandHistoryCapacity = 40;
@@ -131,6 +143,7 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.CommandParsing.OptionValueStyle, Is.EqualTo(OptionValueStyle.EqualSeparated));
         Assert.That(console.Options.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "yes" }));
         Assert.That(console.Options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "no" }));
+        Assert.That(console.Options.Autocomplete.PathCompletionMode, Is.EqualTo(CommandPathCompletionMode.DotSegment));
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(20));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(10));
     }
@@ -141,6 +154,7 @@ public sealed class ConsoleSystemTests
         var console = new ConsoleManager(new ConsoleManagerOptions
         {
             CommandParsing = null!,
+            Autocomplete = null!,
             History = null!,
             Formatting = null!,
             Execution = null!
@@ -149,6 +163,7 @@ public sealed class ConsoleSystemTests
         Assert.That(console.Options.CommandParsing.OptionValueStyle, Is.EqualTo(OptionValueStyle.SpaceSeparated));
         Assert.That(console.Options.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "true" }));
         Assert.That(console.Options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "false" }));
+        Assert.That(console.Options.Autocomplete.PathCompletionMode, Is.EqualTo(CommandPathCompletionMode.FullPath));
         Assert.That(console.Options.History.ConsoleHistoryCapacity, Is.EqualTo(200));
         Assert.That(console.Options.History.CommandHistoryCapacity, Is.EqualTo(100));
         Assert.That(console.Options.Formatting.IsEnabled, Is.False);
@@ -243,6 +258,20 @@ public sealed class ConsoleSystemTests
         };
 
         Assert.Throws<ArgumentException>(() => new ConsoleManager(options));
+    }
+
+    [Test]
+    public void Constructor_InvalidPathCompletionModeThrows()
+    {
+        var options = new ConsoleManagerOptions
+        {
+            Autocomplete = new CommandAutocompleteOptions
+            {
+                PathCompletionMode = (CommandPathCompletionMode)999
+            }
+        };
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => new ConsoleManager(options));
     }
 
     [Test]

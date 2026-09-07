@@ -68,7 +68,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 
 The manager snapshots supplied options during construction. Changing the options object afterwards does not change the manager.
 
-Current option areas are command parsing preferences, history capacities, command input duplicate handling, optional formatting, and command execution defaults. Command parsing and semantic command output are available now. Command execution and autocomplete are not implemented yet.
+Current option areas are command parsing preferences, history capacities, command input duplicate handling, optional formatting, and command execution defaults. Command parsing, autocomplete, and semantic command output are available now. Command execution is not implemented yet.
 
 ## History
 
@@ -123,7 +123,7 @@ foreach (var entry in console.History.Entries)
 
 This example demonstrates the currently implemented behavior: logging writes `LogEntry` values into the shared chronological history.
 
-Command registration, parsing, structured failures, and command result/output types are implemented. Command execution, constraint evaluation, permissions, and autocomplete are not implemented yet.
+Command registration, parsing, autocomplete, structured failures, and command result/output types are implemented. Command execution, constraint evaluation, and permissions are not implemented yet.
 
 ## Register A Command Schema
 
@@ -180,6 +180,19 @@ else if (result.Failure?.Code == ConsoleFailureCodes.CommandUnknown)
 ```
 
 Parsing validates the command shape and creates typed state. It does not execute the stored handler or write to history yet.
+
+## Autocomplete Command Input
+
+```csharp
+CommandAutocompleteResult autocomplete = console.GetAutocomplete(
+    "server.restart maintenance --d",
+    "server.restart maintenance --d".Length);
+
+CommandAutocompleteCandidate candidate = autocomplete.Candidates[0];
+string completed = autocomplete.Apply(candidate);
+```
+
+Autocomplete is side-effect-free. It suggests command paths, flags, options, and command-provided value candidates.
 
 ## Build Command Output
 
@@ -243,6 +256,7 @@ string unityText = themedConsole.Format(
 - [Command History](COMMAND_HISTORY.md) for submitted command input history.
 - [Command Registration](COMMAND_REGISTRATION.md) for immutable command schemas.
 - [Command Parsing](COMMAND_PARSING.md) for parse results and typed value binding.
+- [Command Autocomplete](COMMAND_AUTOCOMPLETE.md) for stateless completion candidates.
 - [Failure Handling](FAILURES.md) for structured failures and project exceptions.
 - [Command Results And Output](COMMAND_OUTPUT.md) for semantic command output and formatting.
 - [Formatting](FORMATTING.md) for opt-in markup, themes, and formatters.

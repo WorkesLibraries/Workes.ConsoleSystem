@@ -152,6 +152,10 @@ Parsing is exposed through `ConsoleManager.ParseCommand(string input)`. It shoul
 
 Successful parse results should expose the matched definition, typed state object when present, and bound argument/flag/option values by schema name. Failed parse results should expose a `ConsoleFailure`.
 
+Autocomplete is exposed through `ConsoleManager.GetAutocomplete(string input, int cursorIndex)`. It should be stateless, side-effect-free, and best-effort while the user is typing. The UI owns selected-candidate/cycling state and applies candidates using the returned replacement range.
+
+`CommandAutocompleteResult` should provide stateless apply helpers for candidate objects and candidate indexes. Autocomplete path completion should default to full command paths and offer opt-in dot-segment completion for large path-like command sets.
+
 Synchronous command handlers should be the default. Leave API room for async handlers later without making async the initial baseline.
 
 ## Command Result And Output Direction

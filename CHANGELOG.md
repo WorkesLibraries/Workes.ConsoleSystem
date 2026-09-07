@@ -22,6 +22,12 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added structured command parse result, error, and bound command types.
 - Added typed command value binding for required positional arguments, flags, and options.
 - Added focused user-facing command parsing documentation.
+- Added stateless command autocomplete through `ConsoleManager.GetAutocomplete(...)`.
+- Added command autocomplete result, candidate, candidate kind, and context types.
+- Added `CommandAutocompleteResult.Apply(...)` helpers.
+- Added `CommandAutocompleteOptions` and `CommandPathCompletionMode` for full-path or dot-segment path completion.
+- Added command value candidate providers through `CommandBuilder.ValueCandidates(...)`.
+- Added focused user-facing command autocomplete documentation.
 - Added configurable boolean literal aliases for boolean option parsing.
 - Added package-wide `ConsoleFailure`, failure codes, failure kinds, and project exception types.
 - Added focused user-facing failure handling documentation.

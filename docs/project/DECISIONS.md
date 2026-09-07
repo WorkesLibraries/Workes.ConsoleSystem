@@ -672,3 +672,35 @@ Lenient parsing prevents ordinary text such as `value < 10`, `List<string>`, or 
 Formatting-aware string APIs are the recommended public path for authored styled text. Explicit literal text is still available through `ConsoleText.Plain(...)`, and structured output remains available through builders for segment data.
 
 Command output resolution is manager-owned. `ConsoleManager.ResolveOutput(...)` converts string-authored output into `ConsoleText`; `ConsoleManager.Format(...)` resolves and formats in one step. Formatter output remains a render target, not the stored source of truth.
+
+### D-026: Autocomplete Is Stateless And UI-Owned
+
+#### Context
+
+Console UIs need autocomplete for command paths, flags, options, and command-specific values. The package should provide schema-aware completion without owning UI state such as selected candidate index, cycling behavior, input widgets, or rendered menus.
+
+#### Decision
+
+Autocomplete should be exposed through `ConsoleManager.GetAutocomplete(string input, int cursorIndex)`.
+
+The result should include the original input, cursor index, replacement range, and ordered candidates. Candidates expose insertion text, display text, kind, and an optional description.
+
+Results should remain stateless but provide convenience `Apply(...)` helpers for applying a candidate to the original input.
+
+Command paths, flags, and options are completed from registered command definitions. Positional argument values and option values are completed only when the command author attaches a synchronous provider through `CommandBuilder.ValueCandidates(...)`.
+
+Command path completion should default to full-path completion. Dot-segment completion should be an opt-in autocomplete option for hosts that use large path-like command namespaces.
+
+Autocomplete should be best-effort for normal typing, including incomplete quotes. It should not execute commands, parse into final typed state, evaluate constraints, or write history.
+
+#### Reasoning
+
+The console package knows command schemas and parser options, so it is the right place to compute candidate text and replacement ranges. The UI knows cursor movement, selection, cycling, and rendering, so those remain outside the package.
+
+Keeping value providers synchronous matches the current command execution model and keeps the first autocomplete implementation engine-neutral and easy to use in Unity and Godot.
+
+#### Consequences
+
+Autocomplete stays side-effect-free and can be called every frame or on every input edit if a host wants that.
+
+Value suggestions are opt-in for each argument or option. More advanced async providers or session-aware completion can be added later without changing the basic manager-owned query shape.
