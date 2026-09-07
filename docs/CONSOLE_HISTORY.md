@@ -2,7 +2,7 @@
 
 `ConsoleHistory` is the shared rendered console entry stream.
 
-Logs, future command input entries, command output, command failures, and custom entry types are intended to appear in this chronological stream. Currently, implemented log calls already write `LogEntry` values into it.
+Logs, echoed command input entries, command output, command failures, and custom entry types appear in this chronological stream. Log calls and command execution both write entries into it.
 
 ## Reading Entries
 
@@ -62,12 +62,13 @@ console.History.Clear();
 
 ## Adding Entries
 
-`ConsoleHistory` does not currently expose public direct entry addition. User-visible manager methods write to it, such as `console.LogInformation(...)`.
+`ConsoleHistory` does not expose public direct entry addition. User-visible manager methods write to it, such as `console.LogInformation(...)` and `console.TryExecuteCommand(...)`.
 
-This keeps the shared rendered stream controlled while the command system is still being built.
+This keeps the shared rendered stream controlled by the package systems that define each entry type.
 
 ## Related Guides
 
 - [ConsoleManager](CONSOLE_MANAGER.md)
+- [Console UI Integration](CONSOLE_UI_INTEGRATION.md)
 - [Configuration](CONFIGURATION.md)
 - [Command History](COMMAND_HISTORY.md)

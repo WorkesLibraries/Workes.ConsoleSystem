@@ -2,7 +2,7 @@
 
 Command handlers return `CommandResult`.
 
-`CommandResult` represents whether a command succeeded and what output it produced. Command execution is not implemented yet, but command schemas can already store handlers that return this result type.
+`CommandResult` represents whether a command succeeded and what output it produced. Command handlers return this type during command execution.
 
 ## Empty Success
 
@@ -75,6 +75,8 @@ var output = CommandOutput.BuildInline(defaultStyle: "Success")
     .Build();
 ```
 
+`CommandOutputBuilder` is returned by `CommandOutput.BuildInline(...)` and `CommandOutput.BuildBlock(...)`. Use `Text(...)` for plain segments and `Value(...)` when a segment should carry a style ID and optional structured data.
+
 ## Inline And Block Output
 
 Inline output is intended for short single-line responses:
@@ -111,10 +113,14 @@ var entry = new CommandOutputEntry(DateTimeOffset.UtcNow, output);
 Console.WriteLine(entry.PlainText);
 ```
 
-Automatic command execution does not write output entries yet. For now, entries can be created directly by tests, custom host code, or future execution code.
+Command execution writes output entries automatically for declared success output and handler-returned output. Entries can also be created directly by tests or custom host code.
+
+`CommandOutput.Kind` is `CommandOutputKind.Inline` or `CommandOutputKind.Block`. Inline output is normally rendered as one line. Block output may contain multiple lines and should be treated as one intentional output entry.
 
 ## Styling
 
 Command output uses the package-wide `ConsoleText` model.
 
 See [Formatting](FORMATTING.md) for opt-in markup, themes, Unity rich text formatting, and Godot BBCode formatting.
+
+See [Command Execution](COMMAND_EXECUTION.md) for how command results become console history entries.

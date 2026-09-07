@@ -23,7 +23,7 @@ public sealed class CommandParseResult
     /// <summary>
     /// Gets a value indicating whether parsing succeeded.
     /// </summary>
-    public bool Success => Command is not null;
+    public bool IsSuccess => Command is not null;
 
     /// <summary>
     /// Gets the bound command when parsing succeeds.

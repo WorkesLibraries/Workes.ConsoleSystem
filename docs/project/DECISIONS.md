@@ -503,7 +503,7 @@ The model should follow the `Workes.InventorySystem` approach:
 
 - expected console-system rejection is structured failure data;
 - programmer/setup misuse uses standard .NET exceptions;
-- expected-success wrappers throw package-owned exceptions carrying the same structured failure;
+- expected-success APIs throw package-owned exceptions carrying the same structured failure;
 - callers branch on stable kinds/codes rather than human-readable messages.
 
 #### Reasoning
@@ -741,3 +741,55 @@ Typed predicates keep constraints close to the state model without bringing back
 Option `.Range(...)` and `.AllowedValues(...)` metadata is enforced during validation. Invalid option metadata is still setup misuse and should fail during command build.
 
 Future command execution should call parsing and validation before invoking handlers. Parse failures, validation failures, and execution failures should surface through one `CommandResult.Failure` value backed by the shared `ConsoleFailure` model. History entries for parse, validation, and execution failures belong to execution because execution owns user-visible command submission flow.
+
+### D-028: Direct Command Execution Is The Normal Submission Path
+
+#### Context
+
+Parsing and validation are useful as inspection/preflight APIs, but making normal callers manually parse and then validate every submitted command is too clunky. The console needs an MVP execution flow that keeps the advanced APIs available while giving runtime UI code one direct path for command submission.
+
+#### Decision
+
+`ConsoleManager.TryExecuteCommand(string input, out CommandResult result)` is the normal user-input command submission API when command failure is expected and should become data.
+
+`ConsoleManager.ExecuteCommand(string input)` is the expected-success command submission API and throws `ConsoleOperationException` carrying the same `ConsoleFailure` when command execution fails.
+
+Execution parses raw input, records valid nonblank submitted input in `CommandHistory`, echoes command input to `ConsoleHistory` when enabled, validates automatically, invokes the stored synchronous handler, and writes command output or command failure entries to `ConsoleHistory`.
+
+Both APIs support `BoundCommand` overloads for advanced parse-then-execute flows and still validate automatically before invoking the handler.
+
+`TryExecuteCommand(...)` returns `false` for failed command results. Caller misuse such as null arguments still uses standard .NET exceptions.
+
+#### Reasoning
+
+Most game console UIs want to submit one string and receive one result. Keeping execution manager-owned also ensures consistent history writes, input echo behavior, failure conversion, validation, and output ordering.
+
+Using the same `CommandResult` and `ConsoleFailure` model for parse, validation, and execution failures avoids parallel error channels. It lets normal execution and preflight inspection branch on the same failure kinds and codes.
+
+#### Consequences
+
+Public docs should present `TryExecuteCommand(...)` as the normal interactive/user-input workflow and `ExecuteCommand(...)` as the expected-success workflow. `ParseCommand(...)` and `ValidateCommand(...)` remain public but should be framed as side-effect-free inspection/preflight APIs for advanced UIs, diagnostics, and tests.
+
+Synchronous handlers are the first executable command model. Async execution, permissions, and generated help remain future additions.
+
+### D-029: 0.1.0 Releases The Executable Console MVP
+
+#### Context
+
+The package is ready for its first real public release when the systems already present feel complete and documented. Generated help and optional built-in help are useful, but they are additive features rather than requirements for a minimal executable console.
+
+#### Decision
+
+Version `0.1.0` should release the current executable console MVP after release-readiness cleanup.
+
+The release includes `ConsoleManager`, bounded console history, command input history, logging, command registration, parsing, validation, synchronous execution, structured failures, semantic command output, autocomplete, and optional formatting.
+
+Generated help, optional built-in help, permissions, and async execution are post-0.1 additions.
+
+#### Reasoning
+
+The current package supports a complete normal loop: register commands, submit user input through `TryExecuteCommand(...)`, receive structured results/failures, write visible history entries, and render that history in a host UI. That is enough to be useful as a first release while leaving room for focused future versions.
+
+#### Consequences
+
+Release docs should describe the current API as a real package rather than as staged scaffolding. Example tests should cover normal usage so docs and code stay aligned. Future features should increment the version instead of delaying the first usable release.

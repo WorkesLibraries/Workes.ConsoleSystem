@@ -9,18 +9,25 @@ namespace Workes.ConsoleSystem.Commands;
 public sealed class BoundCommand
 {
     internal BoundCommand(
+        string input,
         CommandDefinition definition,
         object? state,
         IReadOnlyDictionary<string, object?> arguments,
         IReadOnlyDictionary<string, object?> flags,
         IReadOnlyDictionary<string, object?> options)
     {
+        Input = input ?? throw new ArgumentNullException(nameof(input));
         Definition = definition ?? throw new ArgumentNullException(nameof(definition));
         State = state;
         Arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
         Flags = flags ?? throw new ArgumentNullException(nameof(flags));
         Options = options ?? throw new ArgumentNullException(nameof(options));
     }
+
+    /// <summary>
+    /// Gets the original command input that produced this bound command.
+    /// </summary>
+    public string Input { get; }
 
     /// <summary>
     /// Gets the matched command definition.

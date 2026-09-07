@@ -33,8 +33,8 @@ Workes.ConsoleSystem is currently a small engine-neutral package centered on `Co
 - `ConsoleManager` coordinates the package-level systems.
 - `ConsoleHistory` stores one bounded chronological stream of `IConsoleEntry` values.
 - `ConsoleLog` is the developer-facing facade for adding `LogEntry` values to the shared history.
-- `CommandHistory` stores bounded submitted command input strings for future UI navigation.
-- `CommandSystem` is the read-only command registry used by parsing and future execution.
+- `CommandHistory` stores bounded submitted command input strings for UI navigation.
+- `CommandSystem` is the read-only command registry used by parsing, validation, autocomplete, and execution.
 - Entry types under `Workes.ConsoleSystem.Entries` represent log entries, command input, and command output.
 - Presentation types under `Workes.ConsoleSystem.Presentation` represent semantic console text, formatting models, markup profiles, themes, colors, and formatters.
 
@@ -47,7 +47,7 @@ Implemented option areas:
 - command parsing;
 - history capacity/overflow behavior;
 - optional formatting subsystem defaults;
-- command execution defaults such as future input echo behavior.
+- command execution defaults such as input echo behavior.
 
 Command parsing options should include an option value syntax setting:
 
@@ -76,11 +76,11 @@ Flag and option schema names are defined without their command-line prefix. `Com
 
 History capacity options are active. When either retained history reaches capacity, adding a new item drops the oldest retained item. `CommandHistory` rejects consecutive duplicate command inputs by default using trimmed, case-insensitive comparison while preserving the originally submitted text for retained entries.
 
-Formatting options are disabled by default and become enabled when a formatter-backed setup is configured. When enabled, they carry a `ConsoleFormatModel`, `ConsoleMarkupProfile`, `ConsoleTheme`, and `IConsoleTextFormatter`. Execution options include future command input echo defaults and default echo style.
+Formatting options are disabled by default and become enabled when a formatter-backed setup is configured. When enabled, they carry a `ConsoleFormatModel`, `ConsoleMarkupProfile`, `ConsoleTheme`, and `IConsoleTextFormatter`. Execution options include command input echo defaults and default echo style.
 
 ## Command Model
 
-Command registration, parsing, validation, and autocomplete are implemented, while execution is still unimplemented.
+Command registration, parsing, validation, autocomplete, and synchronous execution are implemented.
 
 A command should be defined by one schema model rather than separate public command types for non-parameterized, flag-parameterized, option-parameterized, or positional commands.
 
@@ -135,7 +135,7 @@ Commands should return `CommandResult`. A result can contain zero, one, or many 
 
 Framework-generated command failure entries should cover parse failures, constraint failures, and execution failures.
 
-The package uses a shared failure and exception model following the `Workes.InventorySystem` pattern: expected domain rejection is structured `ConsoleFailure` data, programmer/setup misuse uses standard .NET exceptions, and expected-success wrappers throw package-owned exceptions carrying the same structured failure.
+The package uses a shared failure and exception model following the `Workes.InventorySystem` pattern: expected domain rejection is structured `ConsoleFailure` data on try APIs, programmer/setup misuse uses standard .NET exceptions, and expected-success APIs throw package-owned exceptions carrying the same structured failure.
 
 ## Presentation Model
 
@@ -169,9 +169,9 @@ Log calls flow through `ConsoleManager.Log` into `ConsoleLog`, which appends `Lo
 
 Console UI code is expected to read `ConsoleManager.History.Entries` and render entries according to their concrete type.
 
-Console UI code may use `ConsoleManager.RecordCommandInput(...)` to retain submitted command input strings for navigation. Command input history is separate from the shared console entry stream until command execution is implemented.
+Console UI code may use `ConsoleManager.RecordCommandInput(...)` to retain submitted command input strings for navigation without executing a command. Normal command execution records command input history and can echo the submitted input into the shared console entry stream.
 
-Command registration, command input parsing, command validation, stateless autocomplete, structured failures, semantic command output, and optional package-wide formatting are implemented. Execution, permissions, and automatic output history writes are not part of the implemented flow yet.
+The 0.1.0 feature set includes command registration, command input parsing, command validation, stateless autocomplete, structured failures, semantic command output, synchronous execution, command output history writes, command failure history writes, and optional package-wide formatting. Permissions and generated help are planned as post-0.1 additions.
 
 The current parse flow is:
 
@@ -185,9 +185,9 @@ raw input
 -> return CommandParseResult with BoundCommand or ConsoleFailure
 ```
 
-Parsing has no history side effects and does not invoke stored handlers. It exists as an inspection/preflight layer; normal runtime command submission should use direct execution once execution is implemented.
+Parsing has no history side effects and does not invoke stored handlers. It exists as an inspection/preflight layer; normal runtime command submission should use direct execution.
 
-The planned command execution flow is:
+The execution flow is:
 
 ```text
 raw input
@@ -211,7 +211,7 @@ BoundCommand
 
 Validation has no history side effects and does not invoke stored handlers.
 
-Validation exists as an inspection/preflight layer. Future direct execution should always validate automatically after parsing and before invoking handlers.
+Validation exists as an inspection/preflight layer. Direct execution validates automatically after parsing and before invoking handlers.
 
 The current autocomplete flow is:
 
@@ -231,7 +231,7 @@ Path completion defaults to whole command paths. Hosts with large dot-separated 
 
 - Keep ownership explicit and testable.
 - Keep UI and engine dependencies outside this package.
-- Preserve one shared chronological console history for logs, command input, command output, and future command failures.
+- Preserve one shared chronological console history for logs, command input, command output, and command failures.
 - Keep simple commands simple.
 - Prefer typed state records for complex commands rather than string IDs or mutable parameter handles as the primary model.
 - Do not introduce separate public command-type hierarchies for each parameterization style.

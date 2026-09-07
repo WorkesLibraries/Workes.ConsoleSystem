@@ -128,14 +128,14 @@ The core entries store semantic content and plain text, not engine-specific mark
 
 ## Command Execution Options
 
-Execution options configure behavior that later command execution will use.
+Execution options configure command execution behavior.
 
 Defaults:
 
 - `EchoInput = true`
 - `EchoInputDefaultStyle = null`
 
-`EchoInputDefaultStyle = null` means echoed command input is plain/un-styled unless a command-specific override or future execution code applies another style.
+`EchoInputDefaultStyle = null` means echoed command input is plain/un-styled unless a command-specific override supplies another style.
 
 ## Related Guides
 

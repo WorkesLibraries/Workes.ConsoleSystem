@@ -17,7 +17,7 @@ public sealed class CommandValidationResult
     /// <summary>
     /// Gets a value indicating whether validation succeeded.
     /// </summary>
-    public bool Success => Failure is null;
+    public bool IsSuccess => Failure is null;
 
     /// <summary>
     /// Gets the bound command that was validated.

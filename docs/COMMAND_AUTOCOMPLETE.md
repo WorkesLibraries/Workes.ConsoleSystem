@@ -34,6 +34,8 @@ Autocomplete can suggest:
 - positional argument values when the command defines a provider;
 - option values when the option defines a provider.
 
+Each `CommandAutocompleteCandidate` has a `CommandAutocompleteCandidateKind` so UIs can group or decorate path, argument value, flag, option, and option value suggestions differently.
+
 Flag and option candidates include the configured prefix:
 
 ```csharp

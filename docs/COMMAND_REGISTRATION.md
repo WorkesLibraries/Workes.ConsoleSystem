@@ -1,8 +1,8 @@
 # Command Registration
 
-Command registration defines command schemas for parsing, validation, and later execution.
+Command registration defines command schemas for parsing, validation, execution, and autocomplete.
 
-In the current package, commands can be created, registered, inspected, parsed, validated, and completed through autocomplete. Command execution is not implemented yet.
+Commands can be created, registered, inspected, executed, parsed, validated, and completed through autocomplete.
 
 ## Simple Commands
 
@@ -22,7 +22,7 @@ CommandDefinition noclip = new CommandBuilder("noclip")
 console.RegisterCommand(noclip);
 ```
 
-`Execute(...)` stores the command handler delegate, but the handler is not invoked by parsing. Handler invocation is planned for command execution.
+`Execute(...)` stores the command handler delegate. The handler is invoked by `ConsoleManager.TryExecuteCommand(...)` or `ConsoleManager.ExecuteCommand(...)`, not by parsing or validation.
 
 ## Typed Command Schemas
 
@@ -59,6 +59,8 @@ console.RegisterCommand(restart);
 
 Arguments, flags, and options are parsed and bound by `ConsoleManager.ParseCommand(...)`. Option ranges, allowed values, and typed constraints are enforced by `ConsoleManager.ValidateCommand(...)`.
 
+Normal player-authored command submissions should use `ConsoleManager.TryExecuteCommand(...)`, which parses and validates automatically before invoking the handler. Use `ConsoleManager.ExecuteCommand(...)` when failure should throw.
+
 ## Value Autocomplete
 
 Positional arguments and options can provide autocomplete candidates:
@@ -77,9 +79,9 @@ Path, flag, and option name candidates come from command schema. Argument and op
 
 ## Command Echo And Success Output
 
-Command definitions can store command-specific echo and success-output metadata for later execution.
+Command definitions can store command-specific echo and success-output metadata for execution.
 
-By default, command execution is expected to echo submitted command input according to manager execution options. A command can override that behavior:
+By default, command execution echoes submitted command input according to manager execution options. A command can override that behavior:
 
 ```csharp
 CommandDefinition command = new CommandBuilder("noclip")
@@ -176,11 +178,26 @@ foreach (CommandDefinition command in console.Commands.Definitions)
 
 `console.Commands` is an inspectable registry. Registration is owned by `ConsoleManager`.
 
+`CommandDefinition` exposes public metadata for registered commands:
+
+| Metadata | Use |
+|---|---|
+| `Path`, `Description`, `StateType` | Identify and describe the command. |
+| `Arguments` | Required positional `CommandArgumentDefinition` values. |
+| `Flags` | Boolean `CommandFlagDefinition` values and aliases. |
+| `Options` | `CommandOptionDefinition` values, aliases, defaults, ranges, and allowed values. |
+| `Constraints` | `CommandConstraintDefinition` names and messages. |
+| `EchoInput` | `CommandEchoInputDefinition` override metadata. |
+| `SuccessOutputs` | Static `CommandSuccessOutputDefinition` metadata appended during execution. |
+
+`CommandArgumentDefinition`, `CommandFlagDefinition`, and `CommandOptionDefinition` all inherit from `CommandMemberDefinition`. Command member definitions expose `PropertyName`, `ValueType`, `Name`, `Aliases`, `Description`, and whether value autocomplete candidates are available.
+
 ## Related Guides
 
 - [ConsoleManager](CONSOLE_MANAGER.md)
 - [Configuration](CONFIGURATION.md)
 - [Command History](COMMAND_HISTORY.md)
+- [Command Execution](COMMAND_EXECUTION.md)
 - [Command Parsing](COMMAND_PARSING.md)
 - [Command Validation](COMMAND_VALIDATION.md)
 - [Command Autocomplete](COMMAND_AUTOCOMPLETE.md)

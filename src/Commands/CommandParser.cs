@@ -212,6 +212,7 @@ internal static class CommandParser
         }
 
         return CommandParseResult.Succeeded(input, new BoundCommand(
+            input,
             command,
             state,
             new ReadOnlyDictionary<string, object?>(argumentValues),

@@ -2,7 +2,7 @@
 
 `CommandHistory` stores submitted command input strings for UI navigation.
 
-It is separate from `ConsoleHistory`. Adding a string to `CommandHistory` does not create a rendered `CommandInputEntry` in the shared console entry stream. That connection belongs to future command execution work.
+It is separate from `ConsoleHistory`. Adding a string through `RecordCommandInput(...)` only updates command input navigation history. Executing a command through `TryExecuteCommand(...)` or `ExecuteCommand(...)` also records command input and, when echo is enabled, writes a rendered `CommandInputEntry` to the shared console entry stream.
 
 ## Adding Input
 
@@ -100,3 +100,4 @@ console.CommandHistory.Clear();
 - [ConsoleManager](CONSOLE_MANAGER.md)
 - [Configuration](CONFIGURATION.md)
 - [Console History](CONSOLE_HISTORY.md)
+- [Command Execution](COMMAND_EXECUTION.md)

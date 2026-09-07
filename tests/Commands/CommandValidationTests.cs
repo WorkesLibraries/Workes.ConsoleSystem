@@ -14,7 +14,7 @@ public sealed class CommandValidationTests
         CommandParseResult parse = console.ParseCommand("noclip");
         CommandValidationResult result = console.ValidateCommand(parse.Command!);
 
-        Assert.That(result.Success, Is.True);
+        Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Command, Is.SameAs(parse.Command));
         Assert.That(result.Failure, Is.Null);
     }
@@ -37,7 +37,7 @@ public sealed class CommandValidationTests
         CommandParseResult parse = console.ParseCommand("server.restart maintenance --ignore-players --delay 5");
         CommandValidationResult result = console.ValidateCommand(parse.Command!);
 
-        Assert.That(result.Success, Is.False);
+        Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Command, Is.SameAs(parse.Command));
         Assert.That(result.Failure!.Kind, Is.EqualTo(ConsoleFailureKind.CommandConstraint));
         Assert.That(result.Failure.Code, Is.EqualTo(ConsoleFailureCodes.CommandConstraintRejected));
@@ -63,7 +63,7 @@ public sealed class CommandValidationTests
         CommandParseResult parse = console.ParseCommand("server.restart maintenance --ignore-players --delay 0");
         CommandValidationResult result = console.ValidateCommand(parse.Command!);
 
-        Assert.That(result.Success, Is.True);
+        Assert.That(result.IsSuccess, Is.True);
     }
 
     [Test]
@@ -80,7 +80,7 @@ public sealed class CommandValidationTests
         CommandParseResult parse = console.ParseCommand("server.restart maintenance");
         CommandValidationResult result = console.ValidateCommand(parse.Command!);
 
-        Assert.That(result.Success, Is.False);
+        Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Failure!.Message, Is.EqualTo("First failed."));
         Assert.That(result.Failure.Source, Is.EqualTo("first"));
     }
@@ -98,7 +98,7 @@ public sealed class CommandValidationTests
         CommandParseResult parse = console.ParseCommand("server.restart maintenance");
         CommandValidationResult result = console.ValidateCommand(parse.Command!);
 
-        Assert.That(result.Success, Is.False);
+        Assert.That(result.IsSuccess, Is.False);
         Assert.That(result.Failure!.Kind, Is.EqualTo(ConsoleFailureKind.CommandConstraint));
         Assert.That(result.Failure.Code, Is.EqualTo(ConsoleFailureCodes.CommandConstraintRejected));
         Assert.That(result.Failure.Source, Is.EqualTo("throws"));
@@ -120,9 +120,9 @@ public sealed class CommandValidationTests
         CommandValidationResult maximum = console.ValidateCommand(console.ParseCommand("server.restart --delay 10").Command!);
         CommandValidationResult tooHigh = console.ValidateCommand(console.ParseCommand("server.restart --delay 11").Command!);
 
-        Assert.That(minimum.Success, Is.True);
-        Assert.That(maximum.Success, Is.True);
-        Assert.That(tooHigh.Success, Is.False);
+        Assert.That(minimum.IsSuccess, Is.True);
+        Assert.That(maximum.IsSuccess, Is.True);
+        Assert.That(tooHigh.IsSuccess, Is.False);
         Assert.That(tooHigh.Failure!.Source, Is.EqualTo("delay"));
     }
 
@@ -139,8 +139,8 @@ public sealed class CommandValidationTests
         CommandValidationResult allowed = console.ValidateCommand(console.ParseCommand("mode.set --mode Fast").Command!);
         CommandValidationResult rejected = console.ValidateCommand(console.ParseCommand("mode.set --mode Hidden").Command!);
 
-        Assert.That(allowed.Success, Is.True);
-        Assert.That(rejected.Success, Is.False);
+        Assert.That(allowed.IsSuccess, Is.True);
+        Assert.That(rejected.IsSuccess, Is.False);
         Assert.That(rejected.Failure!.Source, Is.EqualTo("mode"));
     }
 
@@ -159,9 +159,9 @@ public sealed class CommandValidationTests
         CommandValidationResult outsideAllowedValues = console.ValidateCommand(console.ParseCommand("server.restart --delay 6").Command!);
         CommandValidationResult outsideRange = console.ValidateCommand(console.ParseCommand("server.restart --delay 11").Command!);
 
-        Assert.That(allowed.Success, Is.True);
-        Assert.That(outsideAllowedValues.Success, Is.False);
-        Assert.That(outsideRange.Success, Is.False);
+        Assert.That(allowed.IsSuccess, Is.True);
+        Assert.That(outsideAllowedValues.IsSuccess, Is.False);
+        Assert.That(outsideRange.IsSuccess, Is.False);
     }
 
     [Test]

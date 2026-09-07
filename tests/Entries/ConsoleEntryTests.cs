@@ -1,4 +1,5 @@
 using Workes.ConsoleSystem.Commands;
+using Workes.ConsoleSystem.Core;
 using Workes.ConsoleSystem.Entries;
 using Workes.ConsoleSystem.Logging;
 using Workes.ConsoleSystem.Presentation;
@@ -75,5 +76,52 @@ public sealed class ConsoleEntryTests
         var timestamp = new DateTimeOffset(2026, 6, 19, 12, 32, 0, TimeSpan.Zero);
 
         Assert.Throws<ArgumentNullException>(() => new CommandOutputEntry(timestamp, null!));
+    }
+
+    [Test]
+    public void CommandFailureEntry_PreservesConstructorValues()
+    {
+        var timestamp = new DateTimeOffset(2026, 6, 19, 12, 33, 0, TimeSpan.Zero);
+        var failure = ConsoleFailure.Create(
+            ConsoleFailureKind.CommandExecution,
+            ConsoleFailureCodes.CommandExecutionRejected,
+            "Command failed.");
+
+        var entry = new CommandFailureEntry(timestamp, failure);
+
+        Assert.That(entry.Timestamp, Is.EqualTo(timestamp));
+        Assert.That(entry.Failure, Is.SameAs(failure));
+        Assert.That(entry.Message, Is.EqualTo("Command failed."));
+        Assert.That(entry.Content.DefaultStyleId, Is.EqualTo("Error"));
+    }
+
+    [Test]
+    public void CommandFailureEntry_PreservesSemanticContent()
+    {
+        var timestamp = new DateTimeOffset(2026, 6, 19, 12, 33, 0, TimeSpan.Zero);
+        var failure = ConsoleFailure.Create(
+            ConsoleFailureKind.CommandExecution,
+            ConsoleFailureCodes.CommandExecutionRejected,
+            "Command failed.");
+        var content = ConsoleText.Plain("Visible failure.", "Warning");
+
+        var entry = new CommandFailureEntry(timestamp, failure, content);
+
+        Assert.That(entry.Failure, Is.SameAs(failure));
+        Assert.That(entry.Content, Is.SameAs(content));
+        Assert.That(entry.Message, Is.EqualTo("Visible failure."));
+    }
+
+    [Test]
+    public void CommandFailureEntry_NullValuesThrow()
+    {
+        var timestamp = new DateTimeOffset(2026, 6, 19, 12, 33, 0, TimeSpan.Zero);
+        var failure = ConsoleFailure.Create(
+            ConsoleFailureKind.CommandExecution,
+            ConsoleFailureCodes.CommandExecutionRejected,
+            "Command failed.");
+
+        Assert.Throws<ArgumentNullException>(() => new CommandFailureEntry(timestamp, null!));
+        Assert.Throws<ArgumentNullException>(() => new CommandFailureEntry(timestamp, failure, null!));
     }
 }

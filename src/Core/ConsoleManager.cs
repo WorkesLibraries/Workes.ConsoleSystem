@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Workes.ConsoleSystem.Commands;
 using Workes.ConsoleSystem.Configuration;
+using Workes.ConsoleSystem.Entries;
 using Workes.ConsoleSystem.History;
 using Workes.ConsoleSystem.Logging;
 using Workes.ConsoleSystem.Presentation;
@@ -68,7 +70,7 @@ public sealed class ConsoleManager
     public ConsoleLog Log { get; }
 
     /// <summary>
-    /// Gets the command registry and future execution surface.
+    /// Gets the command registry.
     /// </summary>
     public CommandSystem Commands { get; }
 
@@ -93,6 +95,74 @@ public sealed class ConsoleManager
     public CommandValidationResult ValidateCommand(BoundCommand command)
     {
         return CommandValidator.Validate(command);
+    }
+
+    /// <summary>
+    /// Executes command input through parsing, validation, and synchronous handler invocation.
+    /// </summary>
+    /// <param name="input">The command input.</param>
+    /// <returns>The command result.</returns>
+    public CommandResult ExecuteCommand(string input)
+    {
+        if (input is null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        CommandResult result = ExecuteCommandCore(input);
+        ThrowIfFailed(result);
+        return result;
+    }
+
+    /// <summary>
+    /// Executes a bound command through validation and synchronous handler invocation.
+    /// </summary>
+    /// <param name="command">The bound command.</param>
+    /// <returns>The command result.</returns>
+    public CommandResult ExecuteCommand(BoundCommand command)
+    {
+        if (command is null)
+        {
+            throw new ArgumentNullException(nameof(command));
+        }
+
+        CommandResult result = ExecuteBoundCommand(command, recordCommandInput: true);
+        ThrowIfFailed(result);
+        return result;
+    }
+
+    /// <summary>
+    /// Attempts to execute command input.
+    /// </summary>
+    /// <param name="input">The command input.</param>
+    /// <param name="result">The command result.</param>
+    /// <returns><see langword="true" /> when the command succeeds; otherwise, <see langword="false" />.</returns>
+    public bool TryExecuteCommand(string input, out CommandResult result)
+    {
+        if (input is null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        result = ExecuteCommandCore(input);
+        return result.IsSuccess;
+    }
+
+    /// <summary>
+    /// Attempts to execute a bound command.
+    /// </summary>
+    /// <param name="command">The bound command.</param>
+    /// <param name="result">The command result.</param>
+    /// <returns><see langword="true" /> when the command succeeds; otherwise, <see langword="false" />.</returns>
+    public bool TryExecuteCommand(BoundCommand command, out CommandResult result)
+    {
+        if (command is null)
+        {
+            throw new ArgumentNullException(nameof(command));
+        }
+
+        result = ExecuteBoundCommand(command, recordCommandInput: true);
+        return result.IsSuccess;
     }
 
     /// <summary>
@@ -422,4 +492,126 @@ public sealed class ConsoleManager
         }
     }
 
+    private CommandResult InvokeHandler(BoundCommand command, DateTimeOffset timestamp)
+    {
+        var context = new CommandContext(command.Input, command.Definition, command, timestamp);
+        try
+        {
+            object? result = command.Definition.StateType is null
+                ? ((Func<CommandContext, CommandResult>)command.Definition.Handler)(context)
+                : command.Definition.Handler.DynamicInvoke(context, command.State);
+
+            if (result is CommandResult commandResult)
+            {
+                return commandResult;
+            }
+
+            return CommandResult.Failed(ConsoleFailures.CommandExecution(
+                $"Command '{command.Definition.Path}' returned no command result.",
+                command.Definition.Path));
+        }
+        catch (Exception ex)
+        {
+            Exception causeException = ex is TargetInvocationException { InnerException: not null }
+                ? ex.InnerException!
+                : ex;
+            ConsoleFailure cause = ConsoleFailure.FromException(
+                causeException,
+                ConsoleFailureKind.CommandExecution,
+                ConsoleFailureCodes.CommandExecutionRejected);
+            return CommandResult.Failed(ConsoleFailures.CommandExecution(
+                $"Command '{command.Definition.Path}' failed during execution.",
+                command.Definition.Path,
+                cause));
+        }
+    }
+
+    private CommandResult ExecuteCommandCore(string input)
+    {
+        RecordCommandInput(input);
+        CommandParseResult parse = ParseCommand(input);
+        if (!parse.IsSuccess)
+        {
+            AppendEcho(input, null);
+            return Fail(parse.Failure!);
+        }
+
+        return ExecuteBoundCommand(parse.Command!, recordCommandInput: false);
+    }
+
+    private CommandResult ExecuteBoundCommand(BoundCommand command, bool recordCommandInput)
+    {
+        if (recordCommandInput)
+        {
+            RecordCommandInput(command.Input);
+        }
+
+        AppendEcho(command.Input, command.Definition);
+
+        CommandValidationResult validation = ValidateCommand(command);
+        if (!validation.IsSuccess)
+        {
+            return Fail(validation.Failure!);
+        }
+
+        CommandResult result = InvokeHandler(command, DateTimeOffset.UtcNow);
+        if (!result.IsSuccess)
+        {
+            AppendFailure(result.Failure!);
+            return result;
+        }
+
+        AppendSuccessOutputs(command.Definition, result);
+        return result;
+    }
+
+    private static void ThrowIfFailed(CommandResult result)
+    {
+        if (!result.IsSuccess)
+        {
+            throw new ConsoleOperationException(result.Failure!);
+        }
+    }
+
+    private CommandResult Fail(ConsoleFailure failure)
+    {
+        CommandResult result = CommandResult.Failed(failure);
+        AppendFailure(failure);
+        return result;
+    }
+
+    private void AppendFailure(ConsoleFailure failure)
+    {
+        History.Add(new CommandFailureEntry(
+            DateTimeOffset.UtcNow,
+            failure,
+            ConsoleText.Plain(failure.Message, "Error")));
+    }
+
+    private void AppendSuccessOutputs(CommandDefinition command, CommandResult result)
+    {
+        foreach (CommandSuccessOutputDefinition output in command.SuccessOutputs)
+        {
+            History.Add(new CommandOutputEntry(DateTimeOffset.UtcNow, output.Output));
+        }
+
+        foreach (CommandOutput output in result.Outputs)
+        {
+            History.Add(new CommandOutputEntry(DateTimeOffset.UtcNow, output));
+        }
+    }
+
+    private void AppendEcho(string input, CommandDefinition? command)
+    {
+        bool shouldEcho = command?.EchoInput.EchoInput ?? _options.Execution.EchoInput;
+        if (!shouldEcho || string.IsNullOrWhiteSpace(input))
+        {
+            return;
+        }
+
+        string? defaultStyle = command?.EchoInput.DefaultStyleId ?? _options.Execution.EchoInputDefaultStyle;
+        History.Add(new CommandInputEntry(
+            DateTimeOffset.UtcNow,
+            ConsoleText.Plain(input, defaultStyle)));
+    }
 }

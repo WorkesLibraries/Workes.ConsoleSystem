@@ -8,12 +8,12 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Workes.ConsoleSystem</PackageId>
     <Version>0.1.0</Version>
-    <PackageReleaseNotes>Initial package scaffold with a ConsoleManager root object, configurable bounded history, logging facade, command input history, immutable command registration, side-effect-free command parsing and validation, configurable boolean literals, structured failure handling, semantic command output, autocomplete, and package-wide console text presentation.</PackageReleaseNotes>
+    <PackageReleaseNotes>First public release of the engine-neutral console MVP: ConsoleManager, bounded history, logging, command registration, parsing, validation, synchronous execution, autocomplete, structured failures, semantic command output, and optional Unity/Godot/plain text formatting.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>Workes</Authors>
     <Company>Workes</Company>
     <Product>Workes.ConsoleSystem</Product>
-    <Description>Engine-neutral .NET console foundation for game logging, chronological console history, command input history, command registration, command parsing, command validation, and autocomplete workflows.</Description>
+    <Description>Engine-neutral .NET console system for game logging, chronological console history, command registration, synchronous execution, autocomplete, structured failures, and semantic output formatting.</Description>
     <PackageTags>console;logging;commands;game-development;dotnet</PackageTags>
     <PackageProjectUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem.git</RepositoryUrl>

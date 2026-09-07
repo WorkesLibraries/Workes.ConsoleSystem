@@ -4,17 +4,19 @@ Command validation checks a successfully parsed command before execution.
 
 Parsing answers "does this input match a command schema and bind into typed state?" Validation answers "is the bound command allowed by its command rules?"
 
-Most code should not need to call validation manually once command execution is available. Execution will validate automatically before invoking handlers. Use `ValidateCommand(...)` when a UI or tool wants preflight feedback without running the command.
+Most code should not need to call validation manually. Execution validates automatically before invoking handlers. Use `ValidateCommand(...)` when a UI or tool wants preflight feedback without running the command.
 
 ## Normal Usage
 
-Most game code should not call `ValidateCommand(...)` directly. Once command execution is implemented, submitted command strings should go through execution:
+Most game code should not call `ValidateCommand(...)` directly. Submitted command strings should go through execution:
 
 ```csharp
-CommandResult result = console.ExecuteCommand("server.restart maintenance --ignore-players --delay 5");
+bool success = console.TryExecuteCommand(
+    "server.restart maintenance --ignore-players --delay 5",
+    out CommandResult result);
 ```
 
-Execution will parse, validate, and then run the handler. If validation fails, execution will return a failed `CommandResult` containing the validation `ConsoleFailure`.
+Execution parses, validates, and then runs the handler. If validation fails on the try path, execution returns `false` and provides a failed `CommandResult` containing the validation `ConsoleFailure`. On the expected-success path, `ExecuteCommand(...)` throws `ConsoleOperationException` carrying that same failure.
 
 ## Preflight Validation
 
@@ -41,11 +43,11 @@ console.RegisterCommand(new CommandBuilder("server.restart")
 
 CommandParseResult parse = console.ParseCommand("server.restart maintenance --ignore-players --delay 5");
 
-if (parse.Success)
+if (parse.IsSuccess)
 {
     CommandValidationResult validation = console.ValidateCommand(parse.Command!);
 
-    if (!validation.Success)
+    if (!validation.IsSuccess)
     {
         Console.WriteLine(validation.Failure!.Message);
     }
@@ -104,6 +106,7 @@ Those behaviors belong to command execution.
 ## Related Guides
 
 - [Command Registration](COMMAND_REGISTRATION.md)
+- [Command Execution](COMMAND_EXECUTION.md)
 - [Command Parsing](COMMAND_PARSING.md)
 - [Failure Handling](FAILURES.md)
 - [ConsoleManager](CONSOLE_MANAGER.md)

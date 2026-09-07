@@ -28,7 +28,7 @@ Update when the project's API design principles, naming conventions, consistency
 - Keep the package engine-neutral and UI-neutral.
 - Prefer explicit ownership over global/static access.
 - Keep the public surface small until workflows are proven.
-- Separate implemented behavior from future placeholders in names, docs, and examples.
+- Keep names, docs, and examples focused on implemented release behavior.
 - Favor simple immutable entry models for console history.
 - Keep simple command registration simple, while letting complex commands opt into an explicit typed state model.
 
@@ -63,13 +63,13 @@ Options objects are mutable setup objects for convenient object-initializer use.
 
 History options control active retained history behavior. Histories are bounded and use drop-oldest retention. Command input history rejects consecutive duplicate submissions by default using trimmed, case-insensitive comparison.
 
-Formatting options control the optional console formatting subsystem. Execution options store behavior that later command execution uses, including command input echo defaults.
+Formatting options control the optional console formatting subsystem. Execution options control command input echo behavior during direct execution.
 
 ## History API Direction
 
 `ConsoleHistory` is the shared rendered console entry stream. It should stay controlled by package systems for now, except that callers may inspect `Entries`, inspect `Capacity`, and clear retained entries.
 
-`CommandHistory` is a UI helper for submitted command strings. It should be written through `ConsoleManager.RecordCommandInput(string input)` and may be cleared with `Clear()`. It stores strings only; adding `CommandInputEntry` values to the shared console history belongs to command execution.
+`CommandHistory` is a UI helper for submitted command strings. It should be written through `ConsoleManager.RecordCommandInput(string input)` for manual recording and is written automatically by command execution. It stores strings only; visible echoed command input belongs to the shared `ConsoleHistory`.
 
 ## User Documentation Direction
 
@@ -155,7 +155,7 @@ Successful parse results should expose the matched definition, typed state objec
 
 Command validation is exposed through `ConsoleManager.ValidateCommand(BoundCommand command)` as an advanced inspection/preflight API. It should enforce option ranges, allowed values, and typed command constraints after parsing succeeds. Validation should return `CommandValidationResult`, not throw for ordinary command-use rejection, and it should not execute handlers or write history.
 
-Normal command submission should use direct string execution once available. Execution should call parsing and validation automatically, then return one `CommandResult` that can carry parse, validation, or execution failures through the shared `ConsoleFailure` model.
+Normal command submission should use direct string execution APIs. `TryExecuteCommand(...)` is the user-input path when command failure is expected and should be handled as data. `ExecuteCommand(...)` is the expected-success path and throws `ConsoleOperationException` carrying the same `ConsoleFailure` when command execution fails.
 
 Autocomplete is exposed through `ConsoleManager.GetAutocomplete(string input, int cursorIndex)`. It should be stateless, side-effect-free, and best-effort while the user is typing. The UI owns selected-candidate/cycling state and applies candidates using the returned replacement range.
 
@@ -173,11 +173,11 @@ Use `CommandResult.Success(...)` for successful results with output and `Command
 
 Prefer returned command output entries over imperative output methods on `CommandContext`.
 
-`CommandContext` should remain available for command execution metadata such as the originating input, future caller/source information, service access if needed, and future async/cancellation integration. It should not be the primary output writing model.
+`CommandContext` exposes command execution metadata such as the originating input, matched definition, bound command, and execution timestamp. It can grow later for caller/source information, service access if needed, and async/cancellation integration. It should not be the primary output writing model.
 
 ## Console Entry API Direction
 
-`IConsoleEntry` should remain an extensibility point for all console-visible entries. It should require timestamp and entry type/kind information, but it should not require log severity.
+`IConsoleEntry` should remain an extensibility point for all console-visible entries. It should require a timestamp only; the concrete entry type is the entry discriminator. It should not require log severity.
 
 Built-in entry types should include log entries, command input entries, command output entries, and command failure/error entries. Users should be able to add custom entry types for game-specific console events.
 
@@ -228,7 +228,7 @@ Actual Unity/Godot UI controls remain outside the package. Advanced UIs should b
 
 - Throw `ArgumentNullException` for null values that cannot be represented safely.
 - Return `ConsoleFailure` for ordinary invalid user command input.
-- Follow the `Workes.InventorySystem` split: expected domain rejection is structured failure data, expected-success wrappers may throw package-owned exceptions carrying that same failure, and programmer/setup misuse uses standard .NET exceptions.
+- Follow the `Workes.InventorySystem` split: expected domain rejection is structured failure data on try APIs, expected-success APIs throw package-owned exceptions carrying that same failure, and programmer/setup misuse uses standard .NET exceptions.
 - Prefer stable failure kinds/codes for branching and keep human-readable messages as display/debug text.
 - Keep invalid-state rules close to the type that owns the state.
 

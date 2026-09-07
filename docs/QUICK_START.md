@@ -1,4 +1,4 @@
-﻿# Quick Start
+# Quick Start
 
 This guide should take a new user from package installation to the first successful use of `Workes.ConsoleSystem`.
 
@@ -68,7 +68,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 
 The manager snapshots supplied options during construction. Changing the options object afterwards does not change the manager.
 
-Current option areas are command parsing preferences, history capacities, command input duplicate handling, optional formatting, and command execution defaults. Command parsing, command validation, autocomplete, and semantic command output are available now. Command execution is not implemented yet.
+Option areas are command parsing preferences, history capacities, command input duplicate handling, optional formatting, and command execution defaults.
 
 ## History
 
@@ -121,9 +121,7 @@ foreach (var entry in console.History.Entries)
 }
 ```
 
-This example demonstrates the currently implemented behavior: logging writes `LogEntry` values into the shared chronological history.
-
-Command registration, parsing, validation, autocomplete, structured failures, and command result/output types are implemented. Command execution and permissions are not implemented yet.
+Logging writes `LogEntry` values into the shared chronological history. Command execution writes command input, output, and failure entries to the same stream.
 
 ## Register A Command Schema
 
@@ -143,19 +141,26 @@ console.RegisterCommand(command);
 Console.WriteLine(console.Commands.Definitions.Count); // 1
 ```
 
-Registered commands can be inspected, parsed, and validated, but command execution is not implemented yet. When execution is added, direct string execution through `ExecuteCommand(...)` will be the normal runtime path.
+Registered commands can be inspected, parsed, validated, and executed.
+
+## Execute A Command
+
+Use `TryExecuteCommand(...)` for player or user input where invalid commands should become feedback instead of exceptions.
+
+```csharp
+if (!console.TryExecuteCommand("noclip", out CommandResult result))
+{
+    Console.WriteLine(result.Failure!.Message);
+}
+```
+
+Execution parses and validates automatically before running the command handler. It also records submitted input in `CommandHistory` and appends command input, output, or failure entries to `ConsoleHistory`.
+
+Use `ExecuteCommand(...)` when the command is expected to succeed and failure should throw `ConsoleOperationException`.
 
 ## Inspect Command Input
 
 Parsing and validation are side-effect-free inspection APIs. They are useful for tests, editor tooling, and UI preflight feedback. They are not intended to be the normal way to submit a command during gameplay.
-
-Once execution is available, normal usage will look like this:
-
-```csharp
-CommandResult result = console.ExecuteCommand("server.restart maintenance --ignore-players --delay 5");
-```
-
-Execution will parse and validate automatically before running the command handler.
 
 ```csharp
 using Workes.ConsoleSystem.Commands;
@@ -178,7 +183,7 @@ console.RegisterCommand(new CommandBuilder("server.restart")
 
 CommandParseResult result = console.ParseCommand("server.restart maintenance --ignore-players --delay 5");
 
-if (result.Success)
+if (result.IsSuccess)
 {
     RestartState state = result.Command!.GetState<RestartState>()!;
     Console.WriteLine(state.DelaySeconds); // 5
@@ -194,7 +199,7 @@ Parsing validates the command shape and creates typed state. Validation checks o
 ```csharp
 CommandValidationResult validation = console.ValidateCommand(result.Command!);
 
-if (!validation.Success)
+if (!validation.IsSuccess)
 {
     Console.WriteLine(validation.Failure!.Message);
 }
@@ -272,10 +277,13 @@ string unityText = themedConsole.Format(
 ## What To Read Next
 
 - [ConsoleManager](CONSOLE_MANAGER.md) for the root object and ownership model.
+- [Core Concepts](CONCEPTS.md) for the package mental model.
 - [Configuration](CONFIGURATION.md) for options, defaults, and snapshot behavior.
 - [Console History](CONSOLE_HISTORY.md) for rendered console entries and retention.
+- [Console UI Integration](CONSOLE_UI_INTEGRATION.md) for rendering the shared history.
 - [Command History](COMMAND_HISTORY.md) for submitted command input history.
 - [Command Registration](COMMAND_REGISTRATION.md) for immutable command schemas.
+- [Command Execution](COMMAND_EXECUTION.md) for direct command submission.
 - [Command Parsing](COMMAND_PARSING.md) for parse results and typed value binding.
 - [Command Validation](COMMAND_VALIDATION.md) for option rules and typed constraints.
 - [Command Autocomplete](COMMAND_AUTOCOMPLETE.md) for stateless completion candidates.

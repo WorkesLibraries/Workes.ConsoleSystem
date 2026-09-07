@@ -4,7 +4,7 @@ Command parsing reads raw command input against registered command schemas and b
 
 Parsing does not write to console history, write command input history, validate command constraints, or execute command handlers.
 
-Most runtime command submissions should go through command execution once it is available. Use `ParseCommand(...)` directly when a UI, test, or tool needs to inspect command input without running it.
+Most player-authored command submissions should go through `TryExecuteCommand(...)`. Use `ParseCommand(...)` directly when a UI, test, or tool needs to inspect command input without running it.
 
 ## Basic Parsing
 
@@ -22,7 +22,7 @@ console.RegisterCommand(new CommandBuilder("noclip")
 
 CommandParseResult result = console.ParseCommand("noclip");
 
-if (result.Success)
+if (result.IsSuccess)
 {
     Console.WriteLine(result.Command!.Definition.Path);
 }
@@ -159,6 +159,8 @@ Flags bind to `true` when present and `false` when absent. Missing options bind 
 
 Option ranges, allowed values, and typed constraints are checked by `ConsoleManager.ValidateCommand(...)` after parsing succeeds.
 
+The execution APIs run parsing and validation automatically.
+
 ## Parse Results
 
 Successful results expose a `BoundCommand`.
@@ -166,7 +168,7 @@ Successful results expose a `BoundCommand`.
 ```csharp
 CommandParseResult result = console.ParseCommand("server.restart maintenance --delay 5");
 
-if (result.Success)
+if (result.IsSuccess)
 {
     Console.WriteLine(result.Command!.Arguments["reason"]);
     Console.WriteLine(result.Command.Options["delay"]);
@@ -178,7 +180,7 @@ Failed results expose a `ConsoleFailure` with stable kind/code values and a huma
 ```csharp
 CommandParseResult result = console.ParseCommand("server.restart");
 
-if (!result.Success)
+if (!result.IsSuccess)
 {
     Console.WriteLine(result.Failure!.Kind);
     Console.WriteLine(result.Failure.Code);
@@ -189,6 +191,7 @@ if (!result.Success)
 ## Related Guides
 
 - [Command Registration](COMMAND_REGISTRATION.md)
+- [Command Execution](COMMAND_EXECUTION.md)
 - [Command Validation](COMMAND_VALIDATION.md)
 - [Configuration](CONFIGURATION.md)
 - [ConsoleManager](CONSOLE_MANAGER.md)

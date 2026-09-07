@@ -4,10 +4,10 @@ using System.Collections.Generic;
 namespace Workes.ConsoleSystem.Commands;
 
 /// <summary>
-/// Represents the permanent command registry used by parsing, autocomplete, and future execution infrastructure.
+/// Represents the permanent command registry used by parsing, validation, autocomplete, and execution.
 /// </summary>
 /// <remarks>
-/// Execution and permission checks are intentionally not implemented yet.
+/// Registration is owned by <see cref="Core.ConsoleManager"/>.
 /// </remarks>
 public sealed class CommandSystem
 {

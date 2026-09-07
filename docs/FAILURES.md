@@ -8,7 +8,7 @@ Use this guide when you need to:
 - handle parsed command validation failures.
 - branch on stable failure categories or codes.
 - decide whether an error should be a returned failure or an exception.
-- prepare for future command execution wrappers.
+- handle expected-success command execution.
 
 ## Expected Failure Versus Programmer Misuse
 
@@ -16,19 +16,17 @@ The package separates two kinds of failure:
 
 | Situation | API behavior | Examples |
 |---|---|---|
-| Expected console-system rejection | APIs return `ConsoleFailure` through structured results; future expected-success wrappers throw project exceptions containing that same failure | Unknown command, missing argument, invalid option value, failed command constraint |
+| Expected console-system rejection | Try APIs return `ConsoleFailure` through structured results; expected-success APIs throw project exceptions containing that same failure | Unknown command, missing argument, invalid option value, failed command constraint |
 | Programmer or setup misuse | Standard .NET exceptions are thrown directly | Null arguments, invalid option configuration, malformed command definitions during setup |
 
 This distinction is intentional. Expected rejection is part of normal console usage. Programmer misuse usually means calling code or setup code is wrong and should be fixed.
 
 ## The Normal Pattern
 
-Once command execution is implemented, normal command submission should branch on the returned `CommandResult`:
+Normal user-input command submission should use the try path and branch on the returned `CommandResult`:
 
 ```csharp
-CommandResult result = console.ExecuteCommand(input);
-
-if (!result.IsSuccess)
+if (!console.TryExecuteCommand(input, out CommandResult result))
 {
     ConsoleFailure failure = result.Failure!;
 
@@ -43,7 +41,7 @@ if (!result.IsSuccess)
 }
 ```
 
-Execution will use the same `ConsoleFailure` model for parse, validation, and execution failures.
+Execution uses the same `ConsoleFailure` model for parse, validation, and execution failures.
 
 ## Preflight Patterns
 
@@ -52,7 +50,7 @@ Use parse and validation results directly when rejection is normal control flow 
 ```csharp
 CommandParseResult result = console.ParseCommand(input);
 
-if (!result.Success)
+if (!result.IsSuccess)
 {
     if (result.Failure?.Code == ConsoleFailureCodes.CommandUnknown)
     {
@@ -70,19 +68,19 @@ Validation uses the same failure model:
 ```csharp
 CommandValidationResult validation = console.ValidateCommand(result.Command!);
 
-if (!validation.Success &&
+if (!validation.IsSuccess &&
     validation.Failure?.Code == ConsoleFailureCodes.CommandConstraintRejected)
 {
     ShowCommandRejection(validation.Failure.Message);
 }
 ```
 
-Use project-owned exceptions only for expected-success wrappers. The exception types exist before those wrappers, so future APIs can reuse the same failure object instead of inventing another error model.
+Use project-owned exceptions only for expected-success APIs such as `ExecuteCommand(...)`.
 
 ```csharp
 try
 {
-    // Future expected-success command execution wrapper.
+    console.ExecuteCommand(input);
 }
 catch (ConsoleOperationException ex)
 {
@@ -92,7 +90,7 @@ catch (ConsoleOperationException ex)
 
 ## Project Exceptions
 
-`ConsoleSystemException` is the base exception for expected-success console-system wrappers that fail because the console domain rejected the operation.
+`ConsoleSystemException` is the base exception for expected-success console-system APIs that fail because the console domain rejected the operation.
 
 It derives from `InvalidOperationException`, so broad invalid-operation catches can still catch it. Prefer catching the project-owned type when you need structured failure details.
 
@@ -145,7 +143,7 @@ Common groups include:
 | Parsing | `CommandInputEmpty`, `CommandUnknown`, `CommandArgumentMissing`, `CommandArgumentUnexpected`, `CommandMemberUnknown`, `CommandOptionValueMissing`, `CommandMemberDuplicate`, `CommandOptionValueSyntaxInvalid`, `CommandQuoteUnclosed` |
 | Binding | `CommandValueInvalid`, `CommandStateBindingFailed` |
 | Command validation | `CommandConstraintRejected` |
-| Future command workflow | `CommandExecutionRejected`, `ExtensionRejected` |
+| Command execution | `CommandExecutionRejected`, `ExtensionRejected` |
 
 Package-owned codes are reserved. Extension authors should use their own namespaced codes, such as `com.example.console.command.rejected`.
 
@@ -153,5 +151,6 @@ Package-owned codes are reserved. Extension authors should use their own namespa
 
 - [Command Parsing](COMMAND_PARSING.md)
 - [Command Validation](COMMAND_VALIDATION.md)
+- [Command Execution](COMMAND_EXECUTION.md)
 - [ConsoleManager](CONSOLE_MANAGER.md)
 - [Command Registration](COMMAND_REGISTRATION.md)

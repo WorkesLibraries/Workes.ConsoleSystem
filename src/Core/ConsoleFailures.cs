@@ -42,9 +42,9 @@ internal static class ConsoleFailures
         return Create(ConsoleFailureKind.CommandConstraint, ConsoleFailureCodes.CommandConstraintRejected, message, source: source, cause: cause);
     }
 
-    public static ConsoleFailure CommandExecution(string? message = null)
+    public static ConsoleFailure CommandExecution(string? message = null, string? source = null, ConsoleFailure? cause = null)
     {
-        return Create(ConsoleFailureKind.CommandExecution, ConsoleFailureCodes.CommandExecutionRejected, message);
+        return Create(ConsoleFailureKind.CommandExecution, ConsoleFailureCodes.CommandExecutionRejected, message, source: source, cause: cause);
     }
 
     public static ConsoleFailure Extension(string? message = null)

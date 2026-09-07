@@ -68,7 +68,7 @@ public static class ConsoleFailureCodes
     /// <summary>
     /// An option was provided without a value.
     /// </summary>
-    public const string CommandOptionValueMissing = PackagePrefix + "command.option.value_missing";
+    public const string CommandOptionValueMissing = PackagePrefix + "command.option.value.missing";
 
     /// <summary>
     /// A flag or option was provided more than once.
@@ -78,7 +78,7 @@ public static class ConsoleFailureCodes
     /// <summary>
     /// The option value syntax did not match configured parser settings.
     /// </summary>
-    public const string CommandOptionValueSyntaxInvalid = PackagePrefix + "command.option.value_syntax_invalid";
+    public const string CommandOptionValueSyntaxInvalid = PackagePrefix + "command.option.value.syntax.invalid";
 
     /// <summary>
     /// A command value could not be converted to its target type.
@@ -93,7 +93,7 @@ public static class ConsoleFailureCodes
     /// <summary>
     /// Bound values could not create typed command state.
     /// </summary>
-    public const string CommandStateBindingFailed = PackagePrefix + "command.state.binding_failed";
+    public const string CommandStateBindingFailed = PackagePrefix + "command.state.binding.failed";
 
     /// <summary>
     /// Command constraint validation rejection.

@@ -105,7 +105,28 @@ var theme = new ConsoleTheme(new Dictionary<string, ConsoleStyle>
 });
 ```
 
-The built-in standard model supports foreground color, bold, italic, and underline. Custom models can define different string-based formatting attributes for custom formatters.
+The built-in standard model supports these attributes from `ConsoleStandardFormatAttributes`:
+
+| Attribute | Meaning |
+|---|---|
+| `ForegroundColor` | Foreground `ConsoleColor`. |
+| `Bold` | Bold text flag. |
+| `Italic` | Italic text flag. |
+| `Underline` | Underline text flag. |
+
+Custom models are built from `ConsoleFormatAttributeDefinition` values. `ConsoleFormatAttributeKind` distinguishes flag attributes, such as bold, from value attributes, such as foreground color.
+
+## Built-In Formatters
+
+The package includes three string formatters:
+
+| Formatter | Output |
+|---|---|
+| `PlainTextConsoleFormatter` | Plain text with all formatting ignored. |
+| `UnityRichTextConsoleFormatter` | Unity rich text tags. |
+| `GodotBbCodeConsoleFormatter` | Godot BBCode tags. |
+
+The Unity and Godot option presets create the relevant formatter for you. You can also instantiate formatter types directly when you need separate formatting behavior outside a manager-owned call.
 
 ## Formatting Text
 
@@ -115,7 +136,7 @@ Use the manager to format text through the configured formatter:
 string rendered = console.Format(console.CreateText("<style=Success><b>Saved</b></style>"));
 ```
 
-Unity formatting emits Unity rich text. Godot formatting emits BBCode. Plain text, semantic entries, and command output remain the stored source of truth.
+Unity formatting emits Unity rich text. Godot formatting emits BBCode. Plain text, semantic entries, and command output remain the stored source of truth. Formatter implementations receive a `ConsoleFormattingContext` containing the active format model and theme.
 
 String-authored command output can be formatted through the manager too:
 
@@ -139,3 +160,17 @@ if (console.History.Entries[0] is LogEntry log)
 ```
 
 `CommandInputEntry.Input`, `LogEntry.Message`, and command output `PlainText` continue to return plain text.
+
+## Structured Text
+
+Use `ConsoleText.Build(...)` when you need explicit segments instead of markup strings:
+
+```csharp
+ConsoleText text = ConsoleText.Build(defaultStyle: "Success")
+    .Text("Gave ")
+    .Value("7", style: "Amount", data: 7)
+    .Text(" wood.")
+    .Build();
+```
+
+`ConsoleTextBuilder` creates `ConsoleTextSegment` values. Each segment stores text, an optional style ID, optional structured data, and optional inline style.
