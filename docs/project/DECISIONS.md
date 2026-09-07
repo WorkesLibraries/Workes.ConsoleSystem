@@ -704,3 +704,40 @@ Keeping value providers synchronous matches the current command execution model 
 Autocomplete stays side-effect-free and can be called every frame or on every input edit if a host wants that.
 
 Value suggestions are opt-in for each argument or option. More advanced async providers or session-aware completion can be added later without changing the basic manager-owned query shape.
+
+### D-027: Command Validation Runs After Parsing
+
+#### Context
+
+Parsing now resolves command text, binds values, and creates typed command state. The package also needs to enforce option range metadata, allowed value metadata, and command-specific constraints before command execution exists.
+
+#### Decision
+
+Command validation should be a side-effect-free manager-owned step exposed through `ConsoleManager.ValidateCommand(BoundCommand command)` for preflight use.
+
+Validation should return `CommandValidationResult`. Successful results preserve the validated `BoundCommand`. Failed results expose `ConsoleFailure` using `ConsoleFailureKind.CommandConstraint` and `ConsoleFailureCodes.CommandConstraintRejected`.
+
+Command constraints should be typed predicates over the bound command state:
+
+```csharp
+.Constraint<RestartCommandState>(
+    "delay-ignore-players",
+    "Delay cannot be combined with ignore players.",
+    state => !state.IgnorePlayers || state.DelaySeconds == 0)
+```
+
+`ParseCommand(...)` should remain binding-only. It should not evaluate option ranges, allowed values, or constraints.
+
+Future direct command execution should call parsing and validation automatically. Normal runtime command submission should not require consumers to manually call parse and then validate.
+
+#### Reasoning
+
+Keeping validation separate from parsing makes the command pipeline easier to reason about: parsing answers whether input can be understood, validation answers whether understood command state is allowed, and future execution performs the side effects. Keeping both APIs public still gives advanced UIs a preflight route without making that route the normal command-submission workflow.
+
+Typed predicates keep constraints close to the state model without bringing back string IDs or mutable parameter handles.
+
+#### Consequences
+
+Option `.Range(...)` and `.AllowedValues(...)` metadata is enforced during validation. Invalid option metadata is still setup misuse and should fail during command build.
+
+Future command execution should call parsing and validation before invoking handlers. Parse failures, validation failures, and execution failures should surface through one `CommandResult.Failure` value backed by the shared `ConsoleFailure` model. History entries for parse, validation, and execution failures belong to execution because execution owns user-visible command submission flow.

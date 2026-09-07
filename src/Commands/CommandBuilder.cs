@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
 using Workes.ConsoleSystem.Presentation;
@@ -159,16 +160,26 @@ public sealed class CommandBuilder
     }
 
     /// <summary>
-    /// Adds constraint metadata.
+    /// Adds typed command-state constraint validation.
     /// </summary>
+    /// <typeparam name="TState">The command state type.</typeparam>
     /// <param name="name">The constraint name.</param>
     /// <param name="message">The constraint failure message.</param>
+    /// <param name="predicate">The predicate that returns <see langword="true" /> when the command state is valid.</param>
     /// <returns>The current builder.</returns>
-    public CommandBuilder Constraint(string name, string message)
+    public CommandBuilder Constraint<TState>(string name, string message, Func<TState, bool> predicate)
+        where TState : class
     {
+        if (predicate is null)
+        {
+            throw new ArgumentNullException(nameof(predicate));
+        }
+
+        UseStateType(typeof(TState));
         _constraints.Add(new CommandConstraintDefinition(
             ValidateName(name, nameof(name)),
-            message ?? throw new ArgumentNullException(nameof(message))));
+            message ?? throw new ArgumentNullException(nameof(message)),
+            state => predicate((TState)state!)));
         _lastOption = null;
         _lastValueMember = null;
         return this;
@@ -336,10 +347,10 @@ public sealed class CommandBuilder
                 x.Name,
                 new List<string>(x.Aliases).AsReadOnly(),
                 x.Description,
-                x.DefaultValue,
-                x.RangeMinimum,
-                x.RangeMaximum,
-                new List<object?>(x.AllowedValues).AsReadOnly(),
+                NormalizeMetadataValue(x.DefaultValue, x.Property.PropertyType, "default value", x.Name, allowNull: true),
+                NormalizeRangeValue(x.RangeMinimum, x.RangeMaximum, x.Property.PropertyType, "minimum", x.Name),
+                NormalizeRangeValue(x.RangeMaximum, x.RangeMinimum, x.Property.PropertyType, "maximum", x.Name),
+                NormalizeAllowedValues(x.AllowedValues, x.Property.PropertyType, x.Name).AsReadOnly(),
                 x.ValueCandidateProvider)).AsReadOnly(),
             new List<CommandConstraintDefinition>(_constraints).AsReadOnly(),
             new CommandEchoInputDefinition(_echoInput, _echoInputDefaultStyle),
@@ -456,6 +467,99 @@ public sealed class CommandBuilder
                 AddUnique(seen, alias);
             }
         }
+    }
+
+    private static object? NormalizeRangeValue(object? value, object? otherValue, Type targetType, string label, string optionName)
+    {
+        if (value is null && otherValue is null)
+        {
+            return null;
+        }
+
+        if (value is null || otherValue is null)
+        {
+            throw new InvalidOperationException($"Option '{optionName}' range metadata must include both minimum and maximum values.");
+        }
+
+        object normalized = NormalizeMetadataValue(value, targetType, $"range {label}", optionName, allowNull: false)!;
+        object normalizedOther = NormalizeMetadataValue(otherValue, targetType, $"range {label}", optionName, allowNull: false)!;
+        if (CompareMetadataValues(normalized, normalizedOther, optionName) > 0 && label == "minimum")
+        {
+            throw new InvalidOperationException($"Option '{optionName}' range minimum cannot be greater than the maximum.");
+        }
+
+        return normalized;
+    }
+
+    private static List<object?> NormalizeAllowedValues(IReadOnlyList<object?> values, Type targetType, string optionName)
+    {
+        var normalized = new List<object?>(values.Count);
+        foreach (object? value in values)
+        {
+            normalized.Add(NormalizeMetadataValue(value, targetType, "allowed value", optionName, allowNull: AllowsNull(targetType)));
+        }
+
+        return normalized;
+    }
+
+    private static object? NormalizeMetadataValue(object? value, Type targetType, string label, string optionName, bool allowNull)
+    {
+        if (value is null)
+        {
+            if (allowNull)
+            {
+                return null;
+            }
+
+            throw new InvalidOperationException($"Option '{optionName}' {label} metadata cannot be null.");
+        }
+
+        Type conversionType = Nullable.GetUnderlyingType(targetType) ?? targetType;
+        if (conversionType.IsInstanceOfType(value))
+        {
+            return value;
+        }
+
+        try
+        {
+            if (conversionType.IsEnum)
+            {
+                if (value is string enumText)
+                {
+                    return Enum.Parse(conversionType, enumText, ignoreCase: false);
+                }
+
+                return Enum.ToObject(conversionType, value);
+            }
+
+            return Convert.ChangeType(value, conversionType, CultureInfo.InvariantCulture);
+        }
+        catch (Exception ex) when (ex is ArgumentException || ex is FormatException || ex is InvalidCastException || ex is OverflowException)
+        {
+            throw new InvalidOperationException($"Option '{optionName}' {label} metadata must be compatible with {conversionType.Name}.", ex);
+        }
+    }
+
+    private static int CompareMetadataValues(object left, object right, string optionName)
+    {
+        if (left is not IComparable comparable)
+        {
+            throw new InvalidOperationException($"Option '{optionName}' range metadata must be comparable.");
+        }
+
+        try
+        {
+            return comparable.CompareTo(right);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new InvalidOperationException($"Option '{optionName}' range metadata values must be comparable with each other.", ex);
+        }
+    }
+
+    private static bool AllowsNull(Type type)
+    {
+        return !type.IsValueType || Nullable.GetUnderlyingType(type) is not null;
     }
 
     private static void AddUnique(HashSet<string> seen, string name)

@@ -34,7 +34,10 @@ public sealed class CommandRegistrationTests
             .Default(10)
             .Range(0, 60)
             .AllowedValues(0, 10, 30, 60)
-            .Constraint("delay-ignore-players", "Delay cannot be combined with ignore players.")
+            .Constraint<RestartCommandState>(
+                "delay-ignore-players",
+                "Delay cannot be combined with ignore players.",
+                state => !state.IgnorePlayers || state.DelaySeconds == 0)
             .Execute<RestartCommandState>((ctx, state) => new CommandResult())
             .Build();
 

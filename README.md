@@ -5,7 +5,7 @@
 
 Workes.ConsoleSystem is an engine-neutral .NET package for building an in-game or tool-facing console around one shared chronological history.
 
-The initial package shape provides the console root, configuration foundation, log facade, entry model, command registration schema, command input parsing, stateless autocomplete, structured failures, and semantic command output.
+The initial package shape provides the console root, configuration foundation, log facade, entry model, command registration schema, command input parsing, command validation, stateless autocomplete, structured failures, and semantic command output.
 
 ## Highlights
 
@@ -16,6 +16,7 @@ The initial package shape provides the console root, configuration foundation, l
 - Keep bounded command input history separate from the rendered console entry stream.
 - Register immutable command definitions without binding the package to a specific UI or engine.
 - Parse registered commands into structured success/failure results and typed command state.
+- Validate parsed commands against option rules and typed constraints.
 - Get stateless autocomplete candidates for paths, flags, options, and command-provided values.
 - Branch on package-wide structured failures instead of parsing messages.
 - Return semantic command output with plain text derivation and style IDs.
@@ -80,6 +81,7 @@ Focused guides:
 - [Command History](docs/COMMAND_HISTORY.md)
 - [Command Registration](docs/COMMAND_REGISTRATION.md)
 - [Command Parsing](docs/COMMAND_PARSING.md)
+- [Command Validation](docs/COMMAND_VALIDATION.md)
 - [Command Autocomplete](docs/COMMAND_AUTOCOMPLETE.md)
 - [Failure Handling](docs/FAILURES.md)
 - [Command Results And Output](docs/COMMAND_OUTPUT.md)

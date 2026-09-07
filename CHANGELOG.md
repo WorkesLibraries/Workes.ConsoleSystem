@@ -19,9 +19,14 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added focused user-facing command registration documentation.
 - Added configurable `CommandParsingOptions.FlagAndOptionPrefix` for future flag/option parsing.
 - Added side-effect-free `ConsoleManager.ParseCommand(...)`.
-- Added structured command parse result, error, and bound command types.
+- Added side-effect-free `ConsoleManager.ValidateCommand(...)`.
+- Added structured command parse result, failure, and bound command types.
+- Added structured command validation result type.
 - Added typed command value binding for required positional arguments, flags, and options.
+- Added executable typed command constraints through `CommandBuilder.Constraint<TState>(...)`.
+- Added validation for option ranges and allowed values.
 - Added focused user-facing command parsing documentation.
+- Added focused user-facing command validation documentation.
 - Added stateless command autocomplete through `ConsoleManager.GetAutocomplete(...)`.
 - Added command autocomplete result, candidate, candidate kind, and context types.
 - Added `CommandAutocompleteResult.Apply(...)` helpers.
@@ -49,6 +54,7 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Logging and command input recording now use manager-centered public methods.
 - Command flag and option schema names are now defined without their command-line prefix.
 - Command parsing options now control active parse behavior instead of being configuration placeholders only.
+- Command constraints are now typed predicates instead of metadata-only name/message placeholders.
 - Failure and exception handling now uses the shared package model planned before command output/execution work.
 - Command parsing failures now use package-wide `ConsoleFailure` instead of parse-specific error types.
 - `CommandOutputEntry` now stores semantic `CommandOutput` instead of message text plus `CommandOutputLevel`.

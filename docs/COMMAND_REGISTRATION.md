@@ -1,8 +1,8 @@
 # Command Registration
 
-Command registration defines command schemas for parsing and later execution.
+Command registration defines command schemas for parsing, validation, and later execution.
 
-In the current package, commands can be created, validated, registered, inspected, and parsed. Command execution is not implemented yet.
+In the current package, commands can be created, registered, inspected, parsed, validated, and completed through autocomplete. Command execution is not implemented yet.
 
 ## Simple Commands
 
@@ -47,14 +47,17 @@ CommandDefinition restart = new CommandBuilder("server.restart")
         .Default(10)
         .Range(0, 60)
         .AllowedValues(0, 10, 30, 60)
-    .Constraint("delay-ignore-players", "Delay cannot be combined with ignore players.")
+    .Constraint<RestartCommandState>(
+        "delay-ignore-players",
+        "Delay cannot be combined with ignore players.",
+        state => !state.IgnorePlayers || state.DelaySeconds == 0)
     .Execute<RestartCommandState>((ctx, state) => new CommandResult())
     .Build();
 
 console.RegisterCommand(restart);
 ```
 
-Arguments, flags, and options are parsed and bound by `ConsoleManager.ParseCommand(...)`. Constraints remain metadata until constraint evaluation is implemented.
+Arguments, flags, and options are parsed and bound by `ConsoleManager.ParseCommand(...)`. Option ranges, allowed values, and typed constraints are enforced by `ConsoleManager.ValidateCommand(...)`.
 
 ## Value Autocomplete
 
@@ -179,6 +182,7 @@ foreach (CommandDefinition command in console.Commands.Definitions)
 - [Configuration](CONFIGURATION.md)
 - [Command History](COMMAND_HISTORY.md)
 - [Command Parsing](COMMAND_PARSING.md)
+- [Command Validation](COMMAND_VALIDATION.md)
 - [Command Autocomplete](COMMAND_AUTOCOMPLETE.md)
 - [Command Results And Output](COMMAND_OUTPUT.md)
 - [Formatting](FORMATTING.md)

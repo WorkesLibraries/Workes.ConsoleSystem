@@ -37,9 +37,9 @@ internal static class ConsoleFailures
         return Create(ConsoleFailureKind.CommandBinding, code, message, source: source);
     }
 
-    public static ConsoleFailure CommandConstraint(string? message = null)
+    public static ConsoleFailure CommandConstraint(string? message = null, string? source = null, ConsoleFailure? cause = null)
     {
-        return Create(ConsoleFailureKind.CommandConstraint, ConsoleFailureCodes.CommandConstraintRejected, message);
+        return Create(ConsoleFailureKind.CommandConstraint, ConsoleFailureCodes.CommandConstraintRejected, message, source: source, cause: cause);
     }
 
     public static ConsoleFailure CommandExecution(string? message = null)

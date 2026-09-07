@@ -80,7 +80,7 @@ Formatting options are disabled by default and become enabled when a formatter-b
 
 ## Command Model
 
-Command registration and parsing are implemented, while execution is still unimplemented.
+Command registration, parsing, validation, and autocomplete are implemented, while execution is still unimplemented.
 
 A command should be defined by one schema model rather than separate public command types for non-parameterized, flag-parameterized, option-parameterized, or positional commands.
 
@@ -113,9 +113,10 @@ var restart = new CommandBuilder("server.restart")
     .Option<RestartCommand>(x => x.DelaySeconds, "delay", "d")
         .Default(10)
         .Range(0, 3600)
-    .Constraint(
+    .Constraint<RestartCommand>(
         "delay-ignore-players",
-        "Ignore players cannot be combined with delayed restart.")
+        "Ignore players cannot be combined with delayed restart.",
+        state => !state.IgnorePlayers || state.DelaySeconds == 0)
     .Execute<RestartCommand>((ctx, state) =>
     {
         RestartServer(state);
@@ -126,7 +127,7 @@ var restart = new CommandBuilder("server.restart")
 console.RegisterCommand(restart);
 ```
 
-Constraints currently carry error messages as metadata. Constraint evaluation is not implemented yet.
+Constraints are typed predicates over the fully bound command state. Option range and allowed-value metadata is validated after parsing succeeds.
 
 Synchronous command handlers should be the default. The design should leave room for intuitive async command handlers later, but the first implementation should prioritize synchronous debug/game-console commands.
 
@@ -170,7 +171,7 @@ Console UI code is expected to read `ConsoleManager.History.Entries` and render 
 
 Console UI code may use `ConsoleManager.RecordCommandInput(...)` to retain submitted command input strings for navigation. Command input history is separate from the shared console entry stream until command execution is implemented.
 
-Command registration, command input parsing, stateless autocomplete, structured failures, semantic command output, and optional package-wide formatting are implemented. Execution, permissions, constraint evaluation, and automatic output history writes are not part of the implemented flow yet.
+Command registration, command input parsing, command validation, stateless autocomplete, structured failures, semantic command output, and optional package-wide formatting are implemented. Execution, permissions, and automatic output history writes are not part of the implemented flow yet.
 
 The current parse flow is:
 
@@ -184,7 +185,7 @@ raw input
 -> return CommandParseResult with BoundCommand or ConsoleFailure
 ```
 
-Parsing has no history side effects and does not invoke stored handlers.
+Parsing has no history side effects and does not invoke stored handlers. It exists as an inspection/preflight layer; normal runtime command submission should use direct execution once execution is implemented.
 
 The planned command execution flow is:
 
@@ -193,11 +194,24 @@ raw input
 -> parse path, required positional arguments, flags, and options
 -> resolve command definition
 -> bind values into a typed command state record or simple command context
--> run schema validation and constraints
+-> validate option metadata and command constraints
 -> execute handler
 -> receive CommandResult
 -> append command input, output, and failure entries to console history
 ```
+
+The current validation flow is:
+
+```text
+BoundCommand
+-> validate option ranges and allowed values
+-> evaluate typed command constraints in registration order
+-> return CommandValidationResult with BoundCommand or ConsoleFailure
+```
+
+Validation has no history side effects and does not invoke stored handlers.
+
+Validation exists as an inspection/preflight layer. Future direct execution should always validate automatically after parsing and before invoking handlers.
 
 The current autocomplete flow is:
 

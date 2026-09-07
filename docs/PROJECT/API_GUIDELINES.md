@@ -103,9 +103,10 @@ var restart = new CommandBuilder("server.restart")
     .Option<RestartCommand>(x => x.DelaySeconds, "delay", "d")
         .Default(10)
         .Range(0, 3600)
-    .Constraint(
+    .Constraint<RestartCommand>(
         "delay-ignore-players",
-        "Ignore players cannot be combined with delayed restart.")
+        "Ignore players cannot be combined with delayed restart.",
+        state => !state.IgnorePlayers || state.DelaySeconds == 0)
     .Execute<RestartCommand>((ctx, state) =>
     {
         RestartServer(state);
@@ -129,7 +130,7 @@ Use positional arguments for required core command state. Use named options or f
 
 Flag and option registration should support multiple user-facing logical names or aliases. These names should be defined without the configured command-line prefix; the parser applies `CommandParsingOptions.FlagAndOptionPrefix` later. Option and positional-argument value autocomplete should be opt-in through command-provided candidate functions.
 
-Constraints should run against the fully bound command state and should be expressible through state properties or reusable constraint helpers.
+Constraints should run against the fully bound command state and should be expressed as typed predicates over that state. Reusable constraint helpers can be added later on top of the typed predicate model.
 
 Command definitions are immutable after `CommandBuilder.Build()`. Registration is owned by `ConsoleManager`, which validates command paths against the manager registry.
 
@@ -148,9 +149,13 @@ Default command parsing uses `SpaceSeparated`, `FlagAndOptionPrefix = "--"`, cas
 
 Boolean option values should be parsed through `CommandParsingOptions.BooleanLiterals`, not through hard-coded `bool.TryParse` behavior. Defaults should remain strict and unsurprising: `true` means true, `false` means false, and aliases are opt-in.
 
-Parsing is exposed through `ConsoleManager.ParseCommand(string input)`. It should return a structured success/failure result, not throw for normal user input mistakes. Parsing should not execute command handlers or write to history.
+Parsing is exposed through `ConsoleManager.ParseCommand(string input)` as an advanced inspection/preflight API. It should return a structured success/failure result, not throw for normal user input mistakes. Parsing should not execute command handlers or write to history.
 
 Successful parse results should expose the matched definition, typed state object when present, and bound argument/flag/option values by schema name. Failed parse results should expose a `ConsoleFailure`.
+
+Command validation is exposed through `ConsoleManager.ValidateCommand(BoundCommand command)` as an advanced inspection/preflight API. It should enforce option ranges, allowed values, and typed command constraints after parsing succeeds. Validation should return `CommandValidationResult`, not throw for ordinary command-use rejection, and it should not execute handlers or write history.
+
+Normal command submission should use direct string execution once available. Execution should call parsing and validation automatically, then return one `CommandResult` that can carry parse, validation, or execution failures through the shared `ConsoleFailure` model.
 
 Autocomplete is exposed through `ConsoleManager.GetAutocomplete(string input, int cursorIndex)`. It should be stateless, side-effect-free, and best-effort while the user is typing. The UI owns selected-candidate/cycling state and applies candidates using the returned replacement range.
 

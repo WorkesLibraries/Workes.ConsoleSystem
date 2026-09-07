@@ -1,12 +1,14 @@
 # Command Parsing
 
-Command parsing validates raw command input against registered command schemas.
+Command parsing reads raw command input against registered command schemas and binds values into command state.
 
-Currently only parsing and typed value binding is implemented. Parsing does not write to console history, command input history, or execute command handlers.
+Parsing does not write to console history, write command input history, validate command constraints, or execute command handlers.
+
+Most runtime command submissions should go through command execution once it is available. Use `ParseCommand(...)` directly when a UI, test, or tool needs to inspect command input without running it.
 
 ## Basic Parsing
 
-Register commands, then call `ParseCommand`.
+Register commands, then call `ParseCommand` when you need side-effect-free inspection.
 
 ```csharp
 using Workes.ConsoleSystem.Commands;
@@ -155,6 +157,8 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 
 Flags bind to `true` when present and `false` when absent. Missing options bind to their configured `.Default(...)` metadata when present, otherwise to the target type default.
 
+Option ranges, allowed values, and typed constraints are checked by `ConsoleManager.ValidateCommand(...)` after parsing succeeds.
+
 ## Parse Results
 
 Successful results expose a `BoundCommand`.
@@ -185,6 +189,7 @@ if (!result.Success)
 ## Related Guides
 
 - [Command Registration](COMMAND_REGISTRATION.md)
+- [Command Validation](COMMAND_VALIDATION.md)
 - [Configuration](CONFIGURATION.md)
 - [ConsoleManager](CONSOLE_MANAGER.md)
 - [Failure Handling](FAILURES.md)

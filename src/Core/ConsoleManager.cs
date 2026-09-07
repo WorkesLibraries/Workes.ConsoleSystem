@@ -83,6 +83,19 @@ public sealed class ConsoleManager
     }
 
     /// <summary>
+    /// Validates a successfully parsed command without executing it.
+    /// </summary>
+    /// <remarks>
+    /// This is an advanced preflight API. Command execution validates automatically before invoking handlers.
+    /// </remarks>
+    /// <param name="command">The bound command to validate.</param>
+    /// <returns>The command validation result.</returns>
+    public CommandValidationResult ValidateCommand(BoundCommand command)
+    {
+        return CommandValidator.Validate(command);
+    }
+
+    /// <summary>
     /// Gets autocomplete candidates for command input at a cursor position.
     /// </summary>
     /// <param name="input">The command input.</param>

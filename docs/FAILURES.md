@@ -5,6 +5,7 @@
 Use this guide when you need to:
 
 - handle invalid command input in UI code.
+- handle parsed command validation failures.
 - branch on stable failure categories or codes.
 - decide whether an error should be a returned failure or an exception.
 - prepare for future command execution wrappers.
@@ -20,9 +21,33 @@ The package separates two kinds of failure:
 
 This distinction is intentional. Expected rejection is part of normal console usage. Programmer misuse usually means calling code or setup code is wrong and should be fixed.
 
-## The Basic Pattern
+## The Normal Pattern
 
-Use structured results when rejection is normal control flow.
+Once command execution is implemented, normal command submission should branch on the returned `CommandResult`:
+
+```csharp
+CommandResult result = console.ExecuteCommand(input);
+
+if (!result.IsSuccess)
+{
+    ConsoleFailure failure = result.Failure!;
+
+    if (failure.Code == ConsoleFailureCodes.CommandUnknown)
+    {
+        ShowUnknownCommand(failure.Message);
+    }
+    else if (failure.Code == ConsoleFailureCodes.CommandConstraintRejected)
+    {
+        ShowCommandRejection(failure.Message);
+    }
+}
+```
+
+Execution will use the same `ConsoleFailure` model for parse, validation, and execution failures.
+
+## Preflight Patterns
+
+Use parse and validation results directly when rejection is normal control flow but you do not want to execute the command.
 
 ```csharp
 CommandParseResult result = console.ParseCommand(input);
@@ -37,6 +62,18 @@ if (!result.Success)
     {
         ShowParseFailure(result.Failure?.Message);
     }
+}
+```
+
+Validation uses the same failure model:
+
+```csharp
+CommandValidationResult validation = console.ValidateCommand(result.Command!);
+
+if (!validation.Success &&
+    validation.Failure?.Code == ConsoleFailureCodes.CommandConstraintRejected)
+{
+    ShowCommandRejection(validation.Failure.Message);
 }
 ```
 
@@ -107,12 +144,14 @@ Common groups include:
 | Definitions and registration | `CommandDefinitionInvalid`, `CommandRegistrationRejected` |
 | Parsing | `CommandInputEmpty`, `CommandUnknown`, `CommandArgumentMissing`, `CommandArgumentUnexpected`, `CommandMemberUnknown`, `CommandOptionValueMissing`, `CommandMemberDuplicate`, `CommandOptionValueSyntaxInvalid`, `CommandQuoteUnclosed` |
 | Binding | `CommandValueInvalid`, `CommandStateBindingFailed` |
-| Future command workflow | `CommandConstraintRejected`, `CommandExecutionRejected`, `ExtensionRejected` |
+| Command validation | `CommandConstraintRejected` |
+| Future command workflow | `CommandExecutionRejected`, `ExtensionRejected` |
 
 Package-owned codes are reserved. Extension authors should use their own namespaced codes, such as `com.example.console.command.rejected`.
 
 ## Related Guides
 
 - [Command Parsing](COMMAND_PARSING.md)
+- [Command Validation](COMMAND_VALIDATION.md)
 - [ConsoleManager](CONSOLE_MANAGER.md)
 - [Command Registration](COMMAND_REGISTRATION.md)

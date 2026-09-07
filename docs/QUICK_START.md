@@ -68,7 +68,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 
 The manager snapshots supplied options during construction. Changing the options object afterwards does not change the manager.
 
-Current option areas are command parsing preferences, history capacities, command input duplicate handling, optional formatting, and command execution defaults. Command parsing, autocomplete, and semantic command output are available now. Command execution is not implemented yet.
+Current option areas are command parsing preferences, history capacities, command input duplicate handling, optional formatting, and command execution defaults. Command parsing, command validation, autocomplete, and semantic command output are available now. Command execution is not implemented yet.
 
 ## History
 
@@ -123,7 +123,7 @@ foreach (var entry in console.History.Entries)
 
 This example demonstrates the currently implemented behavior: logging writes `LogEntry` values into the shared chronological history.
 
-Command registration, parsing, autocomplete, structured failures, and command result/output types are implemented. Command execution, constraint evaluation, and permissions are not implemented yet.
+Command registration, parsing, validation, autocomplete, structured failures, and command result/output types are implemented. Command execution and permissions are not implemented yet.
 
 ## Register A Command Schema
 
@@ -143,9 +143,19 @@ console.RegisterCommand(command);
 Console.WriteLine(console.Commands.Definitions.Count); // 1
 ```
 
-Registered commands can be inspected and parsed, but command execution is not implemented yet.
+Registered commands can be inspected, parsed, and validated, but command execution is not implemented yet. When execution is added, direct string execution through `ExecuteCommand(...)` will be the normal runtime path.
 
-## Parse Command Input
+## Inspect Command Input
+
+Parsing and validation are side-effect-free inspection APIs. They are useful for tests, editor tooling, and UI preflight feedback. They are not intended to be the normal way to submit a command during gameplay.
+
+Once execution is available, normal usage will look like this:
+
+```csharp
+CommandResult result = console.ExecuteCommand("server.restart maintenance --ignore-players --delay 5");
+```
+
+Execution will parse and validate automatically before running the command handler.
 
 ```csharp
 using Workes.ConsoleSystem.Commands;
@@ -179,7 +189,18 @@ else if (result.Failure?.Code == ConsoleFailureCodes.CommandUnknown)
 }
 ```
 
-Parsing validates the command shape and creates typed state. It does not execute the stored handler or write to history yet.
+Parsing validates the command shape and creates typed state. Validation checks option ranges, allowed values, and typed command constraints after parsing succeeds. This manual validation call is only needed when you want preflight feedback without executing.
+
+```csharp
+CommandValidationResult validation = console.ValidateCommand(result.Command!);
+
+if (!validation.Success)
+{
+    Console.WriteLine(validation.Failure!.Message);
+}
+```
+
+Validation is side-effect-free. It does not execute the stored handler or write to history.
 
 ## Autocomplete Command Input
 
@@ -256,6 +277,7 @@ string unityText = themedConsole.Format(
 - [Command History](COMMAND_HISTORY.md) for submitted command input history.
 - [Command Registration](COMMAND_REGISTRATION.md) for immutable command schemas.
 - [Command Parsing](COMMAND_PARSING.md) for parse results and typed value binding.
+- [Command Validation](COMMAND_VALIDATION.md) for option rules and typed constraints.
 - [Command Autocomplete](COMMAND_AUTOCOMPLETE.md) for stateless completion candidates.
 - [Failure Handling](FAILURES.md) for structured failures and project exceptions.
 - [Command Results And Output](COMMAND_OUTPUT.md) for semantic command output and formatting.
