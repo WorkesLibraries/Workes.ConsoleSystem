@@ -14,7 +14,7 @@
     <Company>Workes</Company>
     <Product>Workes.ConsoleSystem</Product>
     <Description>Engine-neutral .NET console system for game logging, chronological console history, command registration, synchronous execution, autocomplete, structured failures, and semantic output formatting.</Description>
-    <PackageTags>console;logging;commands;game-development;dotnet</PackageTags>
+    <PackageTags>console;logging;commands;game-development;game-tools</PackageTags>
     <PackageProjectUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
