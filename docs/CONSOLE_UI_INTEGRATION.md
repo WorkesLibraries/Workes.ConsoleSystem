@@ -47,7 +47,7 @@ if (!console.TryExecuteCommand(inputText, out CommandResult result))
 }
 ```
 
-Execution records valid nonblank submitted input in `CommandHistory`. When input echo is enabled, execution also writes a `CommandInputEntry` to `ConsoleHistory`.
+Execution records nonblank submitted input in `CommandHistory`. When input echo is enabled, execution also writes a `CommandInputEntry` to `ConsoleHistory`.
 
 Use `ExecuteCommand(...)` for setup, tests, or scripted developer tooling where failure should throw `ConsoleOperationException`.
 
@@ -80,15 +80,74 @@ The package returns candidates and replacement ranges. The UI owns selected cand
 
 ## Formatting
 
-If formatting is disabled, render `ConsoleText.PlainText`.
+Formatting is implemented, but it is optional. UI code can render every console entry as plain text without configuring formatting at all.
 
-If formatting is enabled, use the manager formatter:
+If formatting is disabled, render `ConsoleText.PlainText`:
 
 ```csharp
-string rendered = console.Format(log.Content);
+void RenderText(ConsoleText text)
+{
+    AddConsoleLine(text.PlainText);
+}
 ```
 
-Unity projects can configure `ConsoleFormattingOptions.UnityRichText()`. Godot projects can configure `ConsoleFormattingOptions.GodotBbCode()`. Custom UIs can either write their own formatter or consume `ConsoleText.Segments` directly.
+If formatting is enabled, use the manager formatter before sending text to the UI control:
+
+```csharp
+void RenderText(ConsoleText text)
+{
+    AddConsoleLine(console.Format(text));
+}
+```
+
+Unity projects can configure `ConsoleFormattingOptions.UnityRichText()` and pass the formatted string to a Unity text component that supports rich text. Godot projects can configure `ConsoleFormattingOptions.GodotBbCode()` and pass the formatted string to a `RichTextLabel` with BBCode enabled.
+
+```csharp
+var console = new ConsoleManager(new ConsoleManagerOptions
+{
+    Formatting = ConsoleFormattingOptions.UnityRichText()
+});
+
+console.LogInformation("<style=Success><b>Console ready.</b></style>");
+
+foreach (IConsoleEntry entry in console.History.Entries)
+{
+    if (entry is LogEntry log)
+    {
+        string rendered = console.Format(log.Content);
+        AddConsoleLine(rendered);
+    }
+}
+```
+
+Command output needs one extra step because string-authored output is resolved through the active manager before it is formatted:
+
+```csharp
+if (entry is CommandOutputEntry output)
+{
+    string rendered = console.Format(output.Output);
+    AddConsoleLine(rendered);
+}
+```
+
+`console.Format(output.Output)` resolves the command output into `ConsoleText` and then applies the active formatter. This is the normal path for UI code.
+
+Custom UIs do not have to use string formatting. They can consume `ConsoleText.Segments` directly and translate each segment into native UI spans:
+
+```csharp
+void RenderSegments(ConsoleText text)
+{
+    foreach (ConsoleTextSegment segment in text.Segments)
+    {
+        string? styleId = segment.ResolveStyleId(text.DefaultStyleId);
+        RenderSpan(segment.Text, styleId, segment.Data);
+    }
+}
+```
+
+Direct segment rendering is useful when the UI has native style spans, separate labels per span, or custom controls that should not receive Unity rich text or Godot BBCode strings.
+
+See [Formatting](FORMATTING.md) for the full formatting model, markup rules, themes, built-in formatters, and structured text builder API.
 
 ## Related Guides
 
