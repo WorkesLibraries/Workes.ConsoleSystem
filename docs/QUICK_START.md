@@ -8,16 +8,16 @@ This walkthrough creates a manager, configures its history, registers a typed co
 
 ## Installation
 
-Install the released package from NuGet:
+Install version 0.3.0 from NuGet:
 
 ```bash
-dotnet add package Workes.ConsoleSystem --version 0.2.0
+dotnet add package Workes.ConsoleSystem --version 0.3.0
 ```
 
 Or add a package reference to your project file:
 
 ```xml
-<PackageReference Include="Workes.ConsoleSystem" Version="0.2.0" />
+<PackageReference Include="Workes.ConsoleSystem" Version="0.3.0" />
 ```
 
 NuGet restores the internal `Workes.ContentSystem` dependency automatically. Application code uses the ConsoleSystem API and does not need a separate ContentSystem reference. See the [README](../README.md#installation) for package details.
@@ -97,11 +97,36 @@ else
 
 Execution parses and validates the input before calling the handler. On success, the manager records any enabled input echo and then the declared and handler-produced outputs. A rejected command produces a structured failure result and a `CommandFailureEntry`. `TryExecuteCommand` returns `false` for command failures; `ExecuteCommand` is the throwing alternative. See [Command execution](COMMAND_EXECUTION.md) and [outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md).
 
+## Autocomplete and history updates
+
+For a host input control, ask the manager for candidates at the current cursor position and apply the selected candidate:
+
+```csharp
+CommandAutocompleteResult suggestions = console.GetAutocomplete(input, cursorIndex);
+if (suggestions.Candidates.Count > 0)
+{
+    input = suggestions.Apply(suggestions.Candidates[0]);
+}
+```
+
+Autocomplete is a stateless query. It returns candidate data and a replacement range; the host chooses its menu, selection, and keyboard behavior. Configure option value suggestions on each command schema member where they are wanted. `AllowedValues(...)` validates values, while `SuggestAllowedValues()` separately opts that set into autocomplete.
+
+Subscribe to history changes when the UI needs push notifications instead of polling:
+
+```csharp
+console.History.Changed += (_, change) => RefreshConsoleView(change);
+console.CommandHistory.Changed += (_, change) => RefreshCommandInput(change);
+```
+
+Both events are synchronous and optional. Their ConsoleSystem-owned payloads report added, dropped, or cleared items. See [Command autocomplete](COMMAND_AUTOCOMPLETE.md) and [History change hooks](HISTORY_CHANGE_HOOKS.md) for candidate rules, event payloads, and ordering.
+
 ## What to read next
 
 - [Manager and configuration](MANAGER_AND_CONFIGURATION.md)
 - [Logging](LOGGING.md)
 - [Entries and semantic text](ENTRIES_AND_TEXT.md)
 - [Console and command histories](HISTORY.md)
+- [History change hooks](HISTORY_CHANGE_HOOKS.md)
 - [Command parsing](COMMAND_PARSING.md)
 - [Command validation](COMMAND_VALIDATION.md)
+- [Command autocomplete](COMMAND_AUTOCOMPLETE.md)

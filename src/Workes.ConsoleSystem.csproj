@@ -7,13 +7,13 @@
     <LangVersion>10.0</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Workes.ConsoleSystem</PackageId>
-    <Version>0.2.0</Version>
-    <PackageReleaseNotes>Version 0.2.0 is the substantial rebuild of Workes.ConsoleSystem around Workes.ContentSystem. It provides ConsoleSystem-owned manager, entry, history, logging, and synchronous command APIs; it is not a drop-in upgrade from the legacy 0.1.0 package.</PackageReleaseNotes>
+    <Version>0.3.0</Version>
+    <PackageReleaseNotes>Version 0.3.0 continues the ContentSystem-backed rebuild introduced in 0.2.0. It adds stateless command autocomplete and optional synchronous history change events while keeping ContentSystem out of the public API. It is not a drop-in upgrade from the legacy 0.1.0 package.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>Workes</Authors>
     <Company>Workes</Company>
     <Product>Workes.ConsoleSystem</Product>
-    <Description>A substantial rebuild around Workes.ContentSystem that provides engine-neutral console logging, retained entries, command history, and synchronous command workflows through ConsoleSystem-owned APIs.</Description>
+    <Description>An engine-neutral console foundation with manager-centered logging, retained entries, command history, typed synchronous command workflows, stateless autocomplete, and optional history change events. Workes.ContentSystem provides internal storage while the public API remains ConsoleSystem-owned.</Description>
     <PackageTags>console command-line logging history game development tools</PackageTags>
     <PackageProjectUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem.git</RepositoryUrl>

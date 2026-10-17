@@ -578,3 +578,21 @@ Version 0.2.0 is the next available pre-1.0 stable release and reflects the subs
 #### Consequences
 
 The project version, installation examples, release notes, and current implementation documentation must identify the rebuilt package as 0.2.0. The changelog must clarify that the old 0.1.0 remains unchanged.
+
+### D-039: Prepare The Next Feature Release As 0.3.0
+
+#### Context
+
+Version 0.2.0 of the rebuilt package has been published. Stateless command autocomplete and optional synchronous history change events were implemented afterward and need a package version that can be released without changing the published artifact.
+
+#### Decision
+
+Prepare these features and their user documentation for version 0.3.0. Keep the published 0.2.0 package unchanged and do not publish 0.3.0 as part of the preparation work.
+
+#### Reasoning
+
+0.3.0 is the next available pre-1.0 stable version and cleanly distinguishes the feature update from the published 0.2.0 foundation.
+
+#### Consequences
+
+Package metadata, installation examples, and feature documentation describe the 0.3.0 package. The changelog marks its changes as unreleased until the package is published.

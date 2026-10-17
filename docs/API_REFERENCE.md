@@ -9,7 +9,7 @@ Create one `ConsoleManager` per console instance. Configure it once, register de
 | Operation | API | Behavior |
 | --- | --- | --- |
 | Inspect without executing | `ParseCommand(string)` then `ValidateCommand(BoundCommand)` | Neither method invokes a handler or changes either history. |
-| Suggest input completions | `GetAutocomplete(string, int)` | Returns candidates and the replacement range; on current `main`, added after released 0.2.0. |
+| Suggest input completions | `GetAutocomplete(string, int)` | Returns candidates and the replacement range; included in the 0.3.0 release target. |
 | Execute input | `TryExecuteCommand(string, out CommandResult)` | Returns `false` and a structured failure for parse, validation, or handler failures. |
 | Execute input and throw on failure | `ExecuteCommand(string)` | Returns a successful result; throws `ConsoleOperationException` with the structured failure otherwise. |
 | Execute a parsed command | `TryExecuteCommand(BoundCommand, out CommandResult)` or `ExecuteCommand(BoundCommand)` | Skips parsing but still records the original input, validates, invokes the handler, and records the outcome. |
@@ -24,7 +24,7 @@ Null inputs to manager methods that require an object throw `ArgumentNullExcepti
 
 ### `Workes.ConsoleSystem.Core`
 
-- `ConsoleManager`: root for configuration, logging, histories, registration, parsing, validation, autocomplete, and execution. `Options` returns a detached snapshot. `GetAutocomplete(string, int)` is on current `main`; it was added after the released 0.2.0 package.
+- `ConsoleManager`: root for configuration, logging, histories, registration, parsing, validation, autocomplete, and execution. `Options` returns a detached snapshot. `GetAutocomplete(string, int)` is part of the 0.3.0 release target.
 - `ConsoleFailure`: structured failure data (`Kind`, stable `Code`, `Message`, optional `Component`, `Source`, and nested `Cause`). Use codes or kinds for program logic, not message text.
 - `ConsoleFailureKind`, `ConsoleFailureCodes`, and `ConsoleFailures`: failure categories, built-in stable codes, and helper factories.
 - `ConsoleSystemException` and `ConsoleOperationException`: exceptions for expected-success APIs that fail. Both expose `Failure`; `ConsoleOperationException` is used by `ExecuteCommand`. A handler exception is retained as `InnerException` and in the failure cause chain.
@@ -35,7 +35,7 @@ Null inputs to manager methods that require an object throw `ArgumentNullExcepti
 - `CommandParsingOptions` and `BooleanLiteralOptions`: tokenization, name matching, option syntax, interleaving, and accepted boolean literals.
 - `HistoryOptions` and `CommandHistoryDuplicatePolicy`: independent visible and command-input capacities, plus consecutive duplicate handling.
 - `CommandExecutionOptions`: default command input echo.
-- `CommandAutocompleteOptions` and `CommandPathCompletionMode`: control full-path or dot-segment suggestions on current `main`; the released 0.2.0 package exposes the settings but no completion operation.
+- `CommandAutocompleteOptions` and `CommandPathCompletionMode`: control full-path or dot-segment suggestions in the 0.3.0 release target.
 - `OptionValueStyle`: `SpaceSeparated`, `EqualSeparated`, or `AnySeparated` option values.
 
 Manager construction snapshots and validates the full options graph. Null nested sections resolve to defaults. Capacities must be positive; enum settings must be defined values; boolean literal arrays must be non-empty, contain no blank or duplicate literals, and must not overlap under the configured case comparison; the option prefix must be non-blank and contain no whitespace. Literal arrays are copied into the snapshot.
@@ -49,7 +49,7 @@ Manager construction snapshots and validates the full options graph. Null nested
 - Output: `CommandOutput`, `CommandOutputBuilder`, and `CommandOutputKind` (`Inline` or `Block`).
 - Registered-command view: `CommandSystem`, available as `ConsoleManager.Commands`; its `Definitions` property is a read-only view.
 
-Use `CommandBuilder` for definitions and `CommandResult.Success(...)` / `Failed(...)` for handler outcomes. There is no public constructor for `CommandDefinition` or `CommandResult`. The builder requires an execution handler before `Build()` succeeds. On current `main`, `ValueCandidates(...)` attaches an autocomplete provider to the latest positional argument or option, while `SuggestAllowedValues()` opts the latest option into suggestions from its `AllowedValues` set. Explicit providers take precedence.
+Use `CommandBuilder` for definitions and `CommandResult.Success(...)` / `Failed(...)` for handler outcomes. There is no public constructor for `CommandDefinition` or `CommandResult`. The builder requires an execution handler before `Build()` succeeds. `ValueCandidates(...)` attaches an autocomplete provider to the latest positional argument or option, while `SuggestAllowedValues()` opts the latest option into suggestions from its `AllowedValues` set. Explicit providers take precedence.
 
 For typed commands, all bindings and the handler must use the same reference type. Binding expressions must select public instance properties. The state type must expose a public constructor whose parameter names match bound property names; matching follows the configured case-sensitivity setting. Constructor parameters receive values by name, so their order need not match schema order. Immutable records are a convenient state shape. Bind every value the handler needs to a constructor-backed property.
 
@@ -69,7 +69,7 @@ Entries are retained in the visible history as the same objects that were record
 
 - `ConsoleHistory`: bounded visible entries, oldest-first detached `Entries`, `Capacity`, and `Clear()`.
 - `CommandHistory`: bounded submitted strings, oldest-first detached `Entries`, `Capacity`, and `Clear()`.
-- `HistoryChangeKind`, `ConsoleHistoryChangedEventArgs`, and `CommandHistoryChangedEventArgs`: ConsoleSystem-owned synchronous notifications for added, dropped, and cleared retained items; added after released 0.2.0.
+- `HistoryChangeKind`, `ConsoleHistoryChangedEventArgs`, and `CommandHistoryChangedEventArgs`: ConsoleSystem-owned synchronous notifications for added, dropped, and cleared retained items, included in the 0.3.0 release target.
 
 `CommandHistory` has a public parameterless constructor for an independent empty history. Its add operation is manager-owned, so use `ConsoleManager.CommandHistory` when you want command execution or `RecordCommandInput` to populate it. Command input history trims only for duplicate comparison; it retains the submitted string unchanged. `RejectConsecutive` compares the trimmed newest and submitted values using ordinal case-insensitive comparison. When full, either history drops its oldest item to retain a new one.
 
@@ -91,7 +91,7 @@ There is no public logger object. Every level is recorded; the host can filter e
 
 ## Command parsing details
 
-The first token is the complete command path. Paths may contain dot-separated segments, but cannot be blank, contain whitespace, or have empty segments. Matching is case-insensitive by default. Parsing requires a complete registered path; there is no command-path fallback. Current `main` additionally provides a separate autocomplete API for command paths.
+The first token is the complete command path. Paths may contain dot-separated segments, but cannot be blank, contain whitespace, or have empty segments. Matching is case-insensitive by default. Parsing requires a complete registered path; there is no command-path fallback. The separate autocomplete API can suggest registered command paths without executing them.
 
 Positional arguments are required and bind in schema order. With `AllowInterleavedOptions = false`, they must all appear before the first named member. With it enabled, flags and options may occur between positional values, while positional values still bind in their original order. Named members may be reordered in either mode. A flag is presence-based (`--safe`) and cannot take a value. An option consumes a following token or uses `=` according to `OptionValueStyle`.
 
@@ -122,9 +122,9 @@ Built-in failure codes use the `workes.console.` prefix. Common command codes in
 
 The complete constant list is in `ConsoleFailureCodes`. Messages are for people and may change; branch on `Kind` and `Code`. Failures created for thrown handlers include the original exception details through nested causes. See [Command outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md) for construction examples.
 
-## Scope of version 0.2.0
+## Scope of the 0.3.0 release target
 
-The released 0.2.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, and pull-based history reads. Current `main` also implements stateless autocomplete and optional history change events for a future package release. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
+The published 0.2.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, and pull-based history reads. The 0.3.0 release target adds stateless autocomplete and optional history change events. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
 
 ## Focused guides
 
@@ -132,11 +132,11 @@ The released 0.2.0 package provides synchronous command handlers, retained in-me
 - [Logging](LOGGING.md)
 - [Entries and semantic text](ENTRIES_AND_TEXT.md)
 - [Console and command histories](HISTORY.md)
-- [History change hooks](HISTORY_CHANGE_HOOKS.md) (current `main`; not included in released 0.2.0)
+- [History change hooks](HISTORY_CHANGE_HOOKS.md) (0.3.0 release target)
 - [Command registration](COMMAND_REGISTRATION.md)
 - [Command parsing](COMMAND_PARSING.md)
 - [Command validation](COMMAND_VALIDATION.md)
-- [Command autocomplete](COMMAND_AUTOCOMPLETE.md) (current `main`; not included in released 0.2.0)
+- [Command autocomplete](COMMAND_AUTOCOMPLETE.md) (0.3.0 release target)
 - [Command execution](COMMAND_EXECUTION.md)
 - [Command outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Quick Start](QUICK_START.md)

@@ -45,4 +45,4 @@ For a command without bound state, omit typed members and use `Execute(context =
 
 See [Command parsing](COMMAND_PARSING.md) for input syntax and [Command validation](COMMAND_VALIDATION.md) for range and constraint behavior.
 
-For cursor-aware suggestions, see [Command autocomplete](COMMAND_AUTOCOMPLETE.md). The autocomplete API is on `main` and is not included in the released 0.2.0 package.
+For cursor-aware suggestions, see [Command autocomplete](COMMAND_AUTOCOMPLETE.md). The autocomplete API is part of the 0.3.0 release target and is not included in the published 0.2.0 package.

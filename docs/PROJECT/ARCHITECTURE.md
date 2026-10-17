@@ -6,7 +6,7 @@ Describe the intended internal structure of Workes.ConsoleSystem and its relatio
 
 ## Current State And Target
 
-Released version 0.2.0 implements manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, and synchronous command execution. Current `main` additionally implements stateless autocomplete and optional history change events for a future package release. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to shared history. An internal `ConsoleLog` helper creates those entries through the same history path and is not public. `CommandHistory` separately retains submitted strings for UI navigation and raises optional change notifications. This document records the architecture carried forward from Workes.ConsoleSystem.Old and distinguishes released responsibilities from current and planned work.
+Published version 0.2.0 implements manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, and synchronous command execution. The 0.3.0 release target additionally implements stateless autocomplete and optional history change events. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to shared history. An internal `ConsoleLog` helper creates those entries through the same history path and is not public. `CommandHistory` separately retains submitted strings for UI navigation and raises optional change notifications. This document records the architecture carried forward from Workes.ConsoleSystem.Old and distinguishes published responsibilities from the current release target and planned work.
 
 The public console workflows and overall design philosophy should remain close to the old package. The principal architectural change is that console-visible retained content is stored through Workes.ContentSystem instead of a second console-owned history collection.
 
@@ -18,10 +18,10 @@ ConsoleSystem should depend on ContentSystem rather than copy its sequence/histo
 
 ## Main Components
 
-The following components are implemented in version 0.2.0 unless explicitly marked as current `main` or future work.
+The following components are implemented in version 0.2.0 unless explicitly marked as part of the 0.3.0 release target or future work.
 
 - `ConsoleManager` is the root for one console instance. It coordinates console history, command input history, logging, and command workflows. It is not a singleton and does not rely on global state.
-- `ConsoleHistory` is the console-facing history API. It preserves the old package's convenient entry-oriented view and operations while delegating retained storage to a ContentSystem sequence manager. On current `main`, it translates ContentSystem change notifications into ConsoleSystem-owned `Changed` event payloads. It should not maintain a second authoritative list or expose ContentSystem record types.
+- `ConsoleHistory` is the console-facing history API. It preserves the old package's convenient entry-oriented view and operations while delegating retained storage to a ContentSystem sequence manager. In the 0.3.0 release target, it translates ContentSystem change notifications into ConsoleSystem-owned `Changed` event payloads. It should not maintain a second authoritative list or expose ContentSystem record types.
 - `IConsoleEntry` is a ConsoleSystem-owned contract. It must not inherit from `IContentEntry` or require consumers to reference ContentSystem. An internal adapter maps console entries and timestamps to ContentSystem's entry contract.
 - `LogEntry`, `CommandInputEntry`, `CommandOutputEntry`, `CommandFailureEntry`, and host-defined entries remain ConsoleSystem domain payloads. Log level belongs to log entries, not every content record.
 - `ConsoleManager` is the public logging surface. Its internal `ConsoleLog` helper creates typed log entries and appends them to the shared console history without exposing a separate logger object to consumers.
@@ -45,9 +45,9 @@ host application or command execution
 -> host consumer
 ```
 
-`ConsoleHistory` projects stored records to ConsoleSystem-owned entries or console-specific history results. Its public signatures must not accept or return `ContentEntryRecord`, `IContentEntry`, sequence managers, or ContentSystem event types. Current `main` maps ContentSystem add/overflow and clear notifications to `ConsoleHistoryChangedEventArgs`. Keep ContentSystem identity internal unless a separate console-owned identity is justified by a real use case.
+`ConsoleHistory` projects stored records to ConsoleSystem-owned entries or console-specific history results. Its public signatures must not accept or return `ContentEntryRecord`, `IContentEntry`, sequence managers, or ContentSystem event types. The 0.3.0 release target maps ContentSystem add/overflow and clear notifications to `ConsoleHistoryChangedEventArgs`. Keep ContentSystem identity internal unless a separate console-owned identity is justified by a real use case.
 
-ContentSystem change notifications are the source of truth for current `main` console history events. The console layer translates them into console vocabulary, including overflow drops and clears. No history-change event is exposed in 0.2.0; a console UI can use pull-based reads through `History.Entries` and clear through `History.Clear()`.
+ContentSystem change notifications are the source of truth for the 0.3.0 console history events. The console layer translates them into console vocabulary, including overflow drops and clears. The published 0.2.0 package has no history-change event; a UI using that package can use pull-based reads through `History.Entries` and clear through `History.Clear()`.
 
 Snapshots are an available future integration point, not a required first implementation feature. Console entry snapshot support must be explicitly provided and registered before console histories can be round-tripped through ContentSystem snapshots. Do not claim persistence support until that work exists.
 
@@ -55,7 +55,7 @@ Snapshots are an available future integration point, not a required first implem
 
 Commands use one schema model. Required positional arguments represent core input; flags and named options represent optional state. Simple commands should not need a state type, while complex commands should prefer small immutable typed state records.
 
-Normal command submission is manager-owned and runs parsing, validation, handler invocation, and output/failure recording as one workflow. Parsing, validation, and autocomplete are also available as side-effect-free inspection operations. Autocomplete is implemented on current `main` but was not included in released 0.2.0. Expected command rejection is represented through the package's structured failure/result model; programmer and setup misuse use standard .NET exceptions.
+Normal command submission is manager-owned and runs parsing, validation, handler invocation, and output/failure recording as one workflow. Parsing, validation, and autocomplete are also available as side-effect-free inspection operations. Autocomplete is part of the 0.3.0 release target and is absent from published 0.2.0. Expected command rejection is represented through the package's structured failure/result model; programmer and setup misuse use standard .NET exceptions.
 
 The parser and autocomplete share `CommandTokenizer`. Parsing rejects unclosed quoted input; autocomplete accepts it while the user is editing. Autocomplete reads registered command definitions, returns candidates and replacement ranges, and invokes optional synchronous value providers without writing history or executing commands.
 

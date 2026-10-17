@@ -2,7 +2,7 @@
 
 `ConsoleManager.GetAutocomplete(input, cursorIndex)` suggests schema-aware completions for the text at the cursor. Autocomplete returns data for a host UI; it does not own a selected item, keyboard behavior, or rendered menu.
 
-> This API is on the current `main` branch and was added after the released 0.2.0 package. It will be available in a future package release.
+> This API is part of the 0.3.0 release target. The currently published 0.2.0 package does not include autocomplete operations.
 
 ## Query and apply a candidate
 

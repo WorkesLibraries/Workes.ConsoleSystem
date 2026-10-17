@@ -2,15 +2,15 @@
 
 This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
-## [Unreleased]
+## [0.3.0] - Unreleased
 
 ### Added
 
-- Added stateless command autocomplete on `main`, with command path, flag, option, and command-provided value suggestions.
+- Added stateless command autocomplete, with command path, flag, option, and command-provided value suggestions.
 - Added opt-in dot-segment path completion and candidate replacement helpers.
 - Added opt-in autocomplete suggestions from an option's `AllowedValues` set; explicit value providers take precedence.
 - Added optional synchronous change events for visible console history and command input history, with ConsoleSystem-owned payloads and manager forwarding events.
-- Added a focused command autocomplete guide. These changes are not included in the released 0.2.0 package.
+- Added focused command autocomplete and history change hook guides.
 
 ## [0.2.0] - 2026-10-17
 

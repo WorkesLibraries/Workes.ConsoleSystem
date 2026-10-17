@@ -38,7 +38,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 | `CommandParsing.AllowQuotedStrings` | `true` | Whether quoted tokens are accepted. |
 | `CommandParsing.AllowInterleavedOptions` | `false` | Whether flags/options may appear among positional values. |
 | `CommandParsing.BooleanLiterals` | `true` / `false` | Accepted boolean option values. |
-| `Autocomplete.PathCompletionMode` | `FullPath` | Selects whole-path or dot-segment suggestions on the current `main` branch; autocomplete was added after released 0.2.0. |
+| `Autocomplete.PathCompletionMode` | `FullPath` | Selects whole-path or dot-segment suggestions. |
 | `History.ConsoleHistoryCapacity` | `200` | Maximum visible console entries retained. |
 | `History.CommandHistoryCapacity` | `100` | Maximum submitted command strings retained. |
 | `History.CommandHistoryDuplicatePolicy` | `RejectConsecutive` | Whether the newest duplicate command string is suppressed. |
@@ -46,4 +46,4 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 
 Changing a capacity to zero or less, using an invalid enum value, providing an empty or overlapping boolean literal set, or configuring an invalid flag/option prefix fails when the manager snapshots the options. Boolean literal arrays are copied. The manager snapshots the complete option graph at construction; later changes to the original setup object do not affect it. Each read of `console.Options` is a new detached snapshot.
 
-See [Command parsing](COMMAND_PARSING.md), [history](HISTORY.md), and [execution](COMMAND_EXECUTION.md) for how these values affect behavior. See [Command autocomplete](COMMAND_AUTOCOMPLETE.md) for the current `main` branch completion API; the released 0.2.0 package has configuration only and no public completion API.
+See [Command parsing](COMMAND_PARSING.md), [history](HISTORY.md), and [execution](COMMAND_EXECUTION.md) for how these values affect behavior. See [Command autocomplete](COMMAND_AUTOCOMPLETE.md) for the completion API included in the 0.3.0 release target.
