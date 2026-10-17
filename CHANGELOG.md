@@ -2,7 +2,7 @@
 
 This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
-## [0.4.0] - Unreleased
+## [0.4.0] - 17-10-2026
 
 ### Added
 
@@ -10,7 +10,7 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`. The pac
 - Added configurable autocomplete visibility for commands blocked by permissions or availability.
 - Added a focused command permissions and availability guide, including provider, role, failure, and autocomplete behavior.
 
-## [0.3.0] - 2026-10-17
+## [0.3.0] - 17-10-2026
 
 ### Added
 
@@ -20,7 +20,7 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`. The pac
 - Added optional synchronous change events for visible console history and command input history, with ConsoleSystem-owned payloads and manager forwarding events.
 - Added focused command autocomplete and history change hook guides.
 
-## [0.2.0] - 2026-10-17
+## [0.2.0] - 17-10-2026
 
 ### Rebuilt
 
