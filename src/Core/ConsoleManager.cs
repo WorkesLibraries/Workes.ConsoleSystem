@@ -1,5 +1,6 @@
 using System;
 using Workes.ConsoleSystem.Configuration;
+using Workes.ConsoleSystem.Commands;
 using Workes.ConsoleSystem.Entries;
 using Workes.ConsoleSystem.History;
 using Workes.ConsoleSystem.Logging;
@@ -36,6 +37,9 @@ public sealed class ConsoleManager
             ContentSequenceReadOrder.OldestFirst);
         ContentSequence = new ContentSequenceManager(structure);
         History = new ConsoleHistory(ContentSequence, _options.History.ConsoleHistoryCapacity);
+        CommandHistory = new CommandHistory(
+            _options.History.CommandHistoryCapacity,
+            _options.History.CommandHistoryDuplicatePolicy);
         Log = new ConsoleLog(History);
     }
 
@@ -48,6 +52,11 @@ public sealed class ConsoleManager
     /// Gets the shared chronological console history.
     /// </summary>
     public ConsoleHistory History { get; }
+
+    /// <summary>
+    /// Gets the retained command input strings used by console UI navigation.
+    /// </summary>
+    public CommandHistory CommandHistory { get; }
 
     /// <summary>
     /// Gets the developer-facing logging facade used by this console manager.
@@ -67,6 +76,13 @@ public sealed class ConsoleManager
 
         History.RecordEntry(entry);
     }
+
+    /// <summary>
+    /// Records a submitted command input for console UI navigation.
+    /// </summary>
+    /// <param name="input">The original submitted command input.</param>
+    /// <returns><see langword="true"/> when the input was retained; otherwise, <see langword="false"/>.</returns>
+    public bool RecordCommandInput(string input) => CommandHistory.Add(input);
 
     /// <summary>
     /// Adds a trace log message to the shared console history.

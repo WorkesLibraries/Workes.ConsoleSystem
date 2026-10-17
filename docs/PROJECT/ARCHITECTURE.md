@@ -6,7 +6,7 @@ Describe the intended internal structure of Workes.ConsoleSystem and its relatio
 
 ## Current State And Target
 
-The fresh Workes.ConsoleSystem project now has the Stage 1 manager/options foundation, the Stage 2 entry, semantic-text, and internal storage-adapter foundation, the Stage 3 `ConsoleHistory` read/clear facade, and the Stage 4 logging surface. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to the shared history. History change events and command workflows remain future implementation work. This document records the architecture for carrying useful parts of Workes.ConsoleSystem.Old forward; later APIs remain intended design until implemented.
+The fresh Workes.ConsoleSystem project now has the Stage 1 manager/options foundation, the Stage 2 entry, semantic-text, and internal storage-adapter foundation, the Stage 3 `ConsoleHistory` read/clear facade, the Stage 4 logging surface, and the Stage 5 command-input history/configuration foundation. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to the shared history. `CommandHistory` separately retains submitted strings for UI navigation, and execution echo defaults and command-level echo override metadata are defined for the later execution stages. History change events and command workflows remain future implementation work. This document records the architecture for carrying useful parts of Workes.ConsoleSystem.Old forward; later APIs remain intended design until implemented.
 
 The public console workflows and overall design philosophy should remain close to the old package. The principal architectural change is that console-visible retained content is stored through Workes.ContentSystem instead of a second console-owned history collection.
 
@@ -26,6 +26,7 @@ The following are architectural responsibilities and intended components; names 
 - `LogEntry`, `CommandInputEntry`, `CommandOutputEntry`, `CommandFailureEntry`, and host-defined entries remain ConsoleSystem domain payloads. Log level belongs to log entries, not every content record.
 - `ConsoleLog` is the developer-facing logging facade. It creates the appropriate typed log entry and appends it to the shared console history.
 - `CommandHistory` stores submitted command strings for UI navigation. It remains separate from the visible console stream because it has different retention and duplicate-handling semantics.
+- `CommandEchoInputDefinition` carries a nullable command-level echo override: `null` inherits the manager's `CommandExecutionOptions.EchoInput` setting. Execution and visible echo entries are added in Stage 11.
 - `CommandSystem` owns the command definitions used by parsing, validation, autocomplete, and execution.
 - `ConsoleText`, `ConsoleTextSegment`, and `ConsoleTextBuilder` represent plain or semantically structured text without owning rendering or styling.
 

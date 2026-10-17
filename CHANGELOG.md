@@ -11,5 +11,6 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`.
 - Added `ConsoleManager.RecordEntry(IConsoleEntry)` for recording built-in and custom console entries.
 - Added the ContentSystem-backed `ConsoleManager.History` facade with configured capacity, detached oldest-first entry snapshots, and clear support.
 - Added manager-centered logging for Trace, Debug, Information, Warning, Error, and Critical levels with string and semantic-text overloads.
+- Added bounded command input history with configurable capacity and consecutive duplicate handling, plus global and command-level input echo settings for later execution workflows.
 - Added command output and structured failure value types used by the console entry contracts.
 

@@ -488,3 +488,21 @@ This preserves the old behavior and keeps filtering/rendering decisions with the
 #### Consequences
 
 Every manager logging call appends one `LogEntry` to `ConsoleHistory` and the ContentSystem-backed sequence. The host UI may choose which levels to display, but the package does not discard them.
+
+### D-034: Command Input Navigation History Is Separate From Visible History
+
+#### Context
+
+Interactive command editing needs a compact list of submitted strings for navigation. These strings are not themselves visible transcript entries unless command execution later echoes them.
+
+#### Decision
+
+Keep bounded `CommandHistory` independent of the ContentSystem-backed visible `ConsoleHistory`. Record submissions through `ConsoleManager.RecordCommandInput`, preserve the submitted string, ignore blank input, reject consecutive duplicates by trimmed ordinal case-insensitive comparison by default, and allow an explicit duplicate policy override. Keep global echo configuration on `CommandExecutionOptions` and command-specific nullable echo metadata on `CommandEchoInputDefinition`; execution writes echoed `CommandInputEntry` values in Stage 11.
+
+#### Reasoning
+
+Command navigation and visible console content have different data, retention, and presentation needs. Keeping them separate prevents editing history from silently changing the visible transcript.
+
+#### Consequences
+
+Command input retention uses the configured capacity and drops its oldest retained string when full. Stage 5 defines recording, reading, clearing, and echo policy only; it does not execute commands or write echo entries.
