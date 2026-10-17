@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.Commands;
 using Workes.ConsoleSystem.Entries;
@@ -93,6 +94,76 @@ public sealed class ConsoleManager
     public CommandValidationResult ValidateCommand(BoundCommand command)
     {
         return CommandValidator.Validate(command);
+    }
+
+    /// <summary>
+    /// Executes command input through parsing, validation, and synchronous handler invocation.
+    /// </summary>
+    /// <param name="input">The command input to execute.</param>
+    /// <returns>The successful command result.</returns>
+    /// <exception cref="ConsoleOperationException">The command was rejected or failed during execution.</exception>
+    public CommandResult ExecuteCommand(string input)
+    {
+        if (input is null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        CommandExecutionOutcome outcome = ExecuteCommandCore(input);
+        ThrowIfFailed(outcome);
+        return outcome.Result;
+    }
+
+    /// <summary>
+    /// Executes a previously parsed command through validation and synchronous handler invocation.
+    /// </summary>
+    /// <param name="command">The bound command to execute.</param>
+    /// <returns>The successful command result.</returns>
+    /// <exception cref="ConsoleOperationException">The command was rejected or failed during execution.</exception>
+    public CommandResult ExecuteCommand(BoundCommand command)
+    {
+        if (command is null)
+        {
+            throw new ArgumentNullException(nameof(command));
+        }
+
+        CommandExecutionOutcome outcome = ExecuteBoundCommand(command, recordCommandInput: true);
+        ThrowIfFailed(outcome);
+        return outcome.Result;
+    }
+
+    /// <summary>
+    /// Attempts to execute command input and returns the structured result instead of throwing for command failures.
+    /// </summary>
+    /// <param name="input">The command input to execute.</param>
+    /// <param name="result">Receives the command result.</param>
+    /// <returns><see langword="true"/> when execution succeeds; otherwise, <see langword="false"/>.</returns>
+    public bool TryExecuteCommand(string input, out CommandResult result)
+    {
+        if (input is null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        result = ExecuteCommandCore(input).Result;
+        return result.IsSuccess;
+    }
+
+    /// <summary>
+    /// Attempts to execute a previously parsed command and returns the structured result instead of throwing for command failures.
+    /// </summary>
+    /// <param name="command">The bound command to execute.</param>
+    /// <param name="result">Receives the command result.</param>
+    /// <returns><see langword="true"/> when execution succeeds; otherwise, <see langword="false"/>.</returns>
+    public bool TryExecuteCommand(BoundCommand command, out CommandResult result)
+    {
+        if (command is null)
+        {
+            throw new ArgumentNullException(nameof(command));
+        }
+
+        result = ExecuteBoundCommand(command, recordCommandInput: true).Result;
+        return result.IsSuccess;
     }
 
     /// <summary>
@@ -316,5 +387,138 @@ public sealed class ConsoleManager
         {
             throw new InvalidOperationException($"Duplicate flag or option name or alias '{name}' for the configured command parsing comparer.");
         }
+    }
+
+    private CommandExecutionOutcome InvokeHandler(BoundCommand command)
+    {
+        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        var context = new CommandContext(command.Input, command.Definition, command, timestamp);
+
+        try
+        {
+            object? result = command.Definition.StateType is null
+                ? ((Func<CommandContext, CommandResult>)command.Definition.Handler)(context)
+                : command.Definition.Handler.DynamicInvoke(context, command.State);
+
+            if (result is CommandResult commandResult)
+            {
+                return new CommandExecutionOutcome(commandResult, null);
+            }
+
+            return new CommandExecutionOutcome(
+                CommandResult.Failed(ConsoleFailures.CommandExecution(
+                    $"Command '{command.Definition.Path}' returned no command result.",
+                    command.Definition.Path)),
+                null);
+        }
+        catch (Exception exception)
+        {
+            Exception causeException = exception is TargetInvocationException { InnerException: not null } invocationException
+                ? invocationException.InnerException
+                : exception;
+            ConsoleFailure cause = ConsoleFailure.FromException(
+                causeException,
+                ConsoleFailureKind.CommandExecution,
+                ConsoleFailureCodes.CommandExecutionRejected);
+            ConsoleFailure failure = ConsoleFailures.CommandExecution(
+                $"Command '{command.Definition.Path}' failed during execution.",
+                command.Definition.Path,
+                cause);
+            return new CommandExecutionOutcome(CommandResult.Failed(failure), causeException);
+        }
+    }
+
+    private CommandExecutionOutcome ExecuteCommandCore(string input)
+    {
+        RecordCommandInput(input);
+        CommandParseResult parse = ParseCommand(input);
+        if (!parse.IsSuccess)
+        {
+            AppendEcho(input, null);
+            return Fail(parse.Failure!);
+        }
+
+        return ExecuteBoundCommand(parse.Command!, recordCommandInput: false);
+    }
+
+    private CommandExecutionOutcome ExecuteBoundCommand(BoundCommand command, bool recordCommandInput)
+    {
+        if (recordCommandInput)
+        {
+            RecordCommandInput(command.Input);
+        }
+
+        AppendEcho(command.Input, command.Definition);
+
+        CommandValidationResult validation = ValidateCommand(command);
+        if (!validation.IsSuccess)
+        {
+            return Fail(validation.Failure!);
+        }
+
+        CommandExecutionOutcome outcome = InvokeHandler(command);
+        if (!outcome.Result.IsSuccess)
+        {
+            AppendFailure(outcome.Result.Failure!);
+            return outcome;
+        }
+
+        AppendSuccessOutputs(command.Definition, outcome.Result);
+        return outcome;
+    }
+
+    private static void ThrowIfFailed(CommandExecutionOutcome outcome)
+    {
+        if (!outcome.Result.IsSuccess)
+        {
+            throw new ConsoleOperationException(outcome.Result.Failure!, outcome.HandlerException);
+        }
+    }
+
+    private CommandExecutionOutcome Fail(ConsoleFailure failure)
+    {
+        CommandResult result = CommandResult.Failed(failure);
+        AppendFailure(failure);
+        return new CommandExecutionOutcome(result, null);
+    }
+
+    private void AppendFailure(ConsoleFailure failure)
+    {
+        History.RecordEntry(new CommandFailureEntry(DateTimeOffset.UtcNow, failure));
+    }
+
+    private void AppendSuccessOutputs(CommandDefinition command, CommandResult result)
+    {
+        foreach (CommandSuccessOutputDefinition output in command.SuccessOutputs)
+        {
+            History.RecordEntry(new CommandOutputEntry(DateTimeOffset.UtcNow, output.Output));
+        }
+
+        foreach (CommandOutput output in result.Outputs)
+        {
+            History.RecordEntry(new CommandOutputEntry(DateTimeOffset.UtcNow, output));
+        }
+    }
+
+    private void AppendEcho(string input, CommandDefinition? command)
+    {
+        bool shouldEcho = command?.EchoInput.EchoInput ?? _options.Execution.EchoInput;
+        if (shouldEcho && !string.IsNullOrWhiteSpace(input))
+        {
+            History.RecordEntry(new CommandInputEntry(DateTimeOffset.UtcNow, ConsoleText.Plain(input)));
+        }
+    }
+
+    private readonly struct CommandExecutionOutcome
+    {
+        public CommandExecutionOutcome(CommandResult result, Exception? handlerException)
+        {
+            Result = result ?? throw new ArgumentNullException(nameof(result));
+            HandlerException = handlerException;
+        }
+
+        public CommandResult Result { get; }
+
+        public Exception? HandlerException { get; }
     }
 }
