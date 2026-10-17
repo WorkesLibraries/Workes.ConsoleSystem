@@ -67,32 +67,9 @@ internal static class CommandParser
         var propertyValues = new Dictionary<string, object?>(comparer);
         var seenNamedMembers = new HashSet<string>(comparer);
 
+        int argumentIndex = 0;
         int tokenIndex = 1;
-        foreach (CommandArgumentDefinition argument in command.Arguments)
-        {
-            if (tokenIndex >= tokens.Count || IsPrefixedName(tokens[tokenIndex], options.FlagAndOptionPrefix))
-            {
-                return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
-                    ConsoleFailureCodes.CommandArgumentMissing,
-                    $"Missing required argument '{argument.Name}'.",
-                    source: argument.Name),
-                    tokenIndex < tokens.Count ? tokens[tokenIndex].Start : input.Length,
-                    tokenIndex < tokens.Count ? tokens[tokenIndex].Length : 0);
-            }
-
-            if (!TryConvert(tokens[tokenIndex].Text, argument.ValueType, options, out object? convertedArgument, out string? message))
-            {
-                return CommandParseResult.Failed(input, ConsoleFailures.CommandBinding(
-                    ConsoleFailureCodes.CommandValueInvalid,
-                    $"Invalid value for argument '{argument.Name}': {message}",
-                    source: argument.Name), tokens[tokenIndex].Start, tokens[tokenIndex].Length);
-            }
-
-            argumentValues.Add(argument.Name, convertedArgument);
-            propertyValues[argument.PropertyName] = convertedArgument;
-            tokenIndex++;
-        }
-
+        bool namedMembersStarted = false;
         foreach (CommandFlagDefinition flag in command.Flags)
         {
             flagValues.Add(flag.Name, false);
@@ -104,11 +81,39 @@ internal static class CommandParser
             Token token = tokens[tokenIndex];
             if (!IsPrefixedName(token, options.FlagAndOptionPrefix))
             {
-                return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
-                    ConsoleFailureCodes.CommandArgumentUnexpected,
-                    $"Unexpected positional value '{token.Text}'."), token.Start, token.Length);
+                if (argumentIndex >= command.Arguments.Count || (!options.AllowInterleavedOptions && namedMembersStarted))
+                {
+                    return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                        ConsoleFailureCodes.CommandArgumentUnexpected,
+                        $"Unexpected positional value '{token.Text}'."), token.Start, token.Length);
+                }
+
+                CommandArgumentDefinition argument = command.Arguments[argumentIndex];
+                if (!TryConvert(token.Text, argument.ValueType, options, out object? convertedArgument, out string? message))
+                {
+                    return CommandParseResult.Failed(input, ConsoleFailures.CommandBinding(
+                        ConsoleFailureCodes.CommandValueInvalid,
+                        $"Invalid value for argument '{argument.Name}': {message}",
+                        source: argument.Name), token.Start, token.Length);
+                }
+
+                argumentValues.Add(argument.Name, convertedArgument);
+                propertyValues[argument.PropertyName] = convertedArgument;
+                argumentIndex++;
+                tokenIndex++;
+                continue;
             }
 
+            if (!options.AllowInterleavedOptions && argumentIndex < command.Arguments.Count)
+            {
+                CommandArgumentDefinition missingArgument = command.Arguments[argumentIndex];
+                return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                    ConsoleFailureCodes.CommandArgumentMissing,
+                    $"Missing required argument '{missingArgument.Name}'.",
+                    source: missingArgument.Name), token.Start, token.Length);
+            }
+
+            namedMembersStarted = true;
             string nameAndMaybeValue = token.Text.Substring(options.FlagAndOptionPrefix.Length);
             int equalsIndex = nameAndMaybeValue.IndexOf('=');
             string providedName = equalsIndex >= 0 ? nameAndMaybeValue.Substring(0, equalsIndex) : nameAndMaybeValue;
@@ -178,17 +183,26 @@ internal static class CommandParser
                     source: option.Name), token.Start, token.Length);
             }
 
-            if (!TryConvert(rawValue!, option.ValueType, options, out object? convertedOption, out string? message))
+            if (!TryConvert(rawValue!, option.ValueType, options, out object? convertedOption, out string? optionMessage))
             {
                 return CommandParseResult.Failed(input, ConsoleFailures.CommandBinding(
                     ConsoleFailureCodes.CommandValueInvalid,
-                    $"Invalid value for option '{option.Name}': {message}",
+                    $"Invalid value for option '{option.Name}': {optionMessage}",
                     source: option.Name), tokens[tokenIndex + consumedTokens - 1].Start, tokens[tokenIndex + consumedTokens - 1].Length);
             }
 
             optionValues.Add(option.Name, convertedOption);
             propertyValues[option.PropertyName] = convertedOption;
             tokenIndex += consumedTokens;
+        }
+
+        if (argumentIndex < command.Arguments.Count)
+        {
+            CommandArgumentDefinition missingArgument = command.Arguments[argumentIndex];
+            return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                ConsoleFailureCodes.CommandArgumentMissing,
+                $"Missing required argument '{missingArgument.Name}'.",
+                source: missingArgument.Name), input.Length, 0);
         }
 
         foreach (CommandOptionDefinition option in command.Options)
@@ -272,7 +286,7 @@ internal static class CommandParser
         }
 
         Token valueToken = tokens[valueTokenIndex];
-        if (!valueToken.WasQuoted && IsPrefixedName(valueToken, options.FlagAndOptionPrefix))
+        if (IsPrefixedName(valueToken, options.FlagAndOptionPrefix))
         {
             return false;
         }
@@ -514,7 +528,7 @@ internal static class CommandParser
 
     private static bool IsPrefixedName(Token token, string prefix)
     {
-        return token.Text.StartsWith(prefix, StringComparison.Ordinal);
+        return !token.WasQuoted && token.Text.StartsWith(prefix, StringComparison.Ordinal);
     }
 
     private static TokenizeResult Tokenize(string input, bool allowQuotedStrings)

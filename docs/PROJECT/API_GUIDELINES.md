@@ -6,13 +6,14 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 ## Current Status
 
-The package implements `ConsoleManager` and its options, ConsoleSystem-owned entries, semantic console text, command-output/failure and echo-metadata value types, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, and bounded command input history. Logging supports plain strings and semantic `ConsoleText`; all levels are recorded without a package-side filter. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first entry snapshots, and clearing, and `RecordCommandInput` adds submitted strings to `CommandHistory`. Command registration, execution, and history change events are still planned. The guidance below carries forward the old package's established design intent and the approved ContentSystem boundary; future signatures must be checked against implementation before appearing in user-facing documentation.
+The package implements `ConsoleManager` and its options, ConsoleSystem-owned entries, semantic console text, command-output/failure and echo-metadata value types, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, and synchronous execution. Logging supports plain strings and semantic `ConsoleText`; all levels are recorded without a package-side filter, and consumers call logging methods on `ConsoleManager` rather than accessing a separate logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first entry snapshots, and clearing, and `RecordCommandInput` adds submitted strings to `CommandHistory`. Stateless autocomplete and history change events remain planned. The guidance below carries forward the old package's established design intent and the approved ContentSystem boundary; future signatures must be checked against implementation before appearing in user-facing documentation.
 
 ## API Design Principles
 
 - Keep the package engine-neutral and UI-neutral.
 - Use `ConsoleManager` as the explicit root for one console instance; do not introduce a singleton or hidden global state.
 - Keep the public workflow manager-centered and convenient for normal users.
+- Keep logging methods directly on `ConsoleManager`; use internal helpers only to organize implementation, not as a second public route.
 - Keep the core public surface focused on implemented workflows; avoid speculative extension points.
 - Preserve the old package's command model and typed console domain concepts unless implementation evidence requires a change.
 - Let Workes.ContentSystem own retained content storage and record identity. ConsoleSystem should offer console-appropriate APIs and payloads rather than mirror the content storage API.
@@ -48,6 +49,7 @@ Use one command schema model rather than separate public types for each combinat
 - Keep command path, parsing, binding, validation, execution, and autocomplete concepts separate even when normal submission orchestrates them together.
 - Keep handlers synchronous until a real asynchronous workflow is required.
 - Return command output and expected command failures through a result object rather than writing through a hidden output sink.
+- Construct `CommandResult` through the explicit `Success(...)` and `Failed(...)` factories; do not add equivalent public constructors.
 
 Exact API signatures and syntax are not duplicated here; the existing old-package command decisions are the design source until each workflow is carried into the fresh implementation.
 

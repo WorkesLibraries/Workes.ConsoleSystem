@@ -6,7 +6,7 @@ Describe the intended internal structure of Workes.ConsoleSystem and its relatio
 
 ## Current State And Target
 
-The fresh Workes.ConsoleSystem project now has the Stage 1 manager/options foundation, the Stage 2 entry, semantic-text, and internal storage-adapter foundation, the Stage 3 `ConsoleHistory` read/clear facade, the Stage 4 logging surface, and the Stage 5 command-input history/configuration foundation. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to the shared history. `CommandHistory` separately retains submitted strings for UI navigation, and execution echo defaults and command-level echo override metadata are defined for the later execution stages. History change events and command workflows remain future implementation work. This document records the architecture for carrying useful parts of Workes.ConsoleSystem.Old forward; later APIs remain intended design until implemented.
+The fresh Workes.ConsoleSystem project implements manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, and synchronous command execution. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to the shared history. An internal `ConsoleLog` helper creates those entries and writes them through the same history path; it is not part of the public API. `CommandHistory` separately retains submitted strings for UI navigation. Stateless autocomplete and optional history change events remain planned. This document records the architecture for carrying useful parts of Workes.ConsoleSystem.Old forward; later APIs remain intended design until implemented.
 
 The public console workflows and overall design philosophy should remain close to the old package. The principal architectural change is that console-visible retained content is stored through Workes.ContentSystem instead of a second console-owned history collection.
 
@@ -24,7 +24,7 @@ The following are architectural responsibilities and intended components; names 
 - `ConsoleHistory` is the console-facing history API. It preserves the old package's convenient entry-oriented view and operations while delegating retained storage to a ContentSystem sequence manager. It should not maintain a second authoritative list or expose ContentSystem record types.
 - `IConsoleEntry` is a ConsoleSystem-owned contract. It must not inherit from `IContentEntry` or require consumers to reference ContentSystem. An internal adapter maps console entries and timestamps to ContentSystem's entry contract.
 - `LogEntry`, `CommandInputEntry`, `CommandOutputEntry`, `CommandFailureEntry`, and host-defined entries remain ConsoleSystem domain payloads. Log level belongs to log entries, not every content record.
-- `ConsoleLog` is the developer-facing logging facade. It creates the appropriate typed log entry and appends it to the shared console history.
+- `ConsoleManager` is the public logging surface. Its internal `ConsoleLog` helper creates typed log entries and appends them to the shared console history without exposing a separate logger object to consumers.
 - `CommandHistory` stores submitted command strings for UI navigation. It remains separate from the visible console stream because it has different retention and duplicate-handling semantics.
 - `CommandEchoInputDefinition` carries a nullable command-level echo override: `null` inherits the manager's `CommandExecutionOptions.EchoInput` setting. Execution and visible echo entries are added in Stage 11.
 - `CommandSystem` owns the command definitions used by parsing, validation, autocomplete, and execution.
@@ -32,13 +32,13 @@ The following are architectural responsibilities and intended components; names 
 
 ## ContentSystem Integration
 
-The normal console history uses a ContentSystem sequence with drop-oldest retention. The console's configured history capacity maps to that sequence's capacity. Internally, an adapter wraps console entries for storage; ContentSystem records and IDs stay private to the implementation. `ConsoleManager.RecordEntry(IConsoleEntry)` writes custom or built-in entries, and `ConsoleManager.History` exposes configured capacity, detached oldest-first `Entries` snapshots, and `Clear()`. Manager logging methods delegate to `ConsoleLog`, which creates `LogEntry` values and submits them through the same ConsoleHistory write path.
+The normal console history uses a ContentSystem sequence with drop-oldest retention. The console's configured history capacity maps to that sequence's capacity. Internally, an adapter wraps console entries for storage; ContentSystem records and IDs stay private to the implementation. `ConsoleManager.RecordEntry(IConsoleEntry)` writes custom or built-in entries, and `ConsoleManager.History` exposes configured capacity, detached oldest-first `Entries` snapshots, and `Clear()`. Manager logging methods use the internal `ConsoleLog` helper to create `LogEntry` values and submit them through the same ConsoleHistory write path.
 
 The intended flow is:
 
 ```text
 host application or command execution
--> ConsoleManager / ConsoleLog / ConsoleHistory
+-> ConsoleManager / internal ConsoleLog / ConsoleHistory
 -> ConsoleSystem entry and text types
 -> internal ContentSystem adapter and sequence
 -> ConsoleSystem history projection

@@ -5,6 +5,26 @@ namespace Workes.ConsoleSystem.Tests.Core;
 public sealed class ConsoleFailureTests
 {
     [Test]
+    public void Create_MatchesPublicConstructorPattern()
+    {
+        var direct = new ConsoleFailure(
+            ConsoleFailureKind.CommandExecution,
+            ConsoleFailureCodes.CommandExecutionRejected,
+            "Command failed.",
+            component: "CommandExecutor",
+            source: "move");
+
+        ConsoleFailure factory = ConsoleFailure.Create(
+            ConsoleFailureKind.CommandExecution,
+            ConsoleFailureCodes.CommandExecutionRejected,
+            "Command failed.",
+            component: "CommandExecutor",
+            source: "move");
+
+        Assert.That(factory, Is.EqualTo(direct));
+    }
+
+    [Test]
     public void Constructor_StoresFailureDetails()
     {
         var cause = ConsoleFailure.Create(

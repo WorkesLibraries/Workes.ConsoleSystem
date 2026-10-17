@@ -72,7 +72,7 @@ public sealed class CommandParsingTests
             .Argument<GiveState>(x => x.Player, "player")
             .Argument<GiveState>(x => x.Item, "item")
             .Argument<GiveState>(x => x.Amount, "amount")
-            .Execute<GiveState>((ctx, state) => new CommandResult())
+            .Execute<GiveState>((ctx, state) => CommandResult.Success())
             .Build());
 
         CommandParseResult result = console.ParseCommand("give Anthony5172 gold 10");
@@ -237,7 +237,7 @@ public sealed class CommandParsingTests
             .Option<TeleportState>(x => x.Zone, "zone")
             .Default("spawn")
             .Option<TeleportState>(x => x.Height, "height")
-            .Execute<TeleportState>((ctx, state) => new CommandResult())
+            .Execute<TeleportState>((ctx, state) => CommandResult.Success())
             .Build());
 
         CommandParseResult result = console.ParseCommand("player.teleport Anthony5172");
@@ -257,7 +257,7 @@ public sealed class CommandParsingTests
             .Option<ConfigureState>(x => x.Count, "count")
             .Option<ConfigureState>(x => x.Mode, "mode")
             .Option<ConfigureState>(x => x.OptionalAmount, "amount")
-            .Execute<ConfigureState>((ctx, state) => new CommandResult())
+            .Execute<ConfigureState>((ctx, state) => CommandResult.Success())
             .Build());
 
         CommandParseResult result = console.ParseCommand("configure --enabled TRUE --count 12 --mode Fast --amount 3.5");
@@ -289,7 +289,7 @@ public sealed class CommandParsingTests
             .Option<ConfigureState>(x => x.Count, "count")
             .Option<ConfigureState>(x => x.Mode, "mode")
             .Option<ConfigureState>(x => x.OptionalAmount, "amount")
-            .Execute<ConfigureState>((ctx, state) => new CommandResult())
+            .Execute<ConfigureState>((ctx, state) => CommandResult.Success())
             .Build());
 
         CommandParseResult result = console.ParseCommand("configure --enabled ON --count 12 --mode Fast --amount 3.5");
@@ -317,7 +317,7 @@ public sealed class CommandParsingTests
             .Option<ConfigureState>(x => x.Count, "count")
             .Option<ConfigureState>(x => x.Mode, "mode")
             .Option<ConfigureState>(x => x.OptionalAmount, "amount")
-            .Execute<ConfigureState>((ctx, state) => new CommandResult())
+            .Execute<ConfigureState>((ctx, state) => CommandResult.Success())
             .Build());
 
         CommandParseResult result = console.ParseCommand("configure --enabled true --count 12 --mode Fast --amount 3.5");
@@ -334,7 +334,7 @@ public sealed class CommandParsingTests
         console.RegisterCommand(new CommandBuilder("say")
             .Argument<SayState>(x => x.Message, "message")
             .Option<SayState>(x => x.Target, "target")
-            .Execute<SayState>((ctx, state) => new CommandResult())
+            .Execute<SayState>((ctx, state) => CommandResult.Success())
             .Build());
 
         CommandParseResult result = console.ParseCommand("say \"hello \\\"world\\\"\" --target '--admin'");
@@ -375,7 +375,7 @@ public sealed class CommandParsingTests
         CommandDefinition command = new CommandBuilder("server.restart")
             .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "i")
             .Option<RestartState>(x => x.DelaySeconds, "delay", "I")
-            .Execute<RestartState>((ctx, state) => new CommandResult())
+            .Execute<RestartState>((ctx, state) => CommandResult.Success())
             .Build();
 
         Assert.Throws<InvalidOperationException>(() => console.RegisterCommand(command));
@@ -423,24 +423,112 @@ public sealed class CommandParsingTests
     }
 
     [Test]
-    public void ParseCommand_PreservesLegacyPositionalFirstBehaviorWhenOrderOptionIsFalse()
+    public void ParseCommand_RequiresPositionalArgumentsBeforeNamedMembersByDefault()
     {
-        var console = new ConsoleManager(new ConsoleManagerOptions
-        {
-            CommandParsing = new CommandParsingOptions
-            {
-                AllowFlagsAndOptionsInAnyOrder = false
-            }
-        });
+        var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("player.teleport")
             .Argument<TeleportState>(x => x.Player, "player")
             .Option<TeleportState>(x => x.Zone, "zone")
-            .Execute<TeleportState>((ctx, state) => new CommandResult())
+            .Execute<TeleportState>((ctx, state) => CommandResult.Success())
             .Build());
 
         CommandParseResult result = console.ParseCommand("player.teleport --zone spawn");
 
         Assert.That(result.Failure!.Code, Is.EqualTo(ConsoleFailureCodes.CommandArgumentMissing));
+    }
+
+    [Test]
+    public void ParseCommand_AllowsInterleavedFlagsAndSpaceSeparatedOptionsWhenEnabled()
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            CommandParsing = new CommandParsingOptions
+            {
+                AllowInterleavedOptions = true
+            }
+        });
+        console.RegisterCommand(MoveCommand());
+
+        CommandParseResult result = console.ParseCommand("move Alex --safe --reason because spawn");
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Command!.Arguments["player"], Is.EqualTo("Alex"));
+        Assert.That(result.Command.Arguments["destination"], Is.EqualTo("spawn"));
+        Assert.That(result.Command.Options["reason"], Is.EqualTo("because"));
+        Assert.That(result.Command.Flags["safe"], Is.True);
+        Assert.That(result.Command.GetState<MoveState>(), Is.EqualTo(new MoveState("Alex", "spawn", true, "because")));
+    }
+
+    [Test]
+    public void ParseCommand_AllowsInterleavedEqualSeparatedOptionsWhenConfigured()
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            CommandParsing = new CommandParsingOptions
+            {
+                AllowInterleavedOptions = true,
+                OptionValueStyle = OptionValueStyle.EqualSeparated
+            }
+        });
+        console.RegisterCommand(MoveCommand());
+
+        CommandParseResult result = console.ParseCommand("move --reason=carefully Alex --safe spawn");
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Command!.Arguments["player"], Is.EqualTo("Alex"));
+        Assert.That(result.Command.Arguments["destination"], Is.EqualTo("spawn"));
+        Assert.That(result.Command.Options["reason"], Is.EqualTo("carefully"));
+        Assert.That(result.Command.Flags["safe"], Is.True);
+    }
+
+    [TestCase(false, "move Alex spawn --reason carefully --safe")]
+    [TestCase(false, "move Alex spawn --safe --reason carefully")]
+    [TestCase(true, "move Alex spawn --reason carefully --safe")]
+    [TestCase(true, "move Alex spawn --safe --reason carefully")]
+    public void ParseCommand_NamedMembersRemainReorderable(bool allowInterleavedOptions, string input)
+    {
+        var console = new ConsoleManager(new ConsoleManagerOptions
+        {
+            CommandParsing = new CommandParsingOptions
+            {
+                AllowInterleavedOptions = allowInterleavedOptions
+            }
+        });
+        console.RegisterCommand(MoveCommand());
+
+        CommandParseResult result = console.ParseCommand(input);
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Command!.Options["reason"], Is.EqualTo("carefully"));
+        Assert.That(result.Command.Flags["safe"], Is.True);
+    }
+
+    [Test]
+    public void ParseCommand_DisabledInterleavingRejectsPositionalsAfterNamedMembersWithSpan()
+    {
+        var console = new ConsoleManager();
+        console.RegisterCommand(MoveCommand());
+        const string input = "move Alex spawn --safe extra";
+
+        CommandParseResult result = console.ParseCommand(input);
+
+        Assert.That(result.Failure!.Code, Is.EqualTo(ConsoleFailureCodes.CommandArgumentUnexpected));
+        Assert.That(input.Substring(result.SourceOffset!.Value, result.SourceLength!.Value), Is.EqualTo("extra"));
+    }
+
+    [Test]
+    public void ParseCommand_QuotedPrefixValueRemainsPositional()
+    {
+        var console = new ConsoleManager();
+        console.RegisterCommand(new CommandBuilder("say")
+            .Argument<SingleMessageState>(x => x.Message, "message")
+            .Execute<SingleMessageState>((ctx, state) => CommandResult.Success())
+            .Build());
+
+        CommandParseResult result = console.ParseCommand("say \"--literal\"");
+
+        Assert.That(result.IsSuccess, Is.True);
+        Assert.That(result.Command!.Arguments["message"], Is.EqualTo("--literal"));
     }
 
     [Test]
@@ -452,7 +540,7 @@ public sealed class CommandParsingTests
             .Execute(_ =>
             {
                 handlerCalls++;
-                return new CommandResult();
+                return CommandResult.Success();
             })
             .Build());
 
@@ -467,7 +555,7 @@ public sealed class CommandParsingTests
     private static CommandDefinition SimpleCommand(string path)
     {
         return new CommandBuilder(path)
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build();
     }
 
@@ -477,7 +565,7 @@ public sealed class CommandParsingTests
             .Argument<GiveState>(x => x.Player, "player")
             .Argument<GiveState>(x => x.Item, "item")
             .Argument<GiveState>(x => x.Amount, "amount")
-            .Execute<GiveState>((ctx, state) => new CommandResult())
+            .Execute<GiveState>((ctx, state) => CommandResult.Success())
             .Build();
     }
 
@@ -488,7 +576,18 @@ public sealed class CommandParsingTests
             .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "i")
             .Option<RestartState>(x => x.DelaySeconds, "delay", "d")
             .Default(10)
-            .Execute<RestartState>((ctx, state) => new CommandResult())
+            .Execute<RestartState>((ctx, state) => CommandResult.Success())
+            .Build();
+    }
+
+    private static CommandDefinition MoveCommand()
+    {
+        return new CommandBuilder("move")
+            .Argument<MoveState>(x => x.Player, "player")
+            .Argument<MoveState>(x => x.Destination, "destination")
+            .Flag<MoveState>(x => x.Safe, "safe")
+            .Option<MoveState>(x => x.Reason, "reason")
+            .Execute<MoveState>((ctx, state) => CommandResult.Success())
             .Build();
     }
 
@@ -501,6 +600,10 @@ public sealed class CommandParsingTests
     private sealed record ConfigureState(bool Enabled, int Count, ParseMode Mode, decimal? OptionalAmount);
 
     private sealed record SayState(string Message, string Target);
+
+    private sealed record SingleMessageState(string Message);
+
+    private sealed record MoveState(string Player, string Destination, bool Safe, string? Reason);
 
     private enum ParseMode
     {

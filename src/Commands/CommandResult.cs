@@ -11,14 +11,6 @@ public sealed class CommandResult
 {
     private readonly IReadOnlyList<CommandOutput> _outputs;
 
-    /// <summary>
-    /// Initializes a new successful command result with no output.
-    /// </summary>
-    public CommandResult()
-        : this(null, Array.Empty<CommandOutput>())
-    {
-    }
-
     private CommandResult(ConsoleFailure? failure, IEnumerable<CommandOutput> outputs)
     {
         if (outputs is null)

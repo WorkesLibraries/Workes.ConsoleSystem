@@ -43,7 +43,7 @@ public sealed class CommandExecutionTests
             .Execute<RestartState>((ctx, state) =>
             {
                 captured = state;
-                return new CommandResult();
+                return CommandResult.Success();
             })
             .Build());
 
@@ -100,7 +100,7 @@ public sealed class CommandExecutionTests
             .Execute<CountState>((ctx, state) =>
             {
                 invoked = true;
-                return new CommandResult();
+                return CommandResult.Success();
             })
             .Build());
 
@@ -182,7 +182,7 @@ public sealed class CommandExecutionTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("noclip")
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build());
 
         bool success = console.TryExecuteCommand("noclip", out CommandResult successResult);
@@ -217,7 +217,7 @@ public sealed class CommandExecutionTests
         console.RegisterCommand(new CommandBuilder("counter.add")
             .Argument<CountState>(x => x.Amount, "amount")
             .Constraint<CountState>("positive", "Amount must be positive.", state => state.Amount > 0)
-            .Execute<CountState>((ctx, state) => new CommandResult())
+            .Execute<CountState>((ctx, state) => CommandResult.Success())
             .Build());
         BoundCommand valid = console.ParseCommand("counter.add 1").Command!;
         BoundCommand invalid = console.ParseCommand("counter.add 0").Command!;
@@ -236,7 +236,7 @@ public sealed class CommandExecutionTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("noclip")
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build());
 
         CommandResult success = console.ExecuteCommand("noclip");
@@ -257,15 +257,15 @@ public sealed class CommandExecutionTests
             }
         });
         console.RegisterCommand(new CommandBuilder("default.echo")
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build());
         console.RegisterCommand(new CommandBuilder("styled.echo")
             .EchoInput()
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build());
         console.RegisterCommand(new CommandBuilder("quiet")
             .DoNotEchoInput()
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build());
 
         console.ExecuteCommand("default.echo");
@@ -289,11 +289,11 @@ public sealed class CommandExecutionTests
             }
         });
         console.RegisterCommand(new CommandBuilder("quiet.default")
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build());
         console.RegisterCommand(new CommandBuilder("loud.override")
             .EchoInput()
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build());
 
         console.ExecuteCommand("quiet.default");
@@ -353,7 +353,7 @@ public sealed class CommandExecutionTests
             .Execute(ctx =>
             {
                 captured = ctx;
-                return new CommandResult();
+                return CommandResult.Success();
             })
             .Build();
         console.RegisterCommand(command);

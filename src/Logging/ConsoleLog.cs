@@ -6,9 +6,9 @@ using Workes.ConsoleSystem.Presentation;
 namespace Workes.ConsoleSystem.Logging;
 
 /// <summary>
-/// Provides the manager-owned logging implementation for the shared console history.
+/// Provides the internal implementation for manager-owned logging to the shared console history.
 /// </summary>
-public sealed class ConsoleLog
+internal sealed class ConsoleLog
 {
     private readonly ConsoleHistory _history;
 

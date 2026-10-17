@@ -1,3 +1,4 @@
+using System.Reflection;
 using Workes.ConsoleSystem.Commands;
 using Workes.ConsoleSystem.Core;
 
@@ -6,13 +7,21 @@ namespace Workes.ConsoleSystem.Tests.Commands;
 public sealed class CommandResultTests
 {
     [Test]
-    public void Constructor_CreatesSuccessfulEmptyResult()
+    public void Success_CreatesSuccessfulEmptyResult()
     {
-        var result = new CommandResult();
+        var result = CommandResult.Success();
 
         Assert.That(result.IsSuccess, Is.True);
         Assert.That(result.Failure, Is.Null);
         Assert.That(result.Outputs, Is.Empty);
+    }
+
+    [Test]
+    public void PublicConstruction_UsesFactoriesOnly()
+    {
+        Assert.That(typeof(CommandResult).GetConstructors(BindingFlags.Public | BindingFlags.Instance), Is.Empty);
+        Assert.That(typeof(CommandResult).GetMethod(nameof(CommandResult.Success), BindingFlags.Public | BindingFlags.Static), Is.Not.Null);
+        Assert.That(typeof(CommandResult).GetMethod(nameof(CommandResult.Failed), BindingFlags.Public | BindingFlags.Static), Is.Not.Null);
     }
 
     [Test]

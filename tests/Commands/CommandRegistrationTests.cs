@@ -12,7 +12,7 @@ public sealed class CommandRegistrationTests
     {
         CommandDefinition command = new CommandBuilder("noclip")
             .Description("Toggle noclip.")
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build();
 
         Assert.That(command.Path, Is.EqualTo("noclip"));
@@ -38,7 +38,7 @@ public sealed class CommandRegistrationTests
                 "delay-ignore-players",
                 "Delay cannot be combined with ignore players.",
                 state => !state.IgnorePlayers || state.DelaySeconds == 0)
-            .Execute<RestartCommandState>((ctx, state) => new CommandResult())
+            .Execute<RestartCommandState>((ctx, state) => CommandResult.Success())
             .Build();
 
         Assert.That(command.StateType, Is.EqualTo(typeof(RestartCommandState)));
@@ -65,7 +65,7 @@ public sealed class CommandRegistrationTests
             .SuccessOutputInline("Noclip enabled.")
             .SuccessOutputBlock("Line 1\nLine 2")
             .SuccessOutputInline("<style=Success>Noclip enabled.</style>")
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build();
 
         Assert.That(command.EchoInput.EchoInput, Is.True);
@@ -82,7 +82,7 @@ public sealed class CommandRegistrationTests
     {
         CommandDefinition command = new CommandBuilder("quiet")
             .DoNotEchoInput()
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build();
 
         Assert.That(command.EchoInput.EchoInput, Is.False);
@@ -106,7 +106,7 @@ public sealed class CommandRegistrationTests
     public void Build_InvalidPathThrows(string? path)
     {
         var builder = new CommandBuilder(path!)
-            .Execute(ctx => new CommandResult());
+            .Execute(ctx => CommandResult.Success());
 
         Assert.That(() => builder.Build(), Throws.InstanceOf<Exception>());
     }
@@ -117,7 +117,7 @@ public sealed class CommandRegistrationTests
         var builder = new CommandBuilder("server.restart")
             .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "i")
             .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "i")
-            .Execute<RestartCommandState>((ctx, state) => new CommandResult());
+            .Execute<RestartCommandState>((ctx, state) => CommandResult.Success());
 
         Assert.Throws<InvalidOperationException>(() => builder.Build());
     }
@@ -135,7 +135,7 @@ public sealed class CommandRegistrationTests
     {
         Assert.Throws<InvalidOperationException>(() =>
             new CommandBuilder("value.command")
-                .Execute<int>((ctx, state) => new CommandResult()));
+                .Execute<int>((ctx, state) => CommandResult.Success()));
     }
 
     [Test]
@@ -199,7 +199,7 @@ public sealed class CommandRegistrationTests
         var console = new ConsoleManager();
         CommandDefinition command = new CommandBuilder("server.restart")
             .Flag<RestartCommandState>(x => x.IgnorePlayers, "--ignore-players")
-            .Execute<RestartCommandState>((ctx, state) => new CommandResult())
+            .Execute<RestartCommandState>((ctx, state) => CommandResult.Success())
             .Build();
 
         Assert.Throws<InvalidOperationException>(() => console.RegisterCommand(command));
@@ -219,7 +219,7 @@ public sealed class CommandRegistrationTests
         CommandDefinition command = new CommandBuilder("server.restart")
             .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "i")
             .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "d")
-            .Execute<RestartCommandState>((ctx, state) => new CommandResult())
+            .Execute<RestartCommandState>((ctx, state) => CommandResult.Success())
             .Build();
 
         Assert.DoesNotThrow(() => console.RegisterCommand(command));
@@ -260,7 +260,7 @@ public sealed class CommandRegistrationTests
     private static CommandDefinition SimpleCommand(string path)
     {
         return new CommandBuilder(path)
-            .Execute(ctx => new CommandResult())
+            .Execute(ctx => CommandResult.Success())
             .Build();
     }
 

@@ -20,7 +20,7 @@ public sealed class CommandParsingOptions
         FlagAndOptionPrefix = ValidatePrefix(source.FlagAndOptionPrefix);
         IsCaseSensitive = source.IsCaseSensitive;
         AllowQuotedStrings = source.AllowQuotedStrings;
-        AllowFlagsAndOptionsInAnyOrder = source.AllowFlagsAndOptionsInAnyOrder;
+        AllowInterleavedOptions = source.AllowInterleavedOptions;
         BooleanLiterals = BooleanLiteralOptions.CreateSnapshot(source.BooleanLiterals, IsCaseSensitive);
     }
 
@@ -45,9 +45,10 @@ public sealed class CommandParsingOptions
     public bool AllowQuotedStrings { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets a value indicating whether flags and options may appear in any order after positional arguments.
+    /// Gets or sets a value indicating whether flags and options may appear before, between, or after positional arguments.
     /// </summary>
-    public bool AllowFlagsAndOptionsInAnyOrder { get; set; } = true;
+    /// <remarks>Defaults to <see langword="false"/>. When enabled, this applies after the command path; positional arguments always bind in schema order.</remarks>
+    public bool AllowInterleavedOptions { get; set; }
 
     /// <summary>
     /// Gets or sets the boolean option value literals accepted by the parser.

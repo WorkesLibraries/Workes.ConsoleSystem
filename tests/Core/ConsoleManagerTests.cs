@@ -19,7 +19,7 @@ public sealed class ConsoleManagerTests
         Assert.That(options.CommandParsing.FlagAndOptionPrefix, Is.EqualTo("--"));
         Assert.That(options.CommandParsing.IsCaseSensitive, Is.False);
         Assert.That(options.CommandParsing.AllowQuotedStrings, Is.True);
-        Assert.That(options.CommandParsing.AllowFlagsAndOptionsInAnyOrder, Is.True);
+        Assert.That(options.CommandParsing.AllowInterleavedOptions, Is.False);
         Assert.That(options.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "true" }));
         Assert.That(options.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "false" }));
         Assert.That(options.Autocomplete.PathCompletionMode, Is.EqualTo(CommandPathCompletionMode.FullPath));
@@ -40,7 +40,7 @@ public sealed class ConsoleManagerTests
                 FlagAndOptionPrefix = "-",
                 IsCaseSensitive = true,
                 AllowQuotedStrings = false,
-                AllowFlagsAndOptionsInAnyOrder = false,
+                AllowInterleavedOptions = true,
                 BooleanLiterals = new BooleanLiteralOptions
                 {
                     TrueLiterals = new[] { "yes" },
@@ -78,7 +78,7 @@ public sealed class ConsoleManagerTests
         Assert.That(resolved.CommandParsing.FlagAndOptionPrefix, Is.EqualTo("-"));
         Assert.That(resolved.CommandParsing.IsCaseSensitive, Is.True);
         Assert.That(resolved.CommandParsing.AllowQuotedStrings, Is.False);
-        Assert.That(resolved.CommandParsing.AllowFlagsAndOptionsInAnyOrder, Is.False);
+        Assert.That(resolved.CommandParsing.AllowInterleavedOptions, Is.True);
         Assert.That(resolved.CommandParsing.BooleanLiterals.TrueLiterals, Is.EqualTo(new[] { "yes" }));
         Assert.That(resolved.CommandParsing.BooleanLiterals.FalseLiterals, Is.EqualTo(new[] { "no" }));
         Assert.That(resolved.Autocomplete.PathCompletionMode, Is.EqualTo(CommandPathCompletionMode.DotSegment));

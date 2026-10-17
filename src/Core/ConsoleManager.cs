@@ -18,6 +18,7 @@ public sealed class ConsoleManager
 {
     private readonly ConsoleManagerOptions _options;
     private readonly StringComparer _commandPathComparer;
+    private readonly ConsoleLog _log;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConsoleManager"/> class with default options.
@@ -46,7 +47,7 @@ public sealed class ConsoleManager
         CommandHistory = new CommandHistory(
             _options.History.CommandHistoryCapacity,
             _options.History.CommandHistoryDuplicatePolicy);
-        Log = new ConsoleLog(History);
+        _log = new ConsoleLog(History);
         Commands = new CommandSystem();
     }
 
@@ -64,11 +65,6 @@ public sealed class ConsoleManager
     /// Gets the retained command input strings used by console UI navigation.
     /// </summary>
     public CommandHistory CommandHistory { get; }
-
-    /// <summary>
-    /// Gets the developer-facing logging facade used by this console manager.
-    /// </summary>
-    public ConsoleLog Log { get; }
 
     /// <summary>
     /// Gets the registered command definitions. Registration remains owned by this manager.
@@ -242,73 +238,73 @@ public sealed class ConsoleManager
     /// Adds a trace log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void LogTrace(string message) => Log.Trace(message);
+    public void LogTrace(string message) => _log.Trace(message);
 
     /// <summary>
     /// Adds trace log content to the shared console history.
     /// </summary>
     /// <param name="content">The log content.</param>
-    public void LogTrace(ConsoleText content) => Log.Trace(content);
+    public void LogTrace(ConsoleText content) => _log.Trace(content);
 
     /// <summary>
     /// Adds a debug log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void LogDebug(string message) => Log.Debug(message);
+    public void LogDebug(string message) => _log.Debug(message);
 
     /// <summary>
     /// Adds debug log content to the shared console history.
     /// </summary>
     /// <param name="content">The log content.</param>
-    public void LogDebug(ConsoleText content) => Log.Debug(content);
+    public void LogDebug(ConsoleText content) => _log.Debug(content);
 
     /// <summary>
     /// Adds an informational log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void LogInformation(string message) => Log.Information(message);
+    public void LogInformation(string message) => _log.Information(message);
 
     /// <summary>
     /// Adds informational log content to the shared console history.
     /// </summary>
     /// <param name="content">The log content.</param>
-    public void LogInformation(ConsoleText content) => Log.Information(content);
+    public void LogInformation(ConsoleText content) => _log.Information(content);
 
     /// <summary>
     /// Adds a warning log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void LogWarning(string message) => Log.Warning(message);
+    public void LogWarning(string message) => _log.Warning(message);
 
     /// <summary>
     /// Adds warning log content to the shared console history.
     /// </summary>
     /// <param name="content">The log content.</param>
-    public void LogWarning(ConsoleText content) => Log.Warning(content);
+    public void LogWarning(ConsoleText content) => _log.Warning(content);
 
     /// <summary>
     /// Adds an error log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void LogError(string message) => Log.Error(message);
+    public void LogError(string message) => _log.Error(message);
 
     /// <summary>
     /// Adds error log content to the shared console history.
     /// </summary>
     /// <param name="content">The log content.</param>
-    public void LogError(ConsoleText content) => Log.Error(content);
+    public void LogError(ConsoleText content) => _log.Error(content);
 
     /// <summary>
     /// Adds a critical log message to the shared console history.
     /// </summary>
     /// <param name="message">The log message.</param>
-    public void LogCritical(string message) => Log.Critical(message);
+    public void LogCritical(string message) => _log.Critical(message);
 
     /// <summary>
     /// Adds critical log content to the shared console history.
     /// </summary>
     /// <param name="content">The log content.</param>
-    public void LogCritical(ConsoleText content) => Log.Critical(content);
+    public void LogCritical(ConsoleText content) => _log.Critical(content);
 
     /// <summary>
     /// Gets the internal store used by the console history facade.

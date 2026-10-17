@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using Workes.ConsoleSystem.Core;
 using Workes.ConsoleSystem.Entries;
 using Workes.ConsoleSystem.Logging;
@@ -8,6 +9,14 @@ namespace Workes.ConsoleSystem.Tests.Core;
 
 public sealed class ConsoleLogTests
 {
+    [Test]
+    public void PublicLoggingSurface_IsOnConsoleManager()
+    {
+        Assert.That(typeof(ConsoleManager).GetProperty("Log", BindingFlags.Instance | BindingFlags.Public), Is.Null);
+        Assert.That(typeof(ConsoleLog).IsPublic, Is.False);
+        Assert.That(typeof(ConsoleManager).GetMethod(nameof(ConsoleManager.LogTrace), new[] { typeof(string) }), Is.Not.Null);
+    }
+
     [Test]
     public void ManagerLoggingMethods_RecordAllSixLevelsInCallOrder()
     {

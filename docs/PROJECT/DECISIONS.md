@@ -487,7 +487,7 @@ This preserves the old behavior and keeps filtering/rendering decisions with the
 
 #### Consequences
 
-Every manager logging call appends one `LogEntry` to `ConsoleHistory` and the ContentSystem-backed sequence. The host UI may choose which levels to display, but the package does not discard them.
+Every manager logging call appends one `LogEntry` to `ConsoleHistory` and the ContentSystem-backed sequence. `ConsoleManager` is the only public logging entry point; an internal `ConsoleLog` helper may organize entry creation and writes without creating a second public workflow. The host UI may choose which levels to display, but the package does not discard them.
 
 ### D-034: Command Input Navigation History Is Separate From Visible History
 
@@ -506,3 +506,39 @@ Command navigation and visible console content have different data, retention, a
 #### Consequences
 
 Command input retention uses the configured capacity and drops its oldest retained string when full. Stage 5 defines recording, reading, clearing, and echo policy only; it does not execute commands or write echo entries.
+
+### D-035: Named Command Options Can Interleave Without Reordering Positionals
+
+#### Context
+
+Requiring every named option to follow all positional arguments is easy to parse, but it can be inconvenient when composing interactive command input. Allowing all tokens to move freely would make positional binding ambiguous.
+
+#### Decision
+
+Keep positional argument order fixed by the command schema. `CommandParsingOptions.AllowInterleavedOptions` controls whether flags and options may appear between positional values, and defaults to `false`. When disabled, input follows command path, positional arguments, then named members. When enabled, the parser may encounter flags/options anywhere after the command path while binding each unquoted positional token to the next positional argument in schema order. Named members may be reordered in either mode. A space-separated option consumes its value token before parsing resumes; an equals-separated option keeps its value inline.
+
+#### Reasoning
+
+This adds the requested flexibility without changing the meaning or order of positional arguments. A default-off setting preserves the predictable positional-first form for simple users.
+
+#### Consequences
+
+Parser configuration, XML documentation, tests, and command guides must describe interleaving rather than suggest positional values may be reordered. Quoted tokens beginning with the configured prefix remain values, not named members.
+
+### D-036: CommandResult Uses Explicit Success And Failure Factories
+
+#### Context
+
+A public parameterless constructor offered another route to create the same empty successful result as `CommandResult.Success()`, making command handler construction less consistent.
+
+#### Decision
+
+Expose `CommandResult.Success(...)` and `CommandResult.Failed(...)` as the public construction routes. Keep `ConsoleFailure`'s public constructor and `Create(...)`/`Wrap(...)`/`FromException(...)` factory family aligned with the established `InventoryFailure` pattern.
+
+#### Reasoning
+
+The named result factories make success/failure intent explicit. `ConsoleFailure` intentionally retains the same construction and factory pattern used by the sibling InventorySystem package.
+
+#### Consequences
+
+Command handlers and examples should return `CommandResult.Success()` when no output is produced. Tests should guard the absence of a public parameterless constructor and preserve the established failure construction pattern.
