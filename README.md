@@ -70,6 +70,7 @@ The [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/m
 
 ## Documentation
 
+- [API reference](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/API_REFERENCE.md)
 - [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/QUICK_START.md)
 - [Manager and configuration](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/MANAGER_AND_CONFIGURATION.md)
 - [Logging](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/LOGGING.md)

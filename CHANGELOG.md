@@ -19,7 +19,7 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`. The pac
 - Added configurable command parsing, including option value styles, boolean literals, quoted strings, case matching, and the default-off `AllowInterleavedOptions` setting. Interleaving preserves positional schema order; named flags and options can be reordered in either mode.
 - Added side-effect-free parsing and validation APIs, plus synchronous `TryExecuteCommand` and `ExecuteCommand` workflows.
 - Added command input echo settings, declared and handler-produced inline/block outputs, and structured command failures.
-- Added package README, Quick Start, focused API guides, and package metadata describing the rebuild.
+- Added package README, Quick Start, focused API guides, a public API reference, and package metadata describing the rebuild.
 
 ### Changed
 
