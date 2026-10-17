@@ -67,6 +67,24 @@ public sealed class ConsoleManager
     public CommandHistory CommandHistory { get; }
 
     /// <summary>
+    /// Occurs after the shared console history changes.
+    /// </summary>
+    public event EventHandler<ConsoleHistoryChangedEventArgs>? ConsoleHistoryChanged
+    {
+        add => History.Changed += value;
+        remove => History.Changed -= value;
+    }
+
+    /// <summary>
+    /// Occurs after command input history changes.
+    /// </summary>
+    public event EventHandler<CommandHistoryChangedEventArgs>? CommandHistoryChanged
+    {
+        add => CommandHistory.Changed += value;
+        remove => CommandHistory.Changed -= value;
+    }
+
+    /// <summary>
     /// Gets the registered command definitions. Registration remains owned by this manager.
     /// </summary>
     public CommandSystem Commands { get; }

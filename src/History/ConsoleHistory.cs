@@ -22,12 +22,18 @@ public sealed class ConsoleHistory
         }
 
         Capacity = capacity;
+        _contentSequence.Changed += OnContentChanged;
     }
 
     /// <summary>
     /// Gets the maximum number of console entries retained.
     /// </summary>
     public int Capacity { get; }
+
+    /// <summary>
+    /// Occurs synchronously after retained console entries change.
+    /// </summary>
+    public event EventHandler<ConsoleHistoryChangedEventArgs>? Changed;
 
     /// <summary>
     /// Gets a detached, oldest-first snapshot of the entries currently in history.
@@ -63,5 +69,46 @@ public sealed class ConsoleHistory
         }
 
         _contentSequence.Add(new ContentEntryAdapter(entry));
+    }
+
+    private void OnContentChanged(object? sender, ContentChangedEventArgs e)
+    {
+        EventHandler<ConsoleHistoryChangedEventArgs>? changed = Changed;
+        if (changed is null)
+        {
+            return;
+        }
+
+        if (e.Cleared)
+        {
+            changed.Invoke(this, new ConsoleHistoryChangedEventArgs(
+                HistoryChangeKind.Cleared,
+                Array.Empty<IConsoleEntry>(),
+                Array.Empty<IConsoleEntry>(),
+                ToConsoleEntries(e.RemovedRecords),
+                _contentSequence.Records.Count));
+            return;
+        }
+
+        if (e.Kind == ContentChangeKind.Added)
+        {
+            changed.Invoke(this, new ConsoleHistoryChangedEventArgs(
+                HistoryChangeKind.Added,
+                ToConsoleEntries(e.AddedRecords),
+                ToConsoleEntries(e.RemovedRecords),
+                Array.Empty<IConsoleEntry>(),
+                _contentSequence.Records.Count));
+        }
+    }
+
+    private static IReadOnlyList<IConsoleEntry> ToConsoleEntries(IReadOnlyList<ContentEntryRecord> records)
+    {
+        var entries = new IConsoleEntry[records.Count];
+        for (int i = 0; i < records.Count; i++)
+        {
+            entries[i] = ((ContentEntryAdapter)records[i].Entry).ConsoleEntry;
+        }
+
+        return entries;
     }
 }

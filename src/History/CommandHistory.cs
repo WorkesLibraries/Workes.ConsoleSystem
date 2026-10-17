@@ -49,11 +49,32 @@ public sealed class CommandHistory
     public IReadOnlyList<string> Entries => Array.AsReadOnly(_entries.ToArray());
 
     /// <summary>
+    /// Occurs synchronously after retained command inputs change.
+    /// </summary>
+    public event EventHandler<CommandHistoryChangedEventArgs>? Changed;
+
+    /// <summary>
     /// Removes all retained submitted command inputs.
     /// </summary>
     public void Clear()
     {
+        if (_entries.Count == 0)
+        {
+            return;
+        }
+
+        EventHandler<CommandHistoryChangedEventArgs>? changed = Changed;
+        string[]? clearedInputs = changed is null ? null : _entries.ToArray();
         _entries.Clear();
+        if (changed is not null && clearedInputs is not null)
+        {
+            changed.Invoke(this, new CommandHistoryChangedEventArgs(
+                HistoryChangeKind.Cleared,
+                Array.Empty<string>(),
+                Array.Empty<string>(),
+                clearedInputs,
+                _entries.Count));
+        }
     }
 
     internal bool Add(string input)
@@ -68,12 +89,28 @@ public sealed class CommandHistory
             return false;
         }
 
+        EventHandler<CommandHistoryChangedEventArgs>? changed = Changed;
+        string[] droppedInputs = Array.Empty<string>();
         if (_entries.Count == Capacity)
         {
+            if (changed is not null)
+            {
+                droppedInputs = new[] { _entries[0] };
+            }
+
             _entries.RemoveAt(0);
         }
 
         _entries.Add(input);
+        if (changed is not null)
+        {
+            changed.Invoke(this, new CommandHistoryChangedEventArgs(
+                HistoryChangeKind.Added,
+                new[] { input },
+                droppedInputs,
+                Array.Empty<string>(),
+                _entries.Count));
+        }
         return true;
     }
 

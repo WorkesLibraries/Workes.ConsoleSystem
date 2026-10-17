@@ -29,3 +29,5 @@ Use `ConsoleManager.RecordEntry` to add custom or constructed ConsoleSystem entr
 By default, consecutive inputs that match after trimming, using ordinal case-insensitive comparison, are rejected. Set `History.CommandHistoryDuplicatePolicy` to `Allow` to retain them. When full, command history drops its oldest string. This history is not echoed into the visible transcript by itself; visible input entries are controlled by command execution echo settings.
 
 Both histories have independently configurable capacities. See [Manager and configuration](MANAGER_AND_CONFIGURATION.md) and [Command execution](COMMAND_EXECUTION.md).
+
+Both histories also expose optional change notifications. See [History change hooks](HISTORY_CHANGE_HOOKS.md) for payloads, event ordering, and manager-level forwarding.

@@ -69,8 +69,11 @@ Entries are retained in the visible history as the same objects that were record
 
 - `ConsoleHistory`: bounded visible entries, oldest-first detached `Entries`, `Capacity`, and `Clear()`.
 - `CommandHistory`: bounded submitted strings, oldest-first detached `Entries`, `Capacity`, and `Clear()`.
+- `HistoryChangeKind`, `ConsoleHistoryChangedEventArgs`, and `CommandHistoryChangedEventArgs`: ConsoleSystem-owned synchronous notifications for added, dropped, and cleared retained items; added after released 0.2.0.
 
 `CommandHistory` has a public parameterless constructor for an independent empty history. Its add operation is manager-owned, so use `ConsoleManager.CommandHistory` when you want command execution or `RecordCommandInput` to populate it. Command input history trims only for duplicate comparison; it retains the submitted string unchanged. `RejectConsecutive` compares the trimmed newest and submitted values using ordinal case-insensitive comparison. When full, either history drops its oldest item to retain a new one.
+
+Both history objects expose `Changed`; `ConsoleManager.ConsoleHistoryChanged` and `ConsoleManager.CommandHistoryChanged` are forwarding convenience events. Events run synchronously after mutation, and their argument collections are read-only snapshots. See [History change hooks](HISTORY_CHANGE_HOOKS.md) for detailed payload and timing behavior.
 
 ### `Workes.ConsoleSystem.Presentation`
 
@@ -121,7 +124,7 @@ The complete constant list is in `ConsoleFailureCodes`. Messages are for people 
 
 ## Scope of version 0.2.0
 
-The released 0.2.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, and pull-based history reads. Current `main` also implements stateless autocomplete for a future package release. The package does not include history change events, persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
+The released 0.2.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, and pull-based history reads. Current `main` also implements stateless autocomplete and optional history change events for a future package release. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
 
 ## Focused guides
 
@@ -129,6 +132,7 @@ The released 0.2.0 package provides synchronous command handlers, retained in-me
 - [Logging](LOGGING.md)
 - [Entries and semantic text](ENTRIES_AND_TEXT.md)
 - [Console and command histories](HISTORY.md)
+- [History change hooks](HISTORY_CHANGE_HOOKS.md) (current `main`; not included in released 0.2.0)
 - [Command registration](COMMAND_REGISTRATION.md)
 - [Command parsing](COMMAND_PARSING.md)
 - [Command validation](COMMAND_VALIDATION.md)

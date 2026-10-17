@@ -447,7 +447,7 @@ Detailed notifications improve UI integration without requiring subscription or 
 
 #### Consequences
 
-ContentSystem is the source of committed storage changes under D-032. ConsoleSystem should adapt its notifications to console vocabulary without storing duplicate history state. Preserve no-op event behavior and document that handlers run synchronously.
+ContentSystem is the source of committed visible-history changes under D-032. ConsoleSystem adapts its notifications to console vocabulary without storing duplicate history state. History events run synchronously after mutation; overflow reports the added and dropped entries together, while clear reports the cleared entries. Manager events forward the corresponding history event and sender. Preserve no-op event behavior and document that subscriber exceptions propagate after the mutation has committed.
 
 ## New Decision
 
