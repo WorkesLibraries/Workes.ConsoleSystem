@@ -85,6 +85,17 @@ public sealed class ConsoleManager
     }
 
     /// <summary>
+    /// Validates a parsed command against its configured ranges, allowed values, and custom constraints.
+    /// </summary>
+    /// <remarks>Validation does not execute the command or change console history.</remarks>
+    /// <param name="command">The parsed command to validate.</param>
+    /// <returns>The validation result.</returns>
+    public CommandValidationResult ValidateCommand(BoundCommand command)
+    {
+        return CommandValidator.Validate(command);
+    }
+
+    /// <summary>
     /// Records a console entry in the shared visible history.
     /// </summary>
     /// <param name="entry">The console entry to record.</param>
