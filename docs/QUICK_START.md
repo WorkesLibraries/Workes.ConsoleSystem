@@ -5,7 +5,22 @@ This walkthrough creates a manager, configures its history, registers a typed co
 ## Prerequisites
 
 - A .NET project that can reference .NET Standard 2.1 libraries.
-- The `Workes.ConsoleSystem` NuGet package. See the install command in the [README](../README.md#installation).
+
+## Installation
+
+Install the released package from NuGet:
+
+```bash
+dotnet add package Workes.ConsoleSystem --version 0.2.0
+```
+
+Or add a package reference to your project file:
+
+```xml
+<PackageReference Include="Workes.ConsoleSystem" Version="0.2.0" />
+```
+
+NuGet restores the internal `Workes.ContentSystem` dependency automatically. Application code uses the ConsoleSystem API and does not need a separate ContentSystem reference. See the [README](../README.md#installation) for package details.
 
 ## Create and configure the manager
 
