@@ -54,4 +54,14 @@ public sealed class ConsoleHistory
     {
         _contentSequence.Clear();
     }
+
+    internal void RecordEntry(IConsoleEntry entry)
+    {
+        if (entry is null)
+        {
+            throw new ArgumentNullException(nameof(entry));
+        }
+
+        _contentSequence.Add(new ContentEntryAdapter(entry));
+    }
 }

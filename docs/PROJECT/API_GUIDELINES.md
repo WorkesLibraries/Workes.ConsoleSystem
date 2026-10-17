@@ -6,7 +6,7 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 ## Current Status
 
-The package implements `ConsoleManager` and its options, ConsoleSystem-owned entries, semantic console text, command-output/failure value types, an internal ContentSystem adapter, and a `ConsoleHistory` read/clear facade. `ConsoleManager.RecordEntry(IConsoleEntry)` writes entries, and `ConsoleManager.History` exposes capacity, detached oldest-first entry snapshots, and clearing. History change events and command workflows are still planned. The guidance below carries forward the old package's established design intent and the approved ContentSystem boundary; future signatures must be checked against implementation before appearing in user-facing documentation.
+The package implements `ConsoleManager` and its options, ConsoleSystem-owned entries, semantic console text, command-output/failure value types, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, and manager-centered logging for all six `LogLevel` values. Logging supports plain strings and semantic `ConsoleText`; all levels are recorded without a package-side filter. `ConsoleManager.RecordEntry(IConsoleEntry)` writes entries, and `ConsoleManager.History` exposes capacity, detached oldest-first entry snapshots, and clearing. History change events and command workflows are still planned. The guidance below carries forward the old package's established design intent and the approved ContentSystem boundary; future signatures must be checked against implementation before appearing in user-facing documentation.
 
 ## API Design Principles
 

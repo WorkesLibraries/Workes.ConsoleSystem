@@ -470,3 +470,21 @@ ContentSystem already owns content identity, sequence retention, mutation, chang
 ConsoleSystem's public entry contracts must not inherit from or expose ContentSystem contracts. An internal adapter must satisfy ContentSystem's timestamped entry contract and wrap ConsoleSystem-owned entry values. ConsoleHistory projects records back to ConsoleSystem-owned entries/results and translates content changes into ConsoleSystem-owned history events; public signatures must not expose ContentSystem types or IDs. ContentSystem remains unaware of log severity, command schemas, and console UI semantics. Snapshot support for console entries requires explicit snapshot serializers/factories and is not implied until implemented. The new project must add and validate the actual package/project dependency before user-facing docs claim it.
 
 This carries forward the observable intent of old D-002 (one chronological stream for logs, echoed input, command output, failures, and custom entries) and D-013 (configurable bounded drop-oldest retention) while replacing their console-owned storage mechanism. ContentSystem now owns the records and retention behavior.
+
+### D-033: Manager Logging Records Every Supported Level
+
+#### Context
+
+The old logging surface accepts all six log severities and provides no minimum-level filter configuration. Adding a new filter option would change that contract and require a separate decision about whether suppressed entries remain observable elsewhere.
+
+#### Decision
+
+Keep logging manager-centered and record every call at Trace, Debug, Information, Warning, Error, or Critical severity. Support plain strings and semantic `ConsoleText`; do not add package-side minimum-level filtering in this stage.
+
+#### Reasoning
+
+This preserves the old behavior and keeps filtering/rendering decisions with the host application.
+
+#### Consequences
+
+Every manager logging call appends one `LogEntry` to `ConsoleHistory` and the ContentSystem-backed sequence. The host UI may choose which levels to display, but the package does not discard them.
