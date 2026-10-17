@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.Commands;
 using Workes.ConsoleSystem.Entries;
@@ -15,6 +16,7 @@ namespace Workes.ConsoleSystem.Core;
 public sealed class ConsoleManager
 {
     private readonly ConsoleManagerOptions _options;
+    private readonly StringComparer _commandPathComparer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConsoleManager"/> class with default options.
@@ -31,6 +33,9 @@ public sealed class ConsoleManager
     public ConsoleManager(ConsoleManagerOptions options)
     {
         _options = ConsoleManagerOptions.CreateSnapshot(options);
+        _commandPathComparer = _options.CommandParsing.IsCaseSensitive
+            ? StringComparer.Ordinal
+            : StringComparer.OrdinalIgnoreCase;
 
         var structure = new ContentSequenceStructure(
             ContentOverflowPolicy.DropOldest(_options.History.ConsoleHistoryCapacity),
@@ -41,6 +46,7 @@ public sealed class ConsoleManager
             _options.History.CommandHistoryCapacity,
             _options.History.CommandHistoryDuplicatePolicy);
         Log = new ConsoleLog(History);
+        Commands = new CommandSystem();
     }
 
     /// <summary>
@@ -64,6 +70,11 @@ public sealed class ConsoleManager
     public ConsoleLog Log { get; }
 
     /// <summary>
+    /// Gets the registered command definitions. Registration remains owned by this manager.
+    /// </summary>
+    public CommandSystem Commands { get; }
+
+    /// <summary>
     /// Records a console entry in the shared visible history.
     /// </summary>
     /// <param name="entry">The console entry to record.</param>
@@ -83,6 +94,57 @@ public sealed class ConsoleManager
     /// <param name="input">The original submitted command input.</param>
     /// <returns><see langword="true"/> when the input was retained; otherwise, <see langword="false"/>.</returns>
     public bool RecordCommandInput(string input) => CommandHistory.Add(input);
+
+    /// <summary>
+    /// Registers one command definition.
+    /// </summary>
+    /// <param name="command">The command definition to register.</param>
+    /// <returns>The registered command definition.</returns>
+    public CommandDefinition RegisterCommand(CommandDefinition command)
+    {
+        if (command is null)
+        {
+            throw new ArgumentNullException(nameof(command));
+        }
+
+        ValidateCommandMembers(command);
+        ValidateCommandIsNotDuplicate(command.Path, Commands.Definitions);
+        Commands.Add(command);
+        return command;
+    }
+
+    /// <summary>
+    /// Registers multiple command definitions atomically.
+    /// </summary>
+    /// <param name="commands">The command definitions to register.</param>
+    /// <returns>The registered definitions in their original order.</returns>
+    public IReadOnlyList<CommandDefinition> RegisterCommands(IEnumerable<CommandDefinition> commands)
+    {
+        if (commands is null)
+        {
+            throw new ArgumentNullException(nameof(commands));
+        }
+
+        var commandList = new List<CommandDefinition>();
+        foreach (CommandDefinition command in commands)
+        {
+            if (command is null)
+            {
+                throw new ArgumentException("Command batches cannot contain null commands.", nameof(commands));
+            }
+
+            commandList.Add(command);
+        }
+
+        ValidateBatch(commandList);
+
+        foreach (CommandDefinition command in commandList)
+        {
+            Commands.Add(command);
+        }
+
+        return commandList.AsReadOnly();
+    }
 
     /// <summary>
     /// Adds a trace log message to the shared console history.
@@ -160,4 +222,78 @@ public sealed class ConsoleManager
     /// Gets the internal store used by the console history facade.
     /// </summary>
     internal ContentSequenceManager ContentSequence { get; }
+
+    private void ValidateBatch(IReadOnlyList<CommandDefinition> commands)
+    {
+        foreach (CommandDefinition command in commands)
+        {
+            ValidateCommandMembers(command);
+            ValidateCommandIsNotDuplicate(command.Path, Commands.Definitions);
+        }
+
+        var paths = new HashSet<string>(_commandPathComparer);
+        foreach (CommandDefinition command in commands)
+        {
+            if (!paths.Add(command.Path))
+            {
+                throw new InvalidOperationException($"Duplicate command path '{command.Path}' in registration batch.");
+            }
+        }
+    }
+
+    private void ValidateCommandIsNotDuplicate(string path, IReadOnlyList<CommandDefinition> existingCommands)
+    {
+        foreach (CommandDefinition existingCommand in existingCommands)
+        {
+            if (_commandPathComparer.Equals(existingCommand.Path, path))
+            {
+                throw new InvalidOperationException($"A command with path '{path}' is already registered.");
+            }
+        }
+    }
+
+    private void ValidateCommandMembers(CommandDefinition command)
+    {
+        string prefix = _options.CommandParsing.FlagAndOptionPrefix;
+        var seenNamedMembers = new HashSet<string>(_commandPathComparer);
+
+        foreach (CommandFlagDefinition flag in command.Flags)
+        {
+            ValidateNameDoesNotIncludePrefix(flag.Name, prefix);
+            AddUniqueCommandMemberName(seenNamedMembers, flag.Name);
+            foreach (string alias in flag.Aliases)
+            {
+                ValidateNameDoesNotIncludePrefix(alias, prefix);
+                AddUniqueCommandMemberName(seenNamedMembers, alias);
+            }
+        }
+
+        foreach (CommandOptionDefinition option in command.Options)
+        {
+            ValidateNameDoesNotIncludePrefix(option.Name, prefix);
+            AddUniqueCommandMemberName(seenNamedMembers, option.Name);
+            foreach (string alias in option.Aliases)
+            {
+                ValidateNameDoesNotIncludePrefix(alias, prefix);
+                AddUniqueCommandMemberName(seenNamedMembers, alias);
+            }
+        }
+    }
+
+    private static void ValidateNameDoesNotIncludePrefix(string name, string prefix)
+    {
+        if (name.StartsWith(prefix, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Flag and option schema names should not include the configured prefix '{prefix}'. Use '{name.Substring(prefix.Length)}' instead.");
+        }
+    }
+
+    private static void AddUniqueCommandMemberName(HashSet<string> seenNamedMembers, string name)
+    {
+        if (!seenNamedMembers.Add(name))
+        {
+            throw new InvalidOperationException($"Duplicate flag or option name or alias '{name}' for the configured command parsing comparer.");
+        }
+    }
 }
