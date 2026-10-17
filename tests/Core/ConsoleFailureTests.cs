@@ -177,4 +177,62 @@ public sealed class ConsoleFailureTests
         Assert.That(exception.Message, Is.EqualTo(failure.Message));
         Assert.That(exception.InnerException, Is.SameAs(innerException));
     }
+
+    [Test]
+    public void ConsoleFailures_UseStableKindsCodesAndDefaultMessage()
+    {
+        ConsoleFailure unknown = ConsoleFailures.Unknown();
+        ConsoleFailure validation = ConsoleFailures.Validation("Rejected.");
+        ConsoleFailure configuration = ConsoleFailures.Configuration("Invalid configuration.");
+        ConsoleFailure definition = ConsoleFailures.CommandDefinition("Invalid command.");
+        ConsoleFailure registration = ConsoleFailures.CommandRegistration("Already registered.");
+        ConsoleFailure extension = ConsoleFailures.Extension("Extension failed.");
+
+        AssertFailure(unknown, ConsoleFailureKind.Unknown, ConsoleFailureCodes.Unknown, "Console operation failed.");
+        AssertFailure(validation, ConsoleFailureKind.Validation, ConsoleFailureCodes.ValidationRejected, "Rejected.");
+        AssertFailure(configuration, ConsoleFailureKind.Configuration, ConsoleFailureCodes.ConfigurationRejected, "Invalid configuration.");
+        AssertFailure(definition, ConsoleFailureKind.CommandDefinition, ConsoleFailureCodes.CommandDefinitionInvalid, "Invalid command.");
+        AssertFailure(registration, ConsoleFailureKind.CommandRegistration, ConsoleFailureCodes.CommandRegistrationRejected, "Already registered.");
+        AssertFailure(extension, ConsoleFailureKind.Extension, ConsoleFailureCodes.ExtensionRejected, "Extension failed.");
+    }
+
+    [Test]
+    public void ConsoleFailures_CommandParsingAndBindingPreserveSpecificCodeAndSource()
+    {
+        ConsoleFailure parsing = ConsoleFailures.CommandParsing(
+            ConsoleFailureCodes.CommandUnknown,
+            "Unknown command.",
+            "missing.command");
+        ConsoleFailure binding = ConsoleFailures.CommandBinding(
+            ConsoleFailureCodes.CommandStateBindingFailed,
+            "Could not bind state.",
+            "give");
+
+        AssertFailure(parsing, ConsoleFailureKind.CommandParsing, ConsoleFailureCodes.CommandUnknown, "Unknown command.");
+        Assert.That(parsing.Source, Is.EqualTo("missing.command"));
+        AssertFailure(binding, ConsoleFailureKind.CommandBinding, ConsoleFailureCodes.CommandStateBindingFailed, "Could not bind state.");
+        Assert.That(binding.Source, Is.EqualTo("give"));
+    }
+
+    [Test]
+    public void ConsoleFailures_ConstraintAndExecutionPreserveCauseAndSource()
+    {
+        ConsoleFailure cause = ConsoleFailures.Extension("Predicate failed.");
+        ConsoleFailure constraint = ConsoleFailures.CommandConstraint("Constraint rejected.", "count", cause);
+        ConsoleFailure execution = ConsoleFailures.CommandExecution("Handler failed.", "spawn", cause);
+
+        AssertFailure(constraint, ConsoleFailureKind.CommandConstraint, ConsoleFailureCodes.CommandConstraintRejected, "Constraint rejected.");
+        Assert.That(constraint.Source, Is.EqualTo("count"));
+        Assert.That(constraint.Cause, Is.SameAs(cause));
+        AssertFailure(execution, ConsoleFailureKind.CommandExecution, ConsoleFailureCodes.CommandExecutionRejected, "Handler failed.");
+        Assert.That(execution.Source, Is.EqualTo("spawn"));
+        Assert.That(execution.Cause, Is.SameAs(cause));
+    }
+
+    private static void AssertFailure(ConsoleFailure failure, ConsoleFailureKind kind, string code, string message)
+    {
+        Assert.That(failure.Kind, Is.EqualTo(kind));
+        Assert.That(failure.Code, Is.EqualTo(code));
+        Assert.That(failure.Message, Is.EqualTo(message));
+    }
 }
