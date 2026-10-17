@@ -1,0 +1,71 @@
+# API GUIDELINES
+
+## Purpose
+
+Describe the public API design principles for Workes.ConsoleSystem. This is project-control guidance, not a member-by-member API reference.
+
+## Current Status
+
+The new package currently has no runtime API implementation. The guidance below carries forward the old package's established design intent and adds the approved ContentSystem boundary. Names and exact signatures should be checked against implementation before appearing in user-facing documentation.
+
+## API Design Principles
+
+- Keep the package engine-neutral and UI-neutral.
+- Use `ConsoleManager` as the explicit root for one console instance; do not introduce a singleton or hidden global state.
+- Keep the public workflow manager-centered and convenient for normal users.
+- Keep the core public surface focused on implemented workflows; avoid speculative extension points.
+- Preserve the old package's command model and typed console domain concepts unless implementation evidence requires a change.
+- Let Workes.ContentSystem own retained content storage and record identity. ConsoleSystem should offer console-appropriate APIs and payloads rather than mirror the content storage API.
+
+## Content And History API
+
+`IConsoleEntry` and all built-in/custom entry contracts belong to ConsoleSystem. They must not inherit from, accept, or return ContentSystem types. ConsoleSystem's internal adapter maps an `IConsoleEntry` and its timestamp to the ContentSystem entry contract when storing it; callers only create ConsoleSystem entries and submit them through ConsoleSystem APIs.
+
+`ConsoleHistory` should be a console-facing facade over a ContentSystem sequence, not a second record store. Keep entry-oriented reads and clear/add workflows in ConsoleSystem terms. Do not accept or return ContentSystem records, IDs, managers, sequence types, or event arguments in the public API. If a future console feature needs identity, define a console-owned identity type.
+
+The normal history retention behavior is bounded drop-oldest. Keep the existing console configuration concept for history capacity and translate it internally to ContentSystem's sequence overflow policy. Do not add custom retention machinery to ConsoleSystem or require callers to configure a ContentSystem sequence.
+
+ContentSystem change events must be translated to ConsoleSystem-owned event arguments before they reach consumers. Preserve useful console concepts such as added entries, dropped entries caused by overflow, cleared entries, and retained count. ContentSystem event types must not appear in public event signatures. Event subscription remains optional; pull-based reads remain valid.
+
+`CommandHistory` is intentionally separate: it stores command input strings for navigation, with its own duplicate policy and capacity. Do not combine it with ContentSystem's visible-entry sequence merely because both are called histories.
+
+## Entry And Presentation API
+
+Use typed console entries for logs, echoed command input, command output, command failures, and host-specific console events. Do not put log severity on every entry type.
+
+Keep simple string logging and output paths simple. Use `ConsoleText` and semantic segments when callers need meaning within a line. Semantic IDs and data describe content; the host application decides appearance and interaction.
+
+Allow custom console entries through a narrow entry contract and a controlled manager/history recording method. Custom entries should not require the package to know their rendering model.
+
+## Command API Direction
+
+Use one command schema model rather than separate public types for each combination of positional arguments, flags, and options.
+
+- Simple commands should work without a separate state type.
+- Complex commands should prefer small immutable typed state records.
+- Required positional arguments represent core command state; flags and named options represent optional state.
+- Build immutable definitions before registering them through the manager.
+- Keep command path, parsing, binding, validation, execution, and autocomplete concepts separate even when normal submission orchestrates them together.
+- Keep handlers synchronous until a real asynchronous workflow is required.
+- Return command output and expected command failures through a result object rather than writing through a hidden output sink.
+
+Exact API signatures and syntax are not duplicated here; the existing old-package command decisions are the design source until each workflow is carried into the fresh implementation.
+
+## Configuration Style
+
+Prefer a no-argument constructor with complete defaults and an options overload for customization. Options objects may be mutable setup objects for object-initializer ergonomics, but the manager should snapshot them at construction so later caller mutations do not change runtime behavior.
+
+Changing one option should not require callers to specify unrelated settings. Validate invalid configuration before accepting it. Keep console history capacity as a console setting even though ContentSystem performs the underlying bounded retention.
+
+## Failure Handling And Validation
+
+- Expected domain or command rejection should be representable as structured failure data.
+- Provide `Try...` operations when callers are expected to branch on rejection, with throwing wrappers for expected-success use where appropriate.
+- Programmer misuse and invalid setup arguments should use standard .NET exceptions.
+- Validate complete operations before committing mutation where practical.
+- Parsing, validation, and autocomplete inspection should not mutate history or invoke command handlers.
+- Direct execution should own the normal user-input workflow and write resulting input/output/failure entries in a consistent order.
+
+## Documentation Boundary
+
+Project-control documents may describe intended architecture and decisions, clearly identified as such while implementation is absent. Public README, Quick Start, and focused user guides must describe only APIs and workflows verified in the new package. Do not copy old examples into public docs until their API shape has been confirmed against the fresh implementation.
