@@ -5,7 +5,7 @@
 
 Workes.ConsoleSystem is an engine-neutral console foundation for applications, games, and tools. It provides one manager-owned API for logging, retained console entries, command input history, and synchronous command registration, parsing, validation, and execution.
 
-Version 0.1.0 is a substantial rebuild of the existing `Workes.ConsoleSystem` package around `Workes.ContentSystem`, which now provides the internal retained-content storage. ConsoleSystem keeps its own public manager, entry, text, command, and history APIs; consumers do not need to create or call ContentSystem objects directly. This release is not intended as a drop-in replacement for APIs from the earlier implementation.
+Version 0.2.0 is a substantial rebuild of the existing `Workes.ConsoleSystem` package around `Workes.ContentSystem`, which now provides the internal retained-content storage. The previously published 0.1.0 package remains unchanged. ConsoleSystem keeps its own public manager, entry, text, command, and history APIs; consumers do not need to create or call ContentSystem objects directly. This release is not intended as a drop-in replacement for APIs from the earlier implementation.
 
 ## Highlights
 
@@ -21,13 +21,13 @@ Version 0.1.0 is a substantial rebuild of the existing `Workes.ConsoleSystem` pa
 Install the package from [NuGet](https://www.nuget.org/packages/Workes.ConsoleSystem):
 
 ```bash
-dotnet add package Workes.ConsoleSystem --version 0.1.0
+dotnet add package Workes.ConsoleSystem --version 0.2.0
 ```
 
 Or add a package reference:
 
 ```xml
-<PackageReference Include="Workes.ConsoleSystem" Version="0.1.0" />
+<PackageReference Include="Workes.ConsoleSystem" Version="0.2.0" />
 ```
 
 The package targets .NET Standard 2.1. Its internal storage dependency is restored transitively; normal usage goes through ConsoleSystem APIs.
@@ -82,7 +82,7 @@ The [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/m
 - [Command outputs and failures](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md)
 
-Autocomplete configuration is present in the options surface, but this version does not provide a completion operation. History change events and persistence are also not part of the 0.1.0 public API.
+Autocomplete configuration is present in the options surface, but this version does not provide a completion operation. History change events and persistence are also not part of the 0.2.0 public API.
 
 ## License
 

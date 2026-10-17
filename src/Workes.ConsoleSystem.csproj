@@ -7,8 +7,8 @@
     <LangVersion>10.0</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Workes.ConsoleSystem</PackageId>
-    <Version>0.1.0</Version>
-    <PackageReleaseNotes>Substantial rebuild of Workes.ConsoleSystem around Workes.ContentSystem. This release provides ConsoleSystem-owned manager, entry, history, logging, and synchronous command APIs; it is not a drop-in upgrade from the earlier implementation.</PackageReleaseNotes>
+    <Version>0.2.0</Version>
+    <PackageReleaseNotes>Version 0.2.0 is the substantial rebuild of Workes.ConsoleSystem around Workes.ContentSystem. It provides ConsoleSystem-owned manager, entry, history, logging, and synchronous command APIs; it is not a drop-in upgrade from the legacy 0.1.0 package.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>Workes</Authors>
     <Company>Workes</Company>

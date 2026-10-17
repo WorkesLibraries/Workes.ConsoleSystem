@@ -1,8 +1,8 @@
 # Changelog
 
-This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity, but version 0.1.0 is a substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
+This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
-## [0.1.0] - Unreleased
+## [0.2.0] - Unreleased
 
 ### Rebuilt
 
@@ -30,4 +30,4 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`. The pac
 
 ### Not included in this release
 
-- Command completion operations, history change events, persistence, asynchronous handlers, UI controls, markup parsing, and theme/rendering systems are not part of the 0.1.0 public API.
+- Command completion operations, history change events, persistence, asynchronous handlers, UI controls, markup parsing, and theme/rendering systems are not part of the 0.2.0 public API.

@@ -38,7 +38,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 | `CommandParsing.AllowQuotedStrings` | `true` | Whether quoted tokens are accepted. |
 | `CommandParsing.AllowInterleavedOptions` | `false` | Whether flags/options may appear among positional values. |
 | `CommandParsing.BooleanLiterals` | `true` / `false` | Accepted boolean option values. |
-| `Autocomplete.PathCompletionMode` | `FullPath` | Reserved completion preference; no completion operation is exposed in 0.1.0. |
+| `Autocomplete.PathCompletionMode` | `FullPath` | Reserved completion preference; no completion operation is exposed in 0.2.0. |
 | `History.ConsoleHistoryCapacity` | `200` | Maximum visible console entries retained. |
 | `History.CommandHistoryCapacity` | `100` | Maximum submitted command strings retained. |
 | `History.CommandHistoryDuplicatePolicy` | `RejectConsecutive` | Whether the newest duplicate command string is suppressed. |

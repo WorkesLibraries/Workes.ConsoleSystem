@@ -551,7 +551,7 @@ The earlier Workes.ConsoleSystem package already uses the `Workes.ConsoleSystem`
 
 #### Decision
 
-Keep the existing NuGet package ID. Clearly describe version 0.1.0 as a substantial rebuild around Workes.ContentSystem in the project metadata and changelog, and state that it is not a drop-in upgrade from the earlier implementation.
+Keep the existing NuGet package ID. Clearly describe the rebuilt release around Workes.ContentSystem in the project metadata and changelog, and state that it is not a drop-in upgrade from the earlier implementation.
 
 #### Reasoning
 
@@ -560,3 +560,21 @@ Keeping the established package identity avoids creating a second package line, 
 #### Consequences
 
 Package metadata and release documentation must describe the rebuild. Public ConsoleSystem APIs remain the only documented workflow; consumers do not need to construct or call ContentSystem types directly.
+
+### D-038: Start The Rebuilt Release At 0.2.0
+
+#### Context
+
+The stable version 0.1.0 of `Workes.ConsoleSystem` is already published with the earlier implementation. NuGet does not allow replacing a package that already exists with the same package ID and version.
+
+#### Decision
+
+Keep the existing package ID and prepare the ContentSystem-backed rebuild as version 0.2.0. Do not attempt to reuse or replace 0.1.0.
+
+#### Reasoning
+
+Version 0.2.0 is the next available pre-1.0 stable release and reflects the substantial API rebuild better than a patch version. It also avoids a prerelease suffix that would be lower precedence than the already published stable 0.1.0.
+
+#### Consequences
+
+The project version, installation examples, release notes, and current implementation documentation must identify the rebuilt package as 0.2.0. The changelog must clarify that the old 0.1.0 remains unchanged.
