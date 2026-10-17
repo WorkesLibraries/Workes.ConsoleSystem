@@ -6,7 +6,7 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 ## Current Status
 
-The package implements `ConsoleManager` and its options, ConsoleSystem-owned entries, semantic console text, command-output/failure value types, and an internal ContentSystem adapter. `ConsoleManager.RecordEntry(IConsoleEntry)` is the current public write path. Full history reads/clears/events and command workflows are still planned. The guidance below carries forward the old package's established design intent and the approved ContentSystem boundary; future signatures must be checked against implementation before appearing in user-facing documentation.
+The package implements `ConsoleManager` and its options, ConsoleSystem-owned entries, semantic console text, command-output/failure value types, an internal ContentSystem adapter, and a `ConsoleHistory` read/clear facade. `ConsoleManager.RecordEntry(IConsoleEntry)` writes entries, and `ConsoleManager.History` exposes capacity, detached oldest-first entry snapshots, and clearing. History change events and command workflows are still planned. The guidance below carries forward the old package's established design intent and the approved ContentSystem boundary; future signatures must be checked against implementation before appearing in user-facing documentation.
 
 ## API Design Principles
 
@@ -21,7 +21,7 @@ The package implements `ConsoleManager` and its options, ConsoleSystem-owned ent
 
 `IConsoleEntry` and all built-in/custom entry contracts belong to ConsoleSystem. They must not inherit from, accept, or return ContentSystem types. ConsoleSystem's internal adapter maps an `IConsoleEntry` and its timestamp to the ContentSystem entry contract when storing it; callers only create ConsoleSystem entries and submit them through ConsoleSystem APIs.
 
-`ConsoleHistory` should be a console-facing facade over a ContentSystem sequence, not a second record store. Keep entry-oriented reads and clear/add workflows in ConsoleSystem terms. Do not accept or return ContentSystem records, IDs, managers, sequence types, or event arguments in the public API. If a future console feature needs identity, define a console-owned identity type.
+`ConsoleHistory` is a console-facing facade over a ContentSystem sequence, not a second record store. `ConsoleManager.History` is the supported access path; `Entries` returns a detached oldest-first snapshot on every read, and `Clear()` mutates the shared retained history. Keep entry-oriented reads and clear/add workflows in ConsoleSystem terms. Do not accept or return ContentSystem records, IDs, managers, sequence types, or event arguments in the public API. If a future console feature needs identity, define a console-owned identity type.
 
 The normal history retention behavior is bounded drop-oldest. Keep the existing console configuration concept for history capacity and translate it internally to ContentSystem's sequence overflow policy. Do not add custom retention machinery to ConsoleSystem or require callers to configure a ContentSystem sequence.
 

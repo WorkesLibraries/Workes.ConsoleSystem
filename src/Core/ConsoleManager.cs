@@ -1,4 +1,5 @@
 using System;
+using Workes.ConsoleSystem.History;
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.Entries;
 using Workes.ConsoleSystem.Internal;
@@ -33,12 +34,18 @@ public sealed class ConsoleManager
             ContentOverflowPolicy.DropOldest(_options.History.ConsoleHistoryCapacity),
             ContentSequenceReadOrder.OldestFirst);
         ContentSequence = new ContentSequenceManager(structure);
+        History = new ConsoleHistory(ContentSequence, _options.History.ConsoleHistoryCapacity);
     }
 
     /// <summary>
     /// Gets a detached snapshot of the resolved options for this console instance.
     /// </summary>
     public ConsoleManagerOptions Options => ConsoleManagerOptions.CreateSnapshot(_options);
+
+    /// <summary>
+    /// Gets the shared chronological console history.
+    /// </summary>
+    public ConsoleHistory History { get; }
 
     /// <summary>
     /// Records a console entry in the shared visible history.
