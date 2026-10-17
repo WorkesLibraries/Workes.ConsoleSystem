@@ -16,6 +16,9 @@ public sealed class CommandDefinition
         IReadOnlyList<CommandFlagDefinition> flags,
         IReadOnlyList<CommandOptionDefinition> options,
         IReadOnlyList<CommandConstraintDefinition> constraints,
+        IReadOnlyList<string> requiredPermissions,
+        IReadOnlyList<IReadOnlyList<string>> requiredAnyPermissionGroups,
+        IReadOnlyList<Func<CommandAvailabilityContext, CommandAvailabilityResult>> availabilityChecks,
         CommandEchoInputDefinition echoInput,
         IReadOnlyList<CommandSuccessOutputDefinition> successOutputs,
         Delegate handler)
@@ -27,6 +30,9 @@ public sealed class CommandDefinition
         Flags = flags ?? throw new ArgumentNullException(nameof(flags));
         Options = options ?? throw new ArgumentNullException(nameof(options));
         Constraints = constraints ?? throw new ArgumentNullException(nameof(constraints));
+        RequiredPermissions = requiredPermissions ?? throw new ArgumentNullException(nameof(requiredPermissions));
+        RequiredAnyPermissionGroups = requiredAnyPermissionGroups ?? throw new ArgumentNullException(nameof(requiredAnyPermissionGroups));
+        AvailabilityChecks = availabilityChecks ?? throw new ArgumentNullException(nameof(availabilityChecks));
         EchoInput = echoInput ?? throw new ArgumentNullException(nameof(echoInput));
         SuccessOutputs = successOutputs ?? throw new ArgumentNullException(nameof(successOutputs));
         Handler = handler ?? throw new ArgumentNullException(nameof(handler));
@@ -67,6 +73,15 @@ public sealed class CommandDefinition
     /// </summary>
     public IReadOnlyList<CommandConstraintDefinition> Constraints { get; }
 
+    /// <summary>Gets the permissions that are all required to execute this command.</summary>
+    public IReadOnlyList<string> RequiredPermissions { get; }
+
+    /// <summary>Gets permission groups for which at least one permission in each group is required.</summary>
+    public IReadOnlyList<IReadOnlyList<string>> RequiredAnyPermissionGroups { get; }
+
+    /// <summary>Gets whether the command has runtime availability checks.</summary>
+    public bool HasAvailabilityChecks => AvailabilityChecks.Count > 0;
+
     /// <summary>
     /// Gets command-specific input echo metadata.
     /// </summary>
@@ -83,4 +98,6 @@ public sealed class CommandDefinition
     public bool HasHandler => Handler is not null;
 
     internal Delegate Handler { get; }
+
+    internal IReadOnlyList<Func<CommandAvailabilityContext, CommandAvailabilityResult>> AvailabilityChecks { get; }
 }

@@ -120,6 +120,8 @@ console.CommandHistory.Changed += (_, change) => RefreshCommandInput(change);
 
 Both events are synchronous and optional. Their ConsoleSystem-owned payloads report added, dropped, or cleared items. See [Command autocomplete](COMMAND_AUTOCOMPLETE.md) and [History change hooks](HISTORY_CHANGE_HOOKS.md) for candidate rules, event payloads, and ordering.
 
+The current development branch also supports restricting commands by caller permissions or runtime state. These APIs are not in the published 0.3.0 package; see [Command permissions and availability](COMMAND_ACCESS.md) for the provider, roles, wildcard rules, failure behavior, and autocomplete visibility settings.
+
 ## What to read next
 
 - [Manager and configuration](MANAGER_AND_CONFIGURATION.md)
@@ -130,3 +132,4 @@ Both events are synchronous and optional. Their ConsoleSystem-owned payloads rep
 - [Command parsing](COMMAND_PARSING.md)
 - [Command validation](COMMAND_VALIDATION.md)
 - [Command autocomplete](COMMAND_AUTOCOMPLETE.md)
+- [Command permissions and availability](COMMAND_ACCESS.md)

@@ -14,7 +14,9 @@ public sealed class CommandAutocompleteCandidate
         string text,
         CommandAutocompleteCandidateKind kind,
         string? displayText = null,
-        string? description = null)
+        string? description = null,
+        bool isAvailable = true,
+        string? unavailableReason = null)
     {
         if (text is null)
         {
@@ -30,6 +32,8 @@ public sealed class CommandAutocompleteCandidate
         Kind = kind;
         DisplayText = displayText ?? text;
         Description = description;
+        IsAvailable = isAvailable;
+        UnavailableReason = unavailableReason;
     }
 
     /// <summary>
@@ -51,4 +55,10 @@ public sealed class CommandAutocompleteCandidate
     /// Gets the optional candidate description.
     /// </summary>
     public string? Description { get; }
+
+    /// <summary>Gets whether the current caller can execute the associated command.</summary>
+    public bool IsAvailable { get; }
+
+    /// <summary>Gets why the associated command is unavailable, when known.</summary>
+    public string? UnavailableReason { get; }
 }

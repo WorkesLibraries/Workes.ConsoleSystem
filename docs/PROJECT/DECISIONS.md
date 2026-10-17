@@ -596,3 +596,21 @@ Prepare these features and their user documentation for version 0.3.0. Keep the 
 #### Consequences
 
 Package metadata, installation examples, and feature documentation describe the 0.3.0 package. The changelog marks its changes as unreleased until the package is published.
+
+### D-040: Keep Command Authorization Opt-In And Manager-Scoped
+
+#### Context
+
+The command API needs caller access checks and runtime availability checks without making simple commands require security configuration. A console manager represents one console/caller context, and autocomplete should avoid exposing blocked commands by default.
+
+#### Decision
+
+Require permissions only when a command declares them. Resolve the manager's caller through an optional `IConsolePermissionProvider` injected into `ConsoleManager`; restricted commands fail closed when no provider is supplied. Include a mutable `ConsolePermissionSet` for direct grants, explicit denials, and reusable named `ConsoleRole` grants. Exact paths and terminal `.*` wildcard rules match case-insensitively; explicit denials override grants. Keep runtime availability as a separate command-level check that can return a reason. Hide commands blocked by either check from autocomplete by default, with an option to show blocked command candidates and their status.
+
+#### Reasoning
+
+The provider strategy supports application-owned identity and policy while leaving a convenient direct grant and role model for common hosts. A manager-scoped provider fits the existing per-console manager model and avoids repeating caller data on every command API. Failing closed only when command metadata requires permission preserves the simple path without silently accepting a missing authorization service for protected commands.
+
+#### Consequences
+
+Execution evaluates access before command validation and handler invocation. Access failures use ConsoleSystem failure kinds/codes and the normal command failure entry path. Autocomplete callbacks are synchronous and may run for each query; hosts should keep them fast and side-effect free. Help visibility is designed in its dedicated stage.

@@ -105,6 +105,12 @@ public static class ConsoleFailureCodes
     /// </summary>
     public const string CommandExecutionRejected = PackagePrefix + "command.execution.rejected";
 
+    /// <summary>Command execution was blocked because a required permission was missing.</summary>
+    public const string CommandPermissionDenied = PackagePrefix + "command.permission.denied";
+
+    /// <summary>Command execution was blocked because the command is currently unavailable.</summary>
+    public const string CommandUnavailable = PackagePrefix + "command.unavailable";
+
     /// <summary>
     /// Extension contract rejection.
     /// </summary>

@@ -17,12 +17,18 @@ public sealed class CommandAutocompleteOptions
     private CommandAutocompleteOptions(CommandAutocompleteOptions source)
     {
         PathCompletionMode = ValidatePathCompletionMode(source.PathCompletionMode);
+        ShowUnavailableCommands = source.ShowUnavailableCommands;
     }
 
     /// <summary>
     /// Gets or sets how command paths are completed.
     /// </summary>
     public CommandPathCompletionMode PathCompletionMode { get; set; } = CommandPathCompletionMode.FullPath;
+
+    /// <summary>
+    /// Gets or sets whether autocomplete includes commands the current caller cannot run.
+    /// </summary>
+    public bool ShowUnavailableCommands { get; set; }
 
     internal static CommandAutocompleteOptions CreateSnapshot(CommandAutocompleteOptions? source)
     {

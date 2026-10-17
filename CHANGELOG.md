@@ -2,7 +2,14 @@
 
 This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
-## [0.3.0] - Unreleased
+## [Unreleased]
+
+### Added
+
+- Added opt-in command permission requirements, reusable permission roles, explicit denials, and runtime availability checks.
+- Added configurable autocomplete visibility for commands blocked by permissions or availability.
+
+## [0.3.0] - 2026-10-17
 
 ### Added
 

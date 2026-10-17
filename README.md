@@ -83,11 +83,12 @@ The [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/m
 - [Command parsing](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_PARSING.md)
 - [Command validation](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_VALIDATION.md)
 - [Command autocomplete](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_AUTOCOMPLETE.md)
+- [Command permissions and availability](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_ACCESS.md) (unreleased)
 - [Command execution](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_EXECUTION.md)
 - [Command outputs and failures](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md)
 
-The 0.3.0 release target adds stateless autocomplete and optional history change events to the 0.2.0 foundation. See the [Command autocomplete guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_AUTOCOMPLETE.md) and [History change hooks](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/HISTORY_CHANGE_HOOKS.md) for their full contracts. History persistence is not part of the public API.
+Version 0.3.0 adds stateless autocomplete and optional history change events to the 0.2.0 foundation. Permission and availability APIs are in the unreleased development work and are not part of published 0.3.0. See the [Command autocomplete guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_AUTOCOMPLETE.md), [History change hooks](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/HISTORY_CHANGE_HOOKS.md), and [changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md) for details. History persistence is not part of the public API.
 
 ## License
 

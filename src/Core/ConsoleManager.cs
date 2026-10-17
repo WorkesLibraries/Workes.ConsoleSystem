@@ -7,6 +7,7 @@ using Workes.ConsoleSystem.Entries;
 using Workes.ConsoleSystem.History;
 using Workes.ConsoleSystem.Logging;
 using Workes.ConsoleSystem.Presentation;
+using Workes.ConsoleSystem.Permissions;
 using Workes.ContentSystem.Core;
 
 namespace Workes.ConsoleSystem.Core;
@@ -17,6 +18,7 @@ namespace Workes.ConsoleSystem.Core;
 public sealed class ConsoleManager
 {
     private readonly ConsoleManagerOptions _options;
+    private readonly IConsolePermissionProvider? _permissionProvider;
     private readonly StringComparer _commandPathComparer;
     private readonly ConsoleLog _log;
 
@@ -33,8 +35,19 @@ public sealed class ConsoleManager
     /// </summary>
     /// <param name="options">The setup options to snapshot for this console instance.</param>
     public ConsoleManager(ConsoleManagerOptions options)
+        : this(options, permissionProvider: null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance with options and the permission provider for this console's caller.
+    /// </summary>
+    /// <param name="options">The setup options to snapshot for this console instance.</param>
+    /// <param name="permissionProvider">The optional caller permission provider.</param>
+    public ConsoleManager(ConsoleManagerOptions options, IConsolePermissionProvider? permissionProvider)
     {
         _options = ConsoleManagerOptions.CreateSnapshot(options);
+        _permissionProvider = permissionProvider;
         _commandPathComparer = _options.CommandParsing.IsCaseSensitive
             ? StringComparer.Ordinal
             : StringComparer.OrdinalIgnoreCase;
@@ -99,12 +112,37 @@ public sealed class ConsoleManager
     /// <exception cref="ArgumentOutOfRangeException">The cursor index is outside the input string.</exception>
     public CommandAutocompleteResult GetAutocomplete(string input, int cursorIndex)
     {
+        if (input is null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        if (cursorIndex < 0 || cursorIndex > input.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(cursorIndex), "Cursor index must be inside the input.");
+        }
+
+        var visibleCommands = new List<CommandDefinition>();
+        var accessResults = new Dictionary<CommandDefinition, CommandAvailabilityResult>();
+        foreach (CommandDefinition definition in Commands.Definitions)
+        {
+            CommandAvailabilityResult access = GetCommandAccessStatus(
+                definition,
+                new CommandAvailabilityContext(input, cursorIndex, definition, command: null));
+            accessResults.Add(definition, access);
+            if (_options.Autocomplete.ShowUnavailableCommands || access.IsAvailable)
+            {
+                visibleCommands.Add(definition);
+            }
+        }
+
         return CommandAutocomplete.GetAutocomplete(
             input,
             cursorIndex,
-            Commands.Definitions,
+            visibleCommands,
             _options.CommandParsing,
-            _options.Autocomplete);
+            _options.Autocomplete,
+            accessResults);
     }
 
     /// <summary>
@@ -482,6 +520,14 @@ public sealed class ConsoleManager
 
         AppendEcho(command.Input, command.Definition);
 
+        ConsoleFailure? accessFailure = ValidateCommandAccess(
+            command,
+            new CommandAvailabilityContext(command.Input, cursorIndex: null, command.Definition, command));
+        if (accessFailure is not null)
+        {
+            return Fail(accessFailure);
+        }
+
         CommandValidationResult validation = ValidateCommand(command);
         if (!validation.IsSuccess)
         {
@@ -512,6 +558,106 @@ public sealed class ConsoleManager
         CommandResult result = CommandResult.Failed(failure);
         AppendFailure(failure);
         return new CommandExecutionOutcome(result, null);
+    }
+
+    private ConsoleFailure? ValidateCommandAccess(BoundCommand command, CommandAvailabilityContext context)
+    {
+        try
+        {
+            string? permissionFailure = GetPermissionFailureMessage(command.Definition);
+            if (permissionFailure is not null)
+            {
+                return new ConsoleFailure(
+                    ConsoleFailureKind.CommandAuthorization,
+                    ConsoleFailureCodes.CommandPermissionDenied,
+                    permissionFailure,
+                    source: command.Definition.Path);
+            }
+
+            CommandAvailabilityResult availability = GetCommandAvailability(command.Definition, context);
+            return availability.IsAvailable
+                ? null
+                : new ConsoleFailure(
+                    ConsoleFailureKind.CommandAvailability,
+                    ConsoleFailureCodes.CommandUnavailable,
+                    availability.Reason!,
+                    source: command.Definition.Path);
+        }
+        catch (Exception exception)
+        {
+            ConsoleFailure cause = ConsoleFailure.FromException(exception);
+            return ConsoleFailure.Wrap(
+                ConsoleFailureKind.Extension,
+                ConsoleFailureCodes.ExtensionRejected,
+                $"An access check for command '{command.Definition.Path}' failed.",
+                cause,
+                component: command.Definition.Path,
+                source: command.Definition.Path);
+        }
+    }
+
+    private CommandAvailabilityResult GetCommandAccessStatus(CommandDefinition definition, CommandAvailabilityContext context)
+    {
+        string? permissionFailure = GetPermissionFailureMessage(definition);
+        if (permissionFailure is not null)
+        {
+            return CommandAvailabilityResult.Unavailable(permissionFailure);
+        }
+
+        return GetCommandAvailability(definition, context);
+    }
+
+    private string? GetPermissionFailureMessage(CommandDefinition definition)
+    {
+        foreach (string permission in definition.RequiredPermissions)
+        {
+            if (_permissionProvider is null || !_permissionProvider.HasPermission(permission))
+            {
+                return $"Command '{definition.Path}' requires permission '{permission}'.";
+            }
+        }
+
+        foreach (IReadOnlyList<string> alternatives in definition.RequiredAnyPermissionGroups)
+        {
+            bool granted = false;
+            if (_permissionProvider is not null)
+            {
+                foreach (string permission in alternatives)
+                {
+                    if (_permissionProvider.HasPermission(permission))
+                    {
+                        granted = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!granted)
+            {
+                return $"Command '{definition.Path}' requires one of these permissions: {string.Join(", ", alternatives)}.";
+            }
+        }
+
+        return null;
+    }
+
+    private CommandAvailabilityResult GetCommandAvailability(CommandDefinition definition, CommandAvailabilityContext context)
+    {
+        foreach (Func<CommandAvailabilityContext, CommandAvailabilityResult> check in definition.AvailabilityChecks)
+        {
+            CommandAvailabilityResult? result = check(context);
+            if (result is null)
+            {
+                throw new InvalidOperationException($"Availability check for command '{definition.Path}' returned null.");
+            }
+
+            if (!result.IsAvailable)
+            {
+                return result;
+            }
+        }
+
+        return CommandAvailabilityResult.Available();
     }
 
     private void AppendFailure(ConsoleFailure failure)

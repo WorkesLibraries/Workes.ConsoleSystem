@@ -12,7 +12,8 @@ internal static class CommandAutocomplete
         int cursorIndex,
         IReadOnlyList<CommandDefinition> commands,
         CommandParsingOptions options,
-        CommandAutocompleteOptions autocompleteOptions)
+        CommandAutocompleteOptions autocompleteOptions,
+        IReadOnlyDictionary<CommandDefinition, CommandAvailabilityResult>? availability = null)
     {
         if (input is null)
         {
@@ -59,7 +60,7 @@ internal static class CommandAutocomplete
                 cursorIndex,
                 replacementStart,
                 replacementLength,
-                CreatePathCandidates(commands, partialPath, autocompleteOptions.PathCompletionMode, comparison));
+                CreatePathCandidates(commands, partialPath, autocompleteOptions.PathCompletionMode, comparison, availability));
         }
 
         CommandDefinition? command = FindCommand(commands, tokens[0].Text, comparer);
@@ -70,7 +71,12 @@ internal static class CommandAutocomplete
                 cursorIndex,
                 GetPathReplacementStart(tokens[0], autocompleteOptions.PathCompletionMode, cursorIndex),
                 GetPathReplacementLength(tokens[0], autocompleteOptions.PathCompletionMode, cursorIndex),
-                CreatePathCandidates(commands, tokens[0].Text, autocompleteOptions.PathCompletionMode, comparison));
+                CreatePathCandidates(commands, tokens[0].Text, autocompleteOptions.PathCompletionMode, comparison, availability));
+        }
+
+        if (availability is not null && availability.TryGetValue(command, out CommandAvailabilityResult? commandStatus) && !commandStatus.IsAvailable)
+        {
+            return Empty(input, cursorIndex, cursorIndex, 0);
         }
 
         return CompleteCommandBody(input, cursorIndex, tokens, currentToken, command, options, comparer, comparison);
@@ -369,30 +375,35 @@ internal static class CommandAutocomplete
         IReadOnlyList<CommandDefinition> commands,
         string partialPath,
         CommandPathCompletionMode pathCompletionMode,
-        StringComparison comparison)
+        StringComparison comparison,
+        IReadOnlyDictionary<CommandDefinition, CommandAvailabilityResult>? availability)
     {
         if (pathCompletionMode == CommandPathCompletionMode.DotSegment)
         {
-            return CreateDotSegmentPathCandidates(commands, partialPath, comparison);
+            return CreateDotSegmentPathCandidates(commands, partialPath, comparison, availability);
         }
 
-        return CreateFullPathCandidates(commands, partialPath, comparison);
+        return CreateFullPathCandidates(commands, partialPath, comparison, availability);
     }
 
     private static IEnumerable<CommandAutocompleteCandidate> CreateFullPathCandidates(
         IReadOnlyList<CommandDefinition> commands,
         string partialPath,
-        StringComparison comparison)
+        StringComparison comparison,
+        IReadOnlyDictionary<CommandDefinition, CommandAvailabilityResult>? availability)
     {
         foreach (CommandDefinition command in commands)
         {
             if (command.Path.StartsWith(partialPath, comparison))
             {
+                CommandAvailabilityResult? status = GetAvailability(command, availability);
                 yield return new CommandAutocompleteCandidate(
                     command.Path,
                     CommandAutocompleteCandidateKind.CommandPath,
                     command.Path,
-                    command.Description);
+                    command.Description,
+                    status?.IsAvailable ?? true,
+                    status?.Reason);
             }
         }
     }
@@ -400,7 +411,8 @@ internal static class CommandAutocomplete
     private static IEnumerable<CommandAutocompleteCandidate> CreateDotSegmentPathCandidates(
         IReadOnlyList<CommandDefinition> commands,
         string partialPath,
-        StringComparison comparison)
+        StringComparison comparison,
+        IReadOnlyDictionary<CommandDefinition, CommandAvailabilityResult>? availability)
     {
         int segmentStart = partialPath.LastIndexOf('.') + 1;
         string prefix = partialPath.Substring(0, segmentStart);
@@ -443,12 +455,50 @@ internal static class CommandAutocomplete
                 displayText += ".";
             }
 
+            CommandDefinition? source = FindPathSource(commands, prefix + segment, comparison, availability);
+            CommandAvailabilityResult? status = source is null ? null : GetAvailability(source, availability);
             yield return new CommandAutocompleteCandidate(
                 segment,
                 CommandAutocompleteCandidateKind.CommandPath,
                 displayText,
-                command.Description);
+                command.Description,
+                status?.IsAvailable ?? true,
+                status?.Reason);
         }
+    }
+
+    private static CommandDefinition? FindPathSource(
+        IReadOnlyList<CommandDefinition> commands,
+        string partialPath,
+        StringComparison comparison,
+        IReadOnlyDictionary<CommandDefinition, CommandAvailabilityResult>? availability)
+    {
+        CommandDefinition? firstMatch = null;
+        foreach (CommandDefinition command in commands)
+        {
+            if (command.Path.StartsWith(partialPath, comparison))
+            {
+                firstMatch ??= command;
+                if (GetAvailability(command, availability)?.IsAvailable ?? true)
+                {
+                    return command;
+                }
+            }
+        }
+
+        return firstMatch;
+    }
+
+    private static CommandAvailabilityResult? GetAvailability(
+        CommandDefinition command,
+        IReadOnlyDictionary<CommandDefinition, CommandAvailabilityResult>? availability)
+    {
+        if (availability is not null && availability.TryGetValue(command, out CommandAvailabilityResult? result))
+        {
+            return result;
+        }
+
+        return null;
     }
 
     private static int GetPathReplacementStart(CommandToken token, CommandPathCompletionMode pathCompletionMode, int cursorIndex)

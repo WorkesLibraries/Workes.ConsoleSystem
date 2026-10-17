@@ -9,7 +9,7 @@ Create one `ConsoleManager` per console instance. Configure it once, register de
 | Operation | API | Behavior |
 | --- | --- | --- |
 | Inspect without executing | `ParseCommand(string)` then `ValidateCommand(BoundCommand)` | Neither method invokes a handler or changes either history. |
-| Suggest input completions | `GetAutocomplete(string, int)` | Returns candidates and the replacement range; included in the 0.3.0 release target. |
+| Suggest input completions | `GetAutocomplete(string, int)` | Returns candidates and replacement range; blocked commands are hidden by default. |
 | Execute input | `TryExecuteCommand(string, out CommandResult)` | Returns `false` and a structured failure for parse, validation, or handler failures. |
 | Execute input and throw on failure | `ExecuteCommand(string)` | Returns a successful result; throws `ConsoleOperationException` with the structured failure otherwise. |
 | Execute a parsed command | `TryExecuteCommand(BoundCommand, out CommandResult)` or `ExecuteCommand(BoundCommand)` | Skips parsing but still records the original input, validates, invokes the handler, and records the outcome. |
@@ -24,9 +24,9 @@ Null inputs to manager methods that require an object throw `ArgumentNullExcepti
 
 ### `Workes.ConsoleSystem.Core`
 
-- `ConsoleManager`: root for configuration, logging, histories, registration, parsing, validation, autocomplete, and execution. `Options` returns a detached snapshot. `GetAutocomplete(string, int)` is part of the 0.3.0 release target.
+- `ConsoleManager`: root for configuration, logging, histories, registration, parsing, validation, autocomplete, and execution. Use its constructor overload accepting `IConsolePermissionProvider` for caller-specific access checks. `Options` returns a detached configuration snapshot.
 - `ConsoleFailure`: structured failure data (`Kind`, stable `Code`, `Message`, optional `Component`, `Source`, and nested `Cause`). Use codes or kinds for program logic, not message text.
-- `ConsoleFailureKind`, `ConsoleFailureCodes`, and `ConsoleFailures`: failure categories, built-in stable codes, and helper factories.
+- `ConsoleFailureKind` and `ConsoleFailureCodes`: failure categories and built-in stable codes, including permission and availability rejections.
 - `ConsoleSystemException` and `ConsoleOperationException`: exceptions for expected-success APIs that fail. Both expose `Failure`; `ConsoleOperationException` is used by `ExecuteCommand`. A handler exception is retained as `InnerException` and in the failure cause chain.
 
 ### `Workes.ConsoleSystem.Configuration`
@@ -35,7 +35,7 @@ Null inputs to manager methods that require an object throw `ArgumentNullExcepti
 - `CommandParsingOptions` and `BooleanLiteralOptions`: tokenization, name matching, option syntax, interleaving, and accepted boolean literals.
 - `HistoryOptions` and `CommandHistoryDuplicatePolicy`: independent visible and command-input capacities, plus consecutive duplicate handling.
 - `CommandExecutionOptions`: default command input echo.
-- `CommandAutocompleteOptions` and `CommandPathCompletionMode`: control full-path or dot-segment suggestions in the 0.3.0 release target.
+- `CommandAutocompleteOptions` and `CommandPathCompletionMode`: control full-path or dot-segment suggestions and whether blocked commands appear.
 - `OptionValueStyle`: `SpaceSeparated`, `EqualSeparated`, or `AnySeparated` option values.
 
 Manager construction snapshots and validates the full options graph. Null nested sections resolve to defaults. Capacities must be positive; enum settings must be defined values; boolean literal arrays must be non-empty, contain no blank or duplicate literals, and must not overlap under the configured case comparison; the option prefix must be non-blank and contain no whitespace. Literal arrays are copied into the snapshot.
@@ -43,13 +43,14 @@ Manager construction snapshots and validates the full options graph. Null nested
 ### `Workes.ConsoleSystem.Commands`
 
 - Definition: `CommandBuilder`, `CommandDefinition`, `CommandArgumentDefinition`, `CommandFlagDefinition`, `CommandOptionDefinition`, `CommandConstraintDefinition`, `CommandSuccessOutputDefinition`, and `CommandEchoInputDefinition`.
+- Access: `CommandAvailabilityContext` and `CommandAvailabilityResult`.
 - Autocomplete: `CommandAutocompleteContext`, `CommandAutocompleteCandidate`, `CommandAutocompleteCandidateKind`, and `CommandAutocompleteResult`.
 - Parsing and validation: `BoundCommand`, `CommandParseResult`, and `CommandValidationResult`.
 - Handler execution: `CommandContext` and `CommandResult`.
 - Output: `CommandOutput`, `CommandOutputBuilder`, and `CommandOutputKind` (`Inline` or `Block`).
 - Registered-command view: `CommandSystem`, available as `ConsoleManager.Commands`; its `Definitions` property is a read-only view.
 
-Use `CommandBuilder` for definitions and `CommandResult.Success(...)` / `Failed(...)` for handler outcomes. There is no public constructor for `CommandDefinition` or `CommandResult`. The builder requires an execution handler before `Build()` succeeds. `ValueCandidates(...)` attaches an autocomplete provider to the latest positional argument or option, while `SuggestAllowedValues()` opts the latest option into suggestions from its `AllowedValues` set. Explicit providers take precedence.
+Use `CommandBuilder` for definitions and `CommandResult.Success(...)` / `Failed(...)` for handler outcomes. There is no public constructor for `CommandDefinition` or `CommandResult`. The builder requires an execution handler before `Build()` succeeds. `ValueCandidates(...)` attaches an autocomplete provider to the latest positional argument or option, while `SuggestAllowedValues()` opts the latest option into suggestions from its `AllowedValues` set. Explicit providers take precedence. `RequirePermission(...)`, `RequireAnyPermission(...)`, and `AvailableWhen(...)` add optional access rules.
 
 For typed commands, all bindings and the handler must use the same reference type. Binding expressions must select public instance properties. The state type must expose a public constructor whose parameter names match bound property names; matching follows the configured case-sensitivity setting. Constructor parameters receive values by name, so their order need not match schema order. Immutable records are a convenient state shape. Bind every value the handler needs to a constructor-backed property.
 
@@ -69,7 +70,7 @@ Entries are retained in the visible history as the same objects that were record
 
 - `ConsoleHistory`: bounded visible entries, oldest-first detached `Entries`, `Capacity`, and `Clear()`.
 - `CommandHistory`: bounded submitted strings, oldest-first detached `Entries`, `Capacity`, and `Clear()`.
-- `HistoryChangeKind`, `ConsoleHistoryChangedEventArgs`, and `CommandHistoryChangedEventArgs`: ConsoleSystem-owned synchronous notifications for added, dropped, and cleared retained items, included in the 0.3.0 release target.
+- `HistoryChangeKind`, `ConsoleHistoryChangedEventArgs`, and `CommandHistoryChangedEventArgs`: ConsoleSystem-owned synchronous notifications for added, dropped, and cleared retained items.
 
 `CommandHistory` has a public parameterless constructor for an independent empty history. Its add operation is manager-owned, so use `ConsoleManager.CommandHistory` when you want command execution or `RecordCommandInput` to populate it. Command input history trims only for duplicate comparison; it retains the submitted string unchanged. `RejectConsecutive` compares the trimmed newest and submitted values using ordinal case-insensitive comparison. When full, either history drops its oldest item to retain a new one.
 
@@ -88,6 +89,14 @@ Both history objects expose `Changed`; `ConsoleManager.ConsoleHistoryChanged` an
 - `LogLevel`: `Trace`, `Debug`, `Information`, `Warning`, `Error`, and `Critical`.
 
 There is no public logger object. Every level is recorded; the host can filter entries after reading history.
+
+### `Workes.ConsoleSystem.Permissions`
+
+- `IConsolePermissionProvider`: supplies the manager-scoped caller's permission decisions.
+- `ConsolePermissionSet`: mutable direct grant/denial set with role composition; explicit denials override grants.
+- `ConsoleRole`: named, reusable immutable grant collection.
+
+Permission rules accept exact dot-separated paths or a terminal `.*` wildcard. Matching is case-insensitive. Commands with no permission requirements do not need a provider; commands with requirements are denied when the manager has no provider.
 
 ## Command parsing details
 
@@ -119,12 +128,14 @@ Built-in failure codes use the `workes.console.` prefix. Common command codes in
 | `CommandValueInvalid` / `CommandStateBindingFailed` | A value cannot be converted or the typed state cannot be constructed. |
 | `CommandConstraintRejected` | An option rule or state constraint rejected the command. |
 | `CommandExecutionRejected` | The handler returned failure or threw. |
+| `CommandPermissionDenied` | A required caller permission was not granted (unreleased). |
+| `CommandUnavailable` | A runtime availability check blocked the command (unreleased). |
 
 The complete constant list is in `ConsoleFailureCodes`. Messages are for people and may change; branch on `Kind` and `Code`. Failures created for thrown handlers include the original exception details through nested causes. See [Command outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md) for construction examples.
 
-## Scope of the 0.3.0 release target
+## Scope of published version 0.3.0
 
-The published 0.2.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, and pull-based history reads. The 0.3.0 release target adds stateless autocomplete and optional history change events. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
+The published 0.3.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, stateless autocomplete, and optional history change events. Command permissions and runtime availability are unreleased development work and are not part of version 0.3.0. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
 
 ## Focused guides
 
@@ -132,11 +143,12 @@ The published 0.2.0 package provides synchronous command handlers, retained in-m
 - [Logging](LOGGING.md)
 - [Entries and semantic text](ENTRIES_AND_TEXT.md)
 - [Console and command histories](HISTORY.md)
-- [History change hooks](HISTORY_CHANGE_HOOKS.md) (0.3.0 release target)
+- [History change hooks](HISTORY_CHANGE_HOOKS.md)
 - [Command registration](COMMAND_REGISTRATION.md)
 - [Command parsing](COMMAND_PARSING.md)
 - [Command validation](COMMAND_VALIDATION.md)
-- [Command autocomplete](COMMAND_AUTOCOMPLETE.md) (0.3.0 release target)
+- [Command autocomplete](COMMAND_AUTOCOMPLETE.md)
+- [Command permissions and availability](COMMAND_ACCESS.md) (unreleased)
 - [Command execution](COMMAND_EXECUTION.md)
 - [Command outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Quick Start](QUICK_START.md)

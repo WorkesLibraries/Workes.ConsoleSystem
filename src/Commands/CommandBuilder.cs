@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
+using Workes.ConsoleSystem.Permissions;
 using Workes.ConsoleSystem.Presentation;
 
 namespace Workes.ConsoleSystem.Commands;
@@ -17,6 +18,9 @@ public sealed class CommandBuilder
     private readonly List<FlagDraft> _flags = new List<FlagDraft>();
     private readonly List<OptionDraft> _options = new List<OptionDraft>();
     private readonly List<CommandConstraintDefinition> _constraints = new List<CommandConstraintDefinition>();
+    private readonly List<string> _requiredPermissions = new List<string>();
+    private readonly List<IReadOnlyList<string>> _requiredAnyPermissionGroups = new List<IReadOnlyList<string>>();
+    private readonly List<Func<CommandAvailabilityContext, CommandAvailabilityResult>> _availabilityChecks = new List<Func<CommandAvailabilityContext, CommandAvailabilityResult>>();
     private readonly List<CommandSuccessOutputDefinition> _successOutputs = new List<CommandSuccessOutputDefinition>();
     private string _description = string.Empty;
     private Type? _stateType;
@@ -195,6 +199,56 @@ public sealed class CommandBuilder
         return this;
     }
 
+    /// <summary>Requires one permission to execute this command. Multiple calls are combined with AND.</summary>
+    /// <param name="permission">The required permission name.</param>
+    public CommandBuilder RequirePermission(string permission)
+    {
+        _requiredPermissions.Add(PermissionPath.ValidateName(permission, nameof(permission)));
+        _lastOption = null;
+        _lastValueMember = null;
+        return this;
+    }
+
+    /// <summary>Requires at least one permission from the supplied group. Multiple groups are combined with AND.</summary>
+    /// <param name="permissions">The alternative permissions.</param>
+    public CommandBuilder RequireAnyPermission(params string[] permissions)
+    {
+        if (permissions is null)
+        {
+            throw new ArgumentNullException(nameof(permissions));
+        }
+
+        if (permissions.Length == 0)
+        {
+            throw new ArgumentException("At least one permission is required.", nameof(permissions));
+        }
+
+        var copy = new List<string>(permissions.Length);
+        foreach (string permission in permissions)
+        {
+            string validated = PermissionPath.ValidateName(permission, nameof(permissions));
+            if (!copy.Exists(existing => string.Equals(existing, validated, StringComparison.OrdinalIgnoreCase)))
+            {
+                copy.Add(validated);
+            }
+        }
+
+        _requiredAnyPermissionGroups.Add(copy.AsReadOnly());
+        _lastOption = null;
+        _lastValueMember = null;
+        return this;
+    }
+
+    /// <summary>Adds a runtime availability check. Every configured check must return available.</summary>
+    /// <param name="check">The availability check.</param>
+    public CommandBuilder AvailableWhen(Func<CommandAvailabilityContext, CommandAvailabilityResult> check)
+    {
+        _availabilityChecks.Add(check ?? throw new ArgumentNullException(nameof(check)));
+        _lastOption = null;
+        _lastValueMember = null;
+        return this;
+    }
+
     /// <summary>
     /// Echoes submitted input for this command using manager defaults.
     /// </summary>
@@ -347,6 +401,9 @@ public sealed class CommandBuilder
                 x.SuggestAllowedValues,
                 x.ValueCandidateProvider)).AsReadOnly(),
             new List<CommandConstraintDefinition>(_constraints).AsReadOnly(),
+            new List<string>(_requiredPermissions).AsReadOnly(),
+            new List<IReadOnlyList<string>>(_requiredAnyPermissionGroups).AsReadOnly(),
+            new List<Func<CommandAvailabilityContext, CommandAvailabilityResult>>(_availabilityChecks).AsReadOnly(),
             new CommandEchoInputDefinition(_echoInput),
             new List<CommandSuccessOutputDefinition>(_successOutputs).AsReadOnly(),
             _handler);

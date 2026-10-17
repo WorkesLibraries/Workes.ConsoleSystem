@@ -6,7 +6,7 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 ## Current Status
 
-The published version 0.2.0 implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, and synchronous execution. The 0.3.0 release target adds stateless autocomplete and optional history change notifications. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first snapshots, and clearing, and command execution records submissions in `CommandHistory`. The guidance below records the package's design rules; public docs must remain aligned with the published and release-target APIs.
+Published version 0.3.0 implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, synchronous execution, stateless autocomplete, and optional history change notifications. Current development adds opt-in permission and availability checks. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first snapshots, and clearing, and command execution records submissions in `CommandHistory`. The guidance below records the package's design rules; public docs must remain aligned with published and development APIs.
 
 ## API Design Principles
 
@@ -26,7 +26,7 @@ The published version 0.2.0 implements `ConsoleManager` and its snapshotted opti
 
 The normal history retention behavior is bounded drop-oldest. Keep the existing console configuration concept for history capacity and translate it internally to ContentSystem's sequence overflow policy. Do not add custom retention machinery to ConsoleSystem or require callers to configure a ContentSystem sequence.
 
-History change events in the 0.3.0 release target translate ContentSystem change events to ConsoleSystem-owned event arguments. Preserve added entries, dropped entries caused by overflow, cleared entries, and retained count. ContentSystem event types must not appear in public event signatures. Pull-based reads remain available and do not depend on subscriptions.
+History change events in published version 0.3.0 translate ContentSystem change events to ConsoleSystem-owned event arguments. Preserve added entries, dropped entries caused by overflow, cleared entries, and retained count. ContentSystem event types must not appear in public event signatures. Pull-based reads remain available and do not depend on subscriptions.
 
 `CommandHistory` is intentionally separate: it stores command input strings for navigation, with its own duplicate policy and capacity. Do not combine it with ContentSystem's visible-entry sequence merely because both are called histories.
 
@@ -51,7 +51,7 @@ Use one command schema model rather than separate public types for each combinat
 - Return command output and expected command failures through a result object rather than writing through a hidden output sink.
 - Construct `CommandResult` through the explicit `Success(...)` and `Failed(...)` factories; do not add equivalent public constructors.
 
-The public command surface is implemented in the published version 0.2.0, with stateless autocomplete included in the 0.3.0 release target. The focused user guides document the implemented signatures and syntax; this file describes the principles that should guide later changes.
+The base command surface, stateless autocomplete, and history events are implemented in published version 0.3.0. Permission and availability APIs are current development. The focused user guides document the implemented signatures and identify unreleased APIs; this file describes the principles that should guide later changes.
 
 ## Configuration Style
 

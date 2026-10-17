@@ -2,6 +2,8 @@
 
 Define a command with `CommandBuilder`, call `Build()` to create an immutable `CommandDefinition`, then register it through `ConsoleManager`.
 
+> Permission and runtime availability methods are unreleased development APIs and are not included in the published 0.3.0 package.
+
 ```csharp
 var command = new CommandBuilder("player.teleport")
     .Description("Moves a player to a zone.")
@@ -34,6 +36,8 @@ internal sealed record TeleportState(string Player, string Zone, bool Silent, in
 - `SuggestAllowedValues()` opts the most recently added option into autocomplete suggestions from its `AllowedValues` set. Suggestions are disabled by default.
 - `ValueCandidates(...)` attaches a synchronous value suggestion provider to the most recently added positional argument or option. On an option, an explicit provider takes precedence over `SuggestAllowedValues()` and may return a custom subset or dynamic candidates.
 - `Constraint<TState>` adds a state-level predicate that runs during validation.
+- `RequirePermission(...)` adds a required permission; each call is required. `RequireAnyPermission(...)` adds an alternative group.
+- `AvailableWhen(...)` adds a runtime availability check with an optional reason.
 - `Description`, `EchoInput`/`DoNotEchoInput`, and `SuccessOutputInline`/`SuccessOutputBlock` add command metadata.
 - `Execute` accepts a simple handler with only `CommandContext`; `Execute<TState>` accepts the bound typed state as well.
 
@@ -45,4 +49,4 @@ For a command without bound state, omit typed members and use `Execute(context =
 
 See [Command parsing](COMMAND_PARSING.md) for input syntax and [Command validation](COMMAND_VALIDATION.md) for range and constraint behavior.
 
-For cursor-aware suggestions, see [Command autocomplete](COMMAND_AUTOCOMPLETE.md). The autocomplete API is part of the 0.3.0 release target and is not included in the published 0.2.0 package.
+For cursor-aware suggestions, see [Command autocomplete](COMMAND_AUTOCOMPLETE.md). Permission and runtime availability checks are described in [Command permissions and availability](COMMAND_ACCESS.md).

@@ -53,5 +53,11 @@ public enum ConsoleFailureKind
     /// <summary>
     /// Extension-provided code rejected or failed inside an expected validation path.
     /// </summary>
-    Extension
+    Extension,
+
+    /// <summary>Command execution was blocked by permission checks.</summary>
+    CommandAuthorization,
+
+    /// <summary>Command execution was blocked by runtime availability checks.</summary>
+    CommandAvailability
 }

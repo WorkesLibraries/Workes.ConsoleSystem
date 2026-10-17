@@ -1,6 +1,6 @@
 # History change hooks
 
-Both histories expose synchronous `Changed` events for consumers that want to update a UI when retained history changes. Events are optional; reading `Entries` and polling continue to work without subscribing. These APIs are part of the 0.3.0 release target and are not in the published 0.2.0 package.
+Both histories expose synchronous `Changed` events for consumers that want to update a UI when retained history changes. Events are optional; reading `Entries` and polling continue to work without subscribing. These APIs are included in the published 0.3.0 package.
 
 ## Visible console history
 
