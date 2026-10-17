@@ -142,7 +142,15 @@ public sealed class ConsoleFailure : IEquatable<ConsoleFailure>
             return consoleException.Failure;
         }
 
-        return new ConsoleFailure(kind, code ?? ConsoleFailureCodes.ExtensionRejected, exception.Message);
+        ConsoleFailure? cause = exception.InnerException is null
+            ? null
+            : FromException(exception.InnerException);
+
+        return new ConsoleFailure(
+            kind,
+            code ?? ConsoleFailureCodes.ExtensionRejected,
+            string.IsNullOrWhiteSpace(exception.Message) ? exception.GetType().Name : exception.Message,
+            cause: cause);
     }
 
     /// <summary>

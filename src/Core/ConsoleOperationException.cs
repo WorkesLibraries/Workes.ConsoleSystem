@@ -1,3 +1,5 @@
+using System;
+
 namespace Workes.ConsoleSystem.Core;
 
 /// <summary>
@@ -11,6 +13,16 @@ public sealed class ConsoleOperationException : ConsoleSystemException
     /// <param name="failure">The structured operation failure.</param>
     public ConsoleOperationException(ConsoleFailure failure)
         : base(failure)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ConsoleOperationException"/> class.
+    /// </summary>
+    /// <param name="failure">The structured operation failure.</param>
+    /// <param name="innerException">The exception that caused this operation failure.</param>
+    public ConsoleOperationException(ConsoleFailure failure, Exception? innerException)
+        : base(failure, innerException)
     {
     }
 }

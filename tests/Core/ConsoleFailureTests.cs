@@ -101,6 +101,21 @@ public sealed class ConsoleFailureTests
     }
 
     [Test]
+    public void FromException_WhenExceptionHasInnerException_PreservesStructuredCauseChain()
+    {
+        var inner = new ArgumentException("Invalid extension input.");
+        var exception = new InvalidOperationException("Extension failed.", inner);
+
+        ConsoleFailure failure = ConsoleFailure.FromException(exception);
+
+        Assert.That(failure.Message, Is.EqualTo("Extension failed."));
+        Assert.That(failure.Cause, Is.Not.Null);
+        Assert.That(failure.Cause!.Kind, Is.EqualTo(ConsoleFailureKind.Extension));
+        Assert.That(failure.Cause.Message, Is.EqualTo("Invalid extension input."));
+        Assert.That(failure.ToString(), Does.Contain("Invalid extension input."));
+    }
+
+    [Test]
     public void Equality_UsesAllFailureFields()
     {
         ConsoleFailure first = ConsoleFailure.Create(
@@ -145,5 +160,21 @@ public sealed class ConsoleFailureTests
         var exception = new ConsoleOperationException(failure);
 
         Assert.That(exception.Failure, Is.SameAs(failure));
+    }
+
+    [Test]
+    public void ConsoleOperationException_PreservesInnerException()
+    {
+        ConsoleFailure failure = ConsoleFailure.Create(
+            ConsoleFailureKind.CommandExecution,
+            ConsoleFailureCodes.CommandExecutionRejected,
+            "Execution failed.");
+        var innerException = new InvalidOperationException("Handler failed.");
+
+        var exception = new ConsoleOperationException(failure, innerException);
+
+        Assert.That(exception.Failure, Is.SameAs(failure));
+        Assert.That(exception.Message, Is.EqualTo(failure.Message));
+        Assert.That(exception.InnerException, Is.SameAs(innerException));
     }
 }
