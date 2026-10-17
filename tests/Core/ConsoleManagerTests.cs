@@ -1,8 +1,9 @@
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.Core;
+using Workes.ConsoleSystem.Entries;
+using Workes.ContentSystem.Core;
 
 namespace Workes.ConsoleSystem.Tests.Core;
 
@@ -261,25 +262,89 @@ public sealed class ConsoleManagerTests
     }
 
     [Test]
+    public void RecordEntry_StoresConsoleEntryThroughInternalAdapter()
+    {
+        var entry = new TestConsoleEntry(DateTimeOffset.UnixEpoch);
+        var console = new ConsoleManager();
+
+        console.RecordEntry(entry);
+        entry.Timestamp = DateTimeOffset.UnixEpoch.AddSeconds(1);
+
+        PropertyInfo sequenceProperty = typeof(ConsoleManager).GetProperty(
+            "ContentSequence",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        var sequence = (ContentSequenceManager)sequenceProperty.GetValue(console)!;
+        Assert.That(sequence.Records, Has.Count.EqualTo(1));
+
+        object storedAdapter = sequence.Records[0].Entry;
+        PropertyInfo payloadProperty = storedAdapter.GetType().GetProperty(
+            "ConsoleEntry",
+            BindingFlags.Instance | BindingFlags.NonPublic)!;
+        Assert.That(payloadProperty.GetValue(storedAdapter), Is.SameAs(entry));
+        Assert.That(sequence.Records[0].Timestamp, Is.EqualTo(DateTimeOffset.UnixEpoch));
+    }
+
+    [Test]
+    public void RecordEntry_NullEntryThrows()
+    {
+        Assert.Throws<ArgumentNullException>(() => new ConsoleManager().RecordEntry(null!));
+    }
+
+    [Test]
     public void PublicApi_DoesNotExposeContentSystemTypes()
     {
-        var publicTypes = new List<Type> { typeof(ConsoleManager) };
-        foreach (ConstructorInfo constructor in typeof(ConsoleManager).GetConstructors())
+        foreach (Type exportedType in typeof(ConsoleManager).Assembly.GetExportedTypes())
         {
-            foreach (ParameterInfo parameter in constructor.GetParameters())
+            Assert.That(ContainsContentSystemType(exportedType), Is.False, $"Public API exposes {exportedType.FullName}.");
+            Assert.That(ContainsContentSystemType(exportedType.BaseType ?? typeof(object)), Is.False,
+                $"{exportedType.FullName} inherits from a ContentSystem type.");
+
+            foreach (Type interfaceType in exportedType.GetInterfaces())
             {
-                publicTypes.Add(parameter.ParameterType);
+                Assert.That(ContainsContentSystemType(interfaceType), Is.False,
+                    $"{exportedType.FullName} implements a ContentSystem interface.");
             }
-        }
 
-        foreach (PropertyInfo property in typeof(ConsoleManager).GetProperties())
-        {
-            publicTypes.Add(property.PropertyType);
-        }
+            foreach (ConstructorInfo constructor in exportedType.GetConstructors())
+            {
+                foreach (ParameterInfo parameter in constructor.GetParameters())
+                {
+                    Assert.That(ContainsContentSystemType(parameter.ParameterType), Is.False,
+                        $"{exportedType.FullName} constructor exposes {parameter.ParameterType.FullName}.");
+                }
+            }
 
-        foreach (Type type in publicTypes)
-        {
-            Assert.That(ContainsContentSystemType(type), Is.False, $"Public API exposes {type.FullName}.");
+            foreach (MethodInfo method in exportedType.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            {
+                Assert.That(ContainsContentSystemType(method.ReturnType), Is.False,
+                    $"{exportedType.FullName}.{method.Name} returns {method.ReturnType.FullName}.");
+                foreach (ParameterInfo parameter in method.GetParameters())
+                {
+                    Assert.That(ContainsContentSystemType(parameter.ParameterType), Is.False,
+                        $"{exportedType.FullName}.{method.Name} accepts {parameter.ParameterType.FullName}.");
+                }
+            }
+
+            foreach (PropertyInfo property in exportedType.GetProperties())
+            {
+                Assert.That(ContainsContentSystemType(property.PropertyType), Is.False,
+                    $"{exportedType.FullName}.{property.Name} exposes {property.PropertyType.FullName}.");
+            }
+
+            foreach (FieldInfo field in exportedType.GetFields())
+            {
+                Assert.That(ContainsContentSystemType(field.FieldType), Is.False,
+                    $"{exportedType.FullName}.{field.Name} exposes {field.FieldType.FullName}.");
+            }
+
+            foreach (EventInfo eventInfo in exportedType.GetEvents())
+            {
+                if (eventInfo.EventHandlerType is not null)
+                {
+                    Assert.That(ContainsContentSystemType(eventInfo.EventHandlerType), Is.False,
+                        $"{exportedType.FullName}.{eventInfo.Name} exposes {eventInfo.EventHandlerType.FullName}.");
+                }
+            }
         }
     }
 
@@ -308,5 +373,15 @@ public sealed class ConsoleManagerTests
         }
 
         return false;
+    }
+
+    private sealed class TestConsoleEntry : IConsoleEntry
+    {
+        public TestConsoleEntry(DateTimeOffset timestamp)
+        {
+            Timestamp = timestamp;
+        }
+
+        public DateTimeOffset Timestamp { get; set; }
     }
 }

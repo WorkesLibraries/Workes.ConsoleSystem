@@ -6,7 +6,7 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 ## Current Status
 
-The new package currently has no runtime API implementation. The guidance below carries forward the old package's established design intent and adds the approved ContentSystem boundary. Names and exact signatures should be checked against implementation before appearing in user-facing documentation.
+The package implements `ConsoleManager` and its options, ConsoleSystem-owned entries, semantic console text, command-output/failure value types, and an internal ContentSystem adapter. `ConsoleManager.RecordEntry(IConsoleEntry)` is the current public write path. Full history reads/clears/events and command workflows are still planned. The guidance below carries forward the old package's established design intent and the approved ContentSystem boundary; future signatures must be checked against implementation before appearing in user-facing documentation.
 
 ## API Design Principles
 

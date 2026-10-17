@@ -1,4 +1,7 @@
+using System;
 using Workes.ConsoleSystem.Configuration;
+using Workes.ConsoleSystem.Entries;
+using Workes.ConsoleSystem.Internal;
 using Workes.ContentSystem.Core;
 
 namespace Workes.ConsoleSystem.Core;
@@ -36,6 +39,20 @@ public sealed class ConsoleManager
     /// Gets a detached snapshot of the resolved options for this console instance.
     /// </summary>
     public ConsoleManagerOptions Options => ConsoleManagerOptions.CreateSnapshot(_options);
+
+    /// <summary>
+    /// Records a console entry in the shared visible history.
+    /// </summary>
+    /// <param name="entry">The console entry to record.</param>
+    public void RecordEntry(IConsoleEntry entry)
+    {
+        if (entry is null)
+        {
+            throw new ArgumentNullException(nameof(entry));
+        }
+
+        ContentSequence.Add(new ContentEntryAdapter(entry));
+    }
 
     /// <summary>
     /// Gets the internal store used by the console history facade.
