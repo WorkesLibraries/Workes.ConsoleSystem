@@ -6,7 +6,7 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 ## Current Status
 
-The package implements `ConsoleManager` and its options, ConsoleSystem-owned entries, semantic console text, command-output/failure and echo-metadata value types, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, and synchronous execution. Logging supports plain strings and semantic `ConsoleText`; all levels are recorded without a package-side filter, and consumers call logging methods on `ConsoleManager` rather than accessing a separate logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first entry snapshots, and clearing, and `RecordCommandInput` adds submitted strings to `CommandHistory`. Stateless autocomplete and history change events remain planned. The guidance below carries forward the old package's established design intent and the approved ContentSystem boundary; future signatures must be checked against implementation before appearing in user-facing documentation.
+Version 0.1.0 implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, and synchronous execution. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first snapshots, and clearing, and command execution records submissions in `CommandHistory`. Stateless autocomplete operations and history change events are not exposed in this release. The guidance below records the package's design rules; public docs must remain aligned with the implemented API.
 
 ## API Design Principles
 
@@ -26,7 +26,7 @@ The package implements `ConsoleManager` and its options, ConsoleSystem-owned ent
 
 The normal history retention behavior is bounded drop-oldest. Keep the existing console configuration concept for history capacity and translate it internally to ContentSystem's sequence overflow policy. Do not add custom retention machinery to ConsoleSystem or require callers to configure a ContentSystem sequence.
 
-ContentSystem change events must be translated to ConsoleSystem-owned event arguments before they reach consumers. Preserve useful console concepts such as added entries, dropped entries caused by overflow, cleared entries, and retained count. ContentSystem event types must not appear in public event signatures. Event subscription remains optional; pull-based reads remain valid.
+If history change events are added in a later release, translate ContentSystem change events to ConsoleSystem-owned event arguments before exposing them. Preserve useful console concepts such as added entries, dropped entries caused by overflow, cleared entries, and retained count. ContentSystem event types must not appear in public event signatures. Such events are not part of version 0.1.0; pull-based reads are the current public workflow.
 
 `CommandHistory` is intentionally separate: it stores command input strings for navigation, with its own duplicate policy and capacity. Do not combine it with ContentSystem's visible-entry sequence merely because both are called histories.
 
@@ -51,7 +51,7 @@ Use one command schema model rather than separate public types for each combinat
 - Return command output and expected command failures through a result object rather than writing through a hidden output sink.
 - Construct `CommandResult` through the explicit `Success(...)` and `Failed(...)` factories; do not add equivalent public constructors.
 
-Exact API signatures and syntax are not duplicated here; the existing old-package command decisions are the design source until each workflow is carried into the fresh implementation.
+The public command surface is implemented in version 0.1.0. The focused user guides document the current signatures and syntax; this file describes the principles that should guide later changes.
 
 ## Configuration Style
 
@@ -65,9 +65,9 @@ Changing one option should not require callers to specify unrelated settings. Va
 - Provide `Try...` operations when callers are expected to branch on rejection, with throwing wrappers for expected-success use where appropriate.
 - Programmer misuse and invalid setup arguments should use standard .NET exceptions.
 - Validate complete operations before committing mutation where practical.
-- Parsing, validation, and autocomplete inspection should not mutate history or invoke command handlers.
+- Parsing and validation do not mutate history or invoke command handlers. Any future autocomplete inspection should also be side-effect-free; no completion operation exists in 0.1.0.
 - Direct execution should own the normal user-input workflow and write resulting input/output/failure entries in a consistent order.
 
 ## Documentation Boundary
 
-Project-control documents may describe intended architecture and decisions, clearly identified as such while implementation is absent. Public README, Quick Start, and focused user guides must describe only APIs and workflows verified in the new package. Do not copy old examples into public docs until their API shape has been confirmed against the fresh implementation.
+Project-control documents may describe planned architecture and decisions, clearly identified as such while implementation is absent. Public README, Quick Start, and focused user guides describe only APIs and workflows verified in the current package. Recheck examples against the fresh implementation before changing the public API documentation.

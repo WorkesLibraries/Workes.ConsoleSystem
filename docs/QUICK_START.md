@@ -1,29 +1,92 @@
-﻿# Quick Start
+# Quick Start
 
-This guide should take a new user from first setup to the first successful use of `Workes.ConsoleSystem`. Installation instructions live in README.md so the package version is maintained in one place.
+This walkthrough creates a manager, configures its history, registers a typed command, executes input, and reads the resulting entries. It uses only public Workes.ConsoleSystem APIs.
 
 ## Prerequisites
 
-You need:
+- A .NET project that can reference .NET Standard 2.1 libraries.
+- The `Workes.ConsoleSystem` NuGet package. See the install command in the [README](../README.md#installation).
 
-- a .NET project compatible with .NET Standard 2.1.
-- the .NET SDK or another NuGet-capable development environment.
-- TODO: Add package-specific prerequisites.
-
-
-## Minimal Setup
+## Create and configure the manager
 
 ```csharp
-// TODO: Add the smallest setup code a new user needs.
+using Workes.ConsoleSystem.Commands;
+using Workes.ConsoleSystem.Configuration;
+using Workes.ConsoleSystem.Core;
+using Workes.ConsoleSystem.Entries;
+
+var console = new ConsoleManager(new ConsoleManagerOptions
+{
+    History = new HistoryOptions
+    {
+        ConsoleHistoryCapacity = 500,
+        CommandHistoryCapacity = 100
+    },
+    CommandParsing = new CommandParsingOptions
+    {
+        AllowInterleavedOptions = false
+    }
+});
 ```
 
-## First Working Example
+The manager snapshots the options during construction. Later changes to the setup object do not change this console instance. `console.Options` also returns a detached snapshot. See [Manager and configuration](MANAGER_AND_CONFIGURATION.md).
+
+## Register a command
+
+Typed command state is a reference type whose public constructor parameters match the bound property names. A record is a convenient fit:
 
 ```csharp
-// TODO: Add a beginner-first example that can be copied into a small test or sample.
+console.RegisterCommand(new CommandBuilder("greet")
+    .Description("Greets a player.")
+    .Argument<GreetState>(state => state.Name, "name")
+    .Execute<GreetState>((context, state) =>
+        CommandResult.Success(CommandOutput.Inline($"Hello, {state.Name}!")))
+    .Build());
+
+internal sealed record GreetState(string Name);
 ```
 
-## What To Read Next
+`CommandBuilder.Build()` creates the definition; `ConsoleManager.RegisterCommand` owns registration. See [Command registration](COMMAND_REGISTRATION.md) for flags, options, aliases, ranges, and constraints.
 
-- TODO: Link focused docs as they are created.
+## Execute and inspect
 
+```csharp
+console.LogInformation("Console ready.");
+
+if (console.TryExecuteCommand("greet Mira", out CommandResult result))
+{
+    foreach (IConsoleEntry entry in console.History.Entries)
+    {
+        switch (entry)
+        {
+            case LogEntry log:
+                System.Console.WriteLine($"[{log.Level}] {log.Message}");
+                break;
+            case CommandInputEntry input:
+                System.Console.WriteLine($"> {input.Input}");
+                break;
+            case CommandOutputEntry output:
+                System.Console.WriteLine(output.PlainText);
+                break;
+            case CommandFailureEntry failure:
+                System.Console.Error.WriteLine(failure.Message);
+                break;
+        }
+    }
+}
+else
+{
+    System.Console.Error.WriteLine(result.Failure?.Message);
+}
+```
+
+Execution parses and validates the input before calling the handler. On success, the manager records any enabled input echo and then the declared and handler-produced outputs. A rejected command produces a structured failure result and a `CommandFailureEntry`. `TryExecuteCommand` returns `false` for command failures; `ExecuteCommand` is the throwing alternative. See [Command execution](COMMAND_EXECUTION.md) and [outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md).
+
+## What to read next
+
+- [Manager and configuration](MANAGER_AND_CONFIGURATION.md)
+- [Logging](LOGGING.md)
+- [Entries and semantic text](ENTRIES_AND_TEXT.md)
+- [Console and command histories](HISTORY.md)
+- [Command parsing](COMMAND_PARSING.md)
+- [Command validation](COMMAND_VALIDATION.md)

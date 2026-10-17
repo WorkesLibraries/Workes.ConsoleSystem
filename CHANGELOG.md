@@ -1,16 +1,33 @@
-﻿# Changelog
+# Changelog
 
-This file records notable user-facing changes to `Workes.ConsoleSystem`.
+This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity, but version 0.1.0 is a substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
 ## [0.1.0] - Unreleased
 
+### Rebuilt
+
+- Rebuilt the package around `Workes.ContentSystem` for retained visible console content. ConsoleSystem exposes its own manager, entries, text, history, and command APIs; ContentSystem's managers, sequences, records, and entry contracts remain outside the public API.
+- Re-established `ConsoleManager` as the root for one console instance, including snapshotted configuration, manager-centered logging, visible history, command input history, registration, parsing, validation, and synchronous execution.
+
 ### Added
 
-- Added the ContentSystem-backed `ConsoleManager` foundation with snapshotted parsing, autocomplete, history, and execution options.
-- Added ConsoleSystem-owned typed entries, semantic console text, and an internal adapter for storing entries in ContentSystem.
-- Added `ConsoleManager.RecordEntry(IConsoleEntry)` for recording built-in and custom console entries.
-- Added the ContentSystem-backed `ConsoleManager.History` facade with configured capacity, detached oldest-first entry snapshots, and clear support.
-- Added manager-centered logging for Trace, Debug, Information, Warning, Error, and Critical levels with string and semantic-text overloads.
-- Added bounded command input history with configurable capacity and consecutive duplicate handling, plus global and command-level input echo settings for later execution workflows.
-- Added command output and structured failure value types used by the console entry contracts.
+- Added ConsoleSystem-owned `IConsoleEntry`, `LogEntry`, `CommandInputEntry`, `CommandOutputEntry`, and `CommandFailureEntry` contracts.
+- Added semantic `ConsoleText` and text segments, leaving rendering and formatting to the host application.
+- Added Trace, Debug, Information, Warning, Error, and Critical logging methods on `ConsoleManager`, with string and `ConsoleText` overloads. All levels are recorded without a package-side minimum-level filter.
+- Added bounded, oldest-first visible history and separate bounded command input history.
+- Added typed command definitions with positional arguments, flags, named options, aliases, option defaults/ranges/allowed values, and custom validation constraints.
+- Added configurable command parsing, including option value styles, boolean literals, quoted strings, case matching, and the default-off `AllowInterleavedOptions` setting. Interleaving preserves positional schema order; named flags and options can be reordered in either mode.
+- Added side-effect-free parsing and validation APIs, plus synchronous `TryExecuteCommand` and `ExecuteCommand` workflows.
+- Added command input echo settings, declared and handler-produced inline/block outputs, and structured command failures.
+- Added package README, Quick Start, focused API guides, and package metadata describing the rebuild.
 
+### Changed
+
+- The public logging workflow is manager-centered; there is no public logger object.
+- `ConsoleManager.History` is the ConsoleSystem-facing history access path. Its entry snapshots are detached and oldest-first; `Clear()` clears retained visible entries.
+- `CommandResult` is created through the explicit `Success(...)` and `Failed(...)` factories.
+- `ConsoleFailure` follows the established constructor and factory pattern used by Workes.InventorySystem's failure type.
+
+### Not included in this release
+
+- Command completion operations, history change events, persistence, asynchronous handlers, UI controls, markup parsing, and theme/rendering systems are not part of the 0.1.0 public API.

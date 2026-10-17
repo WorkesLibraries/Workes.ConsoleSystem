@@ -497,7 +497,7 @@ Interactive command editing needs a compact list of submitted strings for naviga
 
 #### Decision
 
-Keep bounded `CommandHistory` independent of the ContentSystem-backed visible `ConsoleHistory`. Record submissions through `ConsoleManager.RecordCommandInput`, preserve the submitted string, ignore blank input, reject consecutive duplicates by trimmed ordinal case-insensitive comparison by default, and allow an explicit duplicate policy override. Keep global echo configuration on `CommandExecutionOptions` and command-specific nullable echo metadata on `CommandEchoInputDefinition`; execution writes echoed `CommandInputEntry` values in Stage 11.
+Keep bounded `CommandHistory` independent of the ContentSystem-backed visible `ConsoleHistory`. Record submissions through `ConsoleManager.RecordCommandInput`, preserve the submitted string, ignore blank input, reject consecutive duplicates by trimmed ordinal case-insensitive comparison by default, and allow an explicit duplicate policy override. Keep global echo configuration on `CommandExecutionOptions` and command-specific nullable echo metadata on `CommandEchoInputDefinition`; manager execution writes echoed `CommandInputEntry` values when enabled.
 
 #### Reasoning
 
@@ -505,7 +505,7 @@ Command navigation and visible console content have different data, retention, a
 
 #### Consequences
 
-Command input retention uses the configured capacity and drops its oldest retained string when full. Stage 5 defines recording, reading, clearing, and echo policy only; it does not execute commands or write echo entries.
+Command input retention uses the configured capacity and drops its oldest retained string when full. Manager execution records submitted input in this history, independently of whether a visible `CommandInputEntry` is echoed into console history.
 
 ### D-035: Named Command Options Can Interleave Without Reordering Positionals
 
@@ -523,7 +523,7 @@ This adds the requested flexibility without changing the meaning or order of pos
 
 #### Consequences
 
-Parser configuration, XML documentation, tests, and command guides must describe interleaving rather than suggest positional values may be reordered. Quoted tokens beginning with the configured prefix remain values, not named members.
+Parser configuration, XML documentation, tests, and command guides describe interleaving rather than suggest positional values may be reordered. Quoted tokens beginning with the configured prefix remain values, not named members.
 
 ### D-036: CommandResult Uses Explicit Success And Failure Factories
 
@@ -542,3 +542,21 @@ The named result factories make success/failure intent explicit. `ConsoleFailure
 #### Consequences
 
 Command handlers and examples should return `CommandResult.Success()` when no output is produced. Tests should guard the absence of a public parameterless constructor and preserve the established failure construction pattern.
+
+### D-037: Preserve Package Identity For The ContentSystem-Based Rebuild
+
+#### Context
+
+The earlier Workes.ConsoleSystem package already uses the `Workes.ConsoleSystem` package identity. The new implementation carries forward the useful console design while replacing its retained-content foundation with Workes.ContentSystem and re-establishing the public API.
+
+#### Decision
+
+Keep the existing NuGet package ID. Clearly describe version 0.1.0 as a substantial rebuild around Workes.ContentSystem in the project metadata and changelog, and state that it is not a drop-in upgrade from the earlier implementation.
+
+#### Reasoning
+
+Keeping the established package identity avoids creating a second package line, while explicit release notes set correct expectations for consumers of the earlier API.
+
+#### Consequences
+
+Package metadata and release documentation must describe the rebuild. Public ConsoleSystem APIs remain the only documented workflow; consumers do not need to construct or call ContentSystem types directly.
