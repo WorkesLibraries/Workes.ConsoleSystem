@@ -13,7 +13,7 @@ public sealed class CommandFlagDefinition : CommandMemberDefinition
         string name,
         IReadOnlyList<string> aliases,
         string description)
-        : base(propertyName, typeof(bool), name, aliases, description)
+        : base(propertyName, typeof(bool), name, aliases, description, null)
     {
     }
 }

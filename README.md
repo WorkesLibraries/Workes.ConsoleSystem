@@ -79,11 +79,12 @@ The [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/m
 - [Command registration](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_REGISTRATION.md)
 - [Command parsing](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_PARSING.md)
 - [Command validation](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_VALIDATION.md)
+- [Command autocomplete](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_AUTOCOMPLETE.md) (current `main`; not included in released 0.2.0)
 - [Command execution](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_EXECUTION.md)
 - [Command outputs and failures](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md)
 
-Autocomplete configuration is present in the options surface, but this version does not provide a completion operation. History change events and persistence are also not part of the 0.2.0 public API.
+The released 0.2.0 package includes autocomplete configuration but no completion operation. Stateless command autocomplete has since been added on `main` for a future package release; see the [Command autocomplete guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_AUTOCOMPLETE.md). History change events and persistence are also not part of the 0.2.0 public API.
 
 ## License
 

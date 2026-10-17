@@ -30,6 +30,7 @@ internal sealed record TeleportState(string Player, string Zone, bool Silent, in
 - `Argument<TState>` adds a required positional value. Values bind in declaration order.
 - `Flag<TState>` adds a boolean member. Its value is `false` when omitted and `true` when present. Aliases are optional.
 - `Option<TState>` adds a named value. Aliases are optional. `Default`, `Range`, and `AllowedValues` apply to the option most recently added, so place them immediately after that option definition.
+- `ValueCandidates(...)` attaches a synchronous value suggestion provider to the most recently added positional argument or option. It is separate from `AllowedValues`, which only validates values.
 - `Constraint<TState>` adds a state-level predicate that runs during validation.
 - `Description`, `EchoInput`/`DoNotEchoInput`, and `SuccessOutputInline`/`SuccessOutputBlock` add command metadata.
 - `Execute` accepts a simple handler with only `CommandContext`; `Execute<TState>` accepts the bound typed state as well.
@@ -41,3 +42,5 @@ The manager owns registration. Registering a duplicate command path or a schema 
 For a command without bound state, omit typed members and use `Execute(context => ...)`. Registered definitions can be inspected through `console.Commands.Definitions`; callers still register them through the manager.
 
 See [Command parsing](COMMAND_PARSING.md) for input syntax and [Command validation](COMMAND_VALIDATION.md) for range and constraint behavior.
+
+For cursor-aware suggestions, see [Command autocomplete](COMMAND_AUTOCOMPLETE.md). The autocomplete API is on `main` and is not included in the released 0.2.0 package.

@@ -12,8 +12,9 @@ public sealed class CommandArgumentDefinition : CommandMemberDefinition
         string propertyName,
         Type valueType,
         string name,
-        string description)
-        : base(propertyName, valueType, name, Array.Empty<string>(), description)
+        string description,
+        Func<CommandAutocompleteContext, IEnumerable<string>>? valueCandidateProvider)
+        : base(propertyName, valueType, name, Array.Empty<string>(), description, valueCandidateProvider)
     {
     }
 }

@@ -17,8 +17,9 @@ public sealed class CommandOptionDefinition : CommandMemberDefinition
         object? defaultValue,
         object? rangeMinimum,
         object? rangeMaximum,
-        IReadOnlyList<object?> allowedValues)
-        : base(propertyName, valueType, name, aliases, description)
+        IReadOnlyList<object?> allowedValues,
+        Func<CommandAutocompleteContext, IEnumerable<string>>? valueCandidateProvider)
+        : base(propertyName, valueType, name, aliases, description, valueCandidateProvider)
     {
         DefaultValue = defaultValue;
         RangeMinimum = rangeMinimum;

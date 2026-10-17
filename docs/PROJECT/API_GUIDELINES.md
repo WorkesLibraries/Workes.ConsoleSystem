@@ -6,7 +6,7 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 ## Current Status
 
-Version 0.2.0 implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, and synchronous execution. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first snapshots, and clearing, and command execution records submissions in `CommandHistory`. Stateless autocomplete operations and history change events are not exposed in this release. The guidance below records the package's design rules; public docs must remain aligned with the implemented API.
+Released version 0.2.0 implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, and synchronous execution. Current `main` additionally implements stateless autocomplete through `ConsoleManager.GetAutocomplete`; this is not part of the released 0.2.0 package. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first snapshots, and clearing, and command execution records submissions in `CommandHistory`. History change events remain future work. The guidance below records the package's design rules; public docs must remain aligned with both released and unreleased APIs.
 
 ## API Design Principles
 
@@ -51,7 +51,7 @@ Use one command schema model rather than separate public types for each combinat
 - Return command output and expected command failures through a result object rather than writing through a hidden output sink.
 - Construct `CommandResult` through the explicit `Success(...)` and `Failed(...)` factories; do not add equivalent public constructors.
 
-The public command surface is implemented in version 0.2.0. The focused user guides document the current signatures and syntax; this file describes the principles that should guide later changes.
+The public command surface is implemented in the released version 0.2.0, with stateless autocomplete added on current `main` for a future release. The focused user guides document the current signatures and syntax and identify APIs that have not shipped yet; this file describes the principles that should guide later changes.
 
 ## Configuration Style
 
@@ -65,7 +65,7 @@ Changing one option should not require callers to specify unrelated settings. Va
 - Provide `Try...` operations when callers are expected to branch on rejection, with throwing wrappers for expected-success use where appropriate.
 - Programmer misuse and invalid setup arguments should use standard .NET exceptions.
 - Validate complete operations before committing mutation where practical.
-- Parsing and validation do not mutate history or invoke command handlers. Any future autocomplete inspection should also be side-effect-free; no completion operation exists in 0.2.0.
+- Parsing, validation, and autocomplete do not mutate history or invoke command handlers. Autocomplete providers are user callbacks and any side effects inside a provider are owned by that application.
 - Direct execution should own the normal user-input workflow and write resulting input/output/failure entries in a consistent order.
 
 ## Documentation Boundary

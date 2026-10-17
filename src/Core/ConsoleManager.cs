@@ -72,6 +72,24 @@ public sealed class ConsoleManager
     public CommandSystem Commands { get; }
 
     /// <summary>
+    /// Gets schema-driven autocomplete candidates for command input at the specified cursor position.
+    /// </summary>
+    /// <param name="input">The current command input.</param>
+    /// <param name="cursorIndex">The zero-based cursor index in the input string.</param>
+    /// <returns>The matching candidates and the input range they replace.</returns>
+    /// <exception cref="ArgumentNullException">The input is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The cursor index is outside the input string.</exception>
+    public CommandAutocompleteResult GetAutocomplete(string input, int cursorIndex)
+    {
+        return CommandAutocomplete.GetAutocomplete(
+            input,
+            cursorIndex,
+            Commands.Definitions,
+            _options.CommandParsing,
+            _options.Autocomplete);
+    }
+
+    /// <summary>
     /// Parses command input against registered command definitions without executing handlers.
     /// </summary>
     /// <param name="input">The command input to parse.</param>

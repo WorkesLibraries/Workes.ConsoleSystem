@@ -6,7 +6,7 @@ Describe the intended internal structure of Workes.ConsoleSystem and its relatio
 
 ## Current State And Target
 
-Version 0.2.0 implements manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, and synchronous command execution. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to shared history. An internal `ConsoleLog` helper creates those entries through the same history path and is not public. `CommandHistory` separately retains submitted strings for UI navigation. Command completion operations and optional history change events are planned but are not in the 0.2.0 API. This document records the architecture carried forward from Workes.ConsoleSystem.Old and distinguishes implemented responsibilities from those future features.
+Released version 0.2.0 implements manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, and synchronous command execution. Current `main` additionally implements stateless autocomplete for a future package release; optional history change events remain future work. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to shared history. An internal `ConsoleLog` helper creates those entries through the same history path and is not public. `CommandHistory` separately retains submitted strings for UI navigation. This document records the architecture carried forward from Workes.ConsoleSystem.Old and distinguishes released responsibilities from current and planned work.
 
 The public console workflows and overall design philosophy should remain close to the old package. The principal architectural change is that console-visible retained content is stored through Workes.ContentSystem instead of a second console-owned history collection.
 
@@ -27,7 +27,7 @@ The following components are implemented in version 0.2.0 unless explicitly mark
 - `ConsoleManager` is the public logging surface. Its internal `ConsoleLog` helper creates typed log entries and appends them to the shared console history without exposing a separate logger object to consumers.
 - `CommandHistory` stores submitted command strings for UI navigation. It remains separate from the visible console stream because it has different retention and duplicate-handling semantics.
 - `CommandEchoInputDefinition` carries a nullable command-level echo override: `null` inherits the manager's `CommandExecutionOptions.EchoInput` setting. Synchronous execution applies that policy and records visible input entries when echo is enabled.
-- `CommandSystem` owns the command definitions used by parsing, validation, and execution. A future completion operation may use the same registry.
+- `CommandSystem` owns the command definitions used by parsing, validation, autocomplete, and execution.
 - `ConsoleText`, `ConsoleTextSegment`, and `ConsoleTextBuilder` represent plain or semantically structured text without owning rendering or styling.
 
 ## ContentSystem Integration
@@ -55,7 +55,9 @@ Snapshots are an available future integration point, not a required first implem
 
 Commands use one schema model. Required positional arguments represent core input; flags and named options represent optional state. Simple commands should not need a state type, while complex commands should prefer small immutable typed state records.
 
-Normal command submission is manager-owned and runs parsing, validation, handler invocation, and output/failure recording as one workflow. Parsing and validation are also available as side-effect-free inspection operations. A completion operation is planned but not exposed in 0.2.0. Expected command rejection is represented through the package's structured failure/result model; programmer and setup misuse use standard .NET exceptions.
+Normal command submission is manager-owned and runs parsing, validation, handler invocation, and output/failure recording as one workflow. Parsing, validation, and autocomplete are also available as side-effect-free inspection operations. Autocomplete is implemented on current `main` but was not included in released 0.2.0. Expected command rejection is represented through the package's structured failure/result model; programmer and setup misuse use standard .NET exceptions.
+
+The parser and autocomplete share `CommandTokenizer`. Parsing rejects unclosed quoted input; autocomplete accepts it while the user is editing. Autocomplete reads registered command definitions, returns candidates and replacement ranges, and invokes optional synchronous value providers without writing history or executing commands.
 
 Console entries and semantic text remain engine-neutral. The host UI chooses how to render entry types and semantic segments. ConsoleSystem does not own a game engine, UI framework, markup language, theme, or rich-text conversion.
 

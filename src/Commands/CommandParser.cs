@@ -27,13 +27,13 @@ internal static class CommandParser
                 "Command input cannot be blank."), 0, input.Length);
         }
 
-        TokenizeResult tokenizeResult = Tokenize(input, options.AllowQuotedStrings);
+        CommandTokenizationResult tokenizeResult = CommandTokenizer.Tokenize(input, options.AllowQuotedStrings, allowIncompleteQuotes: false);
         if (tokenizeResult.Failure is not null)
         {
             return CommandParseResult.Failed(input, tokenizeResult.Failure!, tokenizeResult.FailureOffset, tokenizeResult.FailureLength);
         }
 
-        IReadOnlyList<Token> tokens = tokenizeResult.Tokens;
+        IReadOnlyList<CommandToken> tokens = tokenizeResult.Tokens;
         if (tokens.Count == 0)
         {
             return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
@@ -57,7 +57,7 @@ internal static class CommandParser
     private static CommandParseResult ParseCommandTokens(
         string input,
         CommandDefinition command,
-        IReadOnlyList<Token> tokens,
+        IReadOnlyList<CommandToken> tokens,
         CommandParsingOptions options,
         StringComparer comparer)
     {
@@ -78,7 +78,7 @@ internal static class CommandParser
 
         while (tokenIndex < tokens.Count)
         {
-            Token token = tokens[tokenIndex];
+            CommandToken token = tokens[tokenIndex];
             if (!IsPrefixedName(token, options.FlagAndOptionPrefix))
             {
                 if (argumentIndex >= command.Arguments.Count || (!options.AllowInterleavedOptions && namedMembersStarted))
@@ -238,7 +238,7 @@ internal static class CommandParser
 
     private static bool TryReadOptionValue(
         string input,
-        IReadOnlyList<Token> tokens,
+        IReadOnlyList<CommandToken> tokens,
         int optionTokenIndex,
         string? inlineValue,
         CommandOptionDefinition option,
@@ -285,7 +285,7 @@ internal static class CommandParser
             return false;
         }
 
-        Token valueToken = tokens[valueTokenIndex];
+        CommandToken valueToken = tokens[valueTokenIndex];
         if (IsPrefixedName(valueToken, options.FlagAndOptionPrefix))
         {
             return false;
@@ -526,131 +526,9 @@ internal static class CommandParser
             : Convert.ChangeType(defaultValue, conversionType, CultureInfo.InvariantCulture);
     }
 
-    private static bool IsPrefixedName(Token token, string prefix)
+    private static bool IsPrefixedName(CommandToken token, string prefix)
     {
         return !token.WasQuoted && token.Text.StartsWith(prefix, StringComparison.Ordinal);
     }
 
-    private static TokenizeResult Tokenize(string input, bool allowQuotedStrings)
-    {
-        var tokens = new List<Token>();
-        int index = 0;
-
-        while (index < input.Length)
-        {
-            while (index < input.Length && char.IsWhiteSpace(input[index]))
-            {
-                index++;
-            }
-
-            if (index >= input.Length)
-            {
-                break;
-            }
-
-            bool wasQuoted = false;
-            int tokenStart = index;
-            char quote = input[index];
-            if (allowQuotedStrings && (quote == '"' || quote == '\''))
-            {
-                wasQuoted = true;
-                index++;
-                var value = new System.Text.StringBuilder();
-                bool closed = false;
-
-                while (index < input.Length)
-                {
-                    char character = input[index];
-                    if (character == '\\' && index + 1 < input.Length)
-                    {
-                        char next = input[index + 1];
-                        if (next == quote || next == '\\')
-                        {
-                            value.Append(next);
-                            index += 2;
-                            continue;
-                        }
-                    }
-
-                    if (character == quote)
-                    {
-                        closed = true;
-                        index++;
-                        break;
-                    }
-
-                    value.Append(character);
-                    index++;
-                }
-
-                if (!closed)
-                {
-                    return TokenizeResult.Failed(ConsoleFailures.CommandParsing(
-                        ConsoleFailureCodes.CommandQuoteUnclosed,
-                        "Command input contains an unclosed quoted string."), tokenStart, input.Length - tokenStart);
-                }
-
-                tokens.Add(new Token(value.ToString(), wasQuoted, tokenStart, index - tokenStart));
-                continue;
-            }
-
-            int start = index;
-            while (index < input.Length && !char.IsWhiteSpace(input[index]))
-            {
-                index++;
-            }
-
-            tokens.Add(new Token(input.Substring(start, index - start), wasQuoted, start, index - start));
-        }
-
-        return TokenizeResult.Succeeded(tokens.AsReadOnly());
-    }
-
-    private readonly struct Token
-    {
-        public Token(string text, bool wasQuoted, int start, int length)
-        {
-            Text = text;
-            WasQuoted = wasQuoted;
-            Start = start;
-            Length = length;
-        }
-
-        public string Text { get; }
-
-        public bool WasQuoted { get; }
-
-        public int Start { get; }
-
-        public int Length { get; }
-    }
-
-    private sealed class TokenizeResult
-    {
-        private TokenizeResult(IReadOnlyList<Token> tokens, ConsoleFailure? failure, int? failureOffset, int? failureLength)
-        {
-            Tokens = tokens;
-            Failure = failure;
-            FailureOffset = failureOffset;
-            FailureLength = failureLength;
-        }
-
-        public IReadOnlyList<Token> Tokens { get; }
-
-        public ConsoleFailure? Failure { get; }
-
-        public int? FailureOffset { get; }
-
-        public int? FailureLength { get; }
-
-        public static TokenizeResult Succeeded(IReadOnlyList<Token> tokens)
-        {
-            return new TokenizeResult(tokens, null, null, null);
-        }
-
-        public static TokenizeResult Failed(ConsoleFailure failure, int offset, int length)
-        {
-            return new TokenizeResult(Array.Empty<Token>(), failure, offset, length);
-        }
-    }
 }
