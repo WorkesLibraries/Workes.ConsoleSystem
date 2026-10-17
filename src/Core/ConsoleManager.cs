@@ -75,6 +75,16 @@ public sealed class ConsoleManager
     public CommandSystem Commands { get; }
 
     /// <summary>
+    /// Parses command input against registered command definitions without executing handlers.
+    /// </summary>
+    /// <param name="input">The command input to parse.</param>
+    /// <returns>The parsed command or structured parse failure.</returns>
+    public CommandParseResult ParseCommand(string input)
+    {
+        return CommandParser.Parse(input, Commands.Definitions, _options.CommandParsing);
+    }
+
+    /// <summary>
     /// Records a console entry in the shared visible history.
     /// </summary>
     /// <param name="entry">The console entry to record.</param>
