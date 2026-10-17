@@ -347,6 +347,69 @@ public sealed class CommandAutocompleteTests
     }
 
     [Test]
+    public void OptionAllowedValues_AreNotSuggestedByDefault()
+    {
+        var console = new ConsoleManager();
+        console.RegisterCommand(new CommandBuilder("server.restart")
+            .Argument<RestartState>(x => x.Reason, "reason")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "d")
+                .AllowedValues(10, 30, 60)
+            .Execute<RestartState>((ctx, state) => CommandResult.Success())
+            .Build());
+
+        var result = console.GetAutocomplete("server.restart maintenance --delay 3", "server.restart maintenance --delay 3".Length);
+
+        Assert.That(result.Candidates, Is.Empty);
+        Assert.That(console.Commands.Definitions[0].Options[0].SuggestAllowedValues, Is.False);
+    }
+
+    [Test]
+    public void OptionAllowedValues_AreSuggestedWhenEnabled()
+    {
+        var console = new ConsoleManager();
+        console.RegisterCommand(new CommandBuilder("server.restart")
+            .Argument<RestartState>(x => x.Reason, "reason")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "d")
+                .AllowedValues(10, 30, 60)
+                .SuggestAllowedValues()
+            .Execute<RestartState>((ctx, state) => CommandResult.Success())
+            .Build());
+
+        var result = console.GetAutocomplete("server.restart maintenance --delay 3", "server.restart maintenance --delay 3".Length);
+
+        Assert.That(result.Candidates.Select(x => x.Text), Is.EqualTo(new[] { "30" }));
+        Assert.That(result.Candidates[0].Kind, Is.EqualTo(CommandAutocompleteCandidateKind.OptionValue));
+        Assert.That(console.Commands.Definitions[0].Options[0].SuggestAllowedValues, Is.True);
+    }
+
+    [Test]
+    public void ExplicitOptionProvider_TakesPrecedenceOverAllowedValueSuggestions()
+    {
+        var console = new ConsoleManager();
+        console.RegisterCommand(new CommandBuilder("server.restart")
+            .Argument<RestartState>(x => x.Reason, "reason")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "d")
+                .AllowedValues(10, 30, 60)
+                .SuggestAllowedValues()
+                .ValueCandidates(ctx => new[] { "30" })
+            .Execute<RestartState>((ctx, state) => CommandResult.Success())
+            .Build());
+
+        var result = console.GetAutocomplete("server.restart maintenance --delay ", "server.restart maintenance --delay ".Length);
+
+        Assert.That(result.Candidates.Select(x => x.Text), Is.EqualTo(new[] { "30" }));
+    }
+
+    [Test]
+    public void SuggestAllowedValues_RequiresAnOption()
+    {
+        Assert.Throws<InvalidOperationException>(() => new CommandBuilder("server.restart").SuggestAllowedValues());
+        Assert.Throws<InvalidOperationException>(() => new CommandBuilder("server.restart")
+            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players")
+            .SuggestAllowedValues());
+    }
+
+    [Test]
     public void MissingValueProvider_ReturnsNoCandidatesForValuePosition()
     {
         var console = new ConsoleManager();

@@ -18,6 +18,7 @@ public sealed class CommandOptionDefinition : CommandMemberDefinition
         object? rangeMinimum,
         object? rangeMaximum,
         IReadOnlyList<object?> allowedValues,
+        bool suggestAllowedValues,
         Func<CommandAutocompleteContext, IEnumerable<string>>? valueCandidateProvider)
         : base(propertyName, valueType, name, aliases, description, valueCandidateProvider)
     {
@@ -25,6 +26,7 @@ public sealed class CommandOptionDefinition : CommandMemberDefinition
         RangeMinimum = rangeMinimum;
         RangeMaximum = rangeMaximum;
         AllowedValues = allowedValues ?? throw new ArgumentNullException(nameof(allowedValues));
+        SuggestAllowedValues = suggestAllowedValues;
     }
 
     /// <summary>
@@ -46,4 +48,10 @@ public sealed class CommandOptionDefinition : CommandMemberDefinition
     /// Gets the configured allowed value metadata.
     /// </summary>
     public IReadOnlyList<object?> AllowedValues { get; }
+
+    /// <summary>
+    /// Gets a value indicating whether allowed values are offered as autocomplete candidates
+    /// when no explicit value candidate provider is configured.
+    /// </summary>
+    public bool SuggestAllowedValues { get; }
 }

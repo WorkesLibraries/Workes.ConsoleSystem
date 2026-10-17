@@ -49,7 +49,7 @@ Manager construction snapshots and validates the full options graph. Null nested
 - Output: `CommandOutput`, `CommandOutputBuilder`, and `CommandOutputKind` (`Inline` or `Block`).
 - Registered-command view: `CommandSystem`, available as `ConsoleManager.Commands`; its `Definitions` property is a read-only view.
 
-Use `CommandBuilder` for definitions and `CommandResult.Success(...)` / `Failed(...)` for handler outcomes. There is no public constructor for `CommandDefinition` or `CommandResult`. The builder requires an execution handler before `Build()` succeeds. `ValueCandidates(...)` attaches an autocomplete provider to the latest positional argument or option.
+Use `CommandBuilder` for definitions and `CommandResult.Success(...)` / `Failed(...)` for handler outcomes. There is no public constructor for `CommandDefinition` or `CommandResult`. The builder requires an execution handler before `Build()` succeeds. On current `main`, `ValueCandidates(...)` attaches an autocomplete provider to the latest positional argument or option, while `SuggestAllowedValues()` opts the latest option into suggestions from its `AllowedValues` set. Explicit providers take precedence.
 
 For typed commands, all bindings and the handler must use the same reference type. Binding expressions must select public instance properties. The state type must expose a public constructor whose parameter names match bound property names; matching follows the configured case-sensitivity setting. Constructor parameters receive values by name, so their order need not match schema order. Immutable records are a convenient state shape. Bind every value the handler needs to a constructor-backed property.
 
@@ -88,7 +88,7 @@ There is no public logger object. Every level is recorded; the host can filter e
 
 ## Command parsing details
 
-The first token is the complete command path. Paths may contain dot-separated segments, but cannot be blank, contain whitespace, or have empty segments. Matching is case-insensitive by default. Parsing requires a complete registered path; there is no command-path fallback or autocomplete API.
+The first token is the complete command path. Paths may contain dot-separated segments, but cannot be blank, contain whitespace, or have empty segments. Matching is case-insensitive by default. Parsing requires a complete registered path; there is no command-path fallback. Current `main` additionally provides a separate autocomplete API for command paths.
 
 Positional arguments are required and bind in schema order. With `AllowInterleavedOptions = false`, they must all appear before the first named member. With it enabled, flags and options may occur between positional values, while positional values still bind in their original order. Named members may be reordered in either mode. A flag is presence-based (`--safe`) and cannot take a value. An option consumes a following token or uses `=` according to `OptionValueStyle`.
 

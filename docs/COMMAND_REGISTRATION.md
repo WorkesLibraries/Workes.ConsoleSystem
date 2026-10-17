@@ -30,7 +30,9 @@ internal sealed record TeleportState(string Player, string Zone, bool Silent, in
 - `Argument<TState>` adds a required positional value. Values bind in declaration order.
 - `Flag<TState>` adds a boolean member. Its value is `false` when omitted and `true` when present. Aliases are optional.
 - `Option<TState>` adds a named value. Aliases are optional. `Default`, `Range`, and `AllowedValues` apply to the option most recently added, so place them immediately after that option definition.
-- `ValueCandidates(...)` attaches a synchronous value suggestion provider to the most recently added positional argument or option. It is separate from `AllowedValues`, which only validates values.
+- `AllowedValues` applies to the most recently added option and validates its value. It does not create autocomplete suggestions unless followed by `SuggestAllowedValues()`.
+- `SuggestAllowedValues()` opts the most recently added option into autocomplete suggestions from its `AllowedValues` set. Suggestions are disabled by default.
+- `ValueCandidates(...)` attaches a synchronous value suggestion provider to the most recently added positional argument or option. On an option, an explicit provider takes precedence over `SuggestAllowedValues()` and may return a custom subset or dynamic candidates.
 - `Constraint<TState>` adds a state-level predicate that runs during validation.
 - `Description`, `EchoInput`/`DoNotEchoInput`, and `SuccessOutputInline`/`SuccessOutputBlock` add command metadata.
 - `Execute` accepts a simple handler with only `CommandContext`; `Execute<TState>` accepts the bound typed state as well.

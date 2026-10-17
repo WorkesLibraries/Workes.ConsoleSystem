@@ -327,19 +327,42 @@ internal static class CommandAutocomplete
                     continue;
                 }
 
-                if (!candidate.StartsWith(partialValue, comparison))
+                AddValueCandidate(candidates, candidate, member, partialValue, comparison);
+            }
+        }
+        else if (member is CommandOptionDefinition { SuggestAllowedValues: true } option)
+        {
+            foreach (object? allowedValue in option.AllowedValues)
+            {
+                if (allowedValue is null)
                 {
                     continue;
                 }
 
-                CommandAutocompleteCandidateKind kind = member is CommandArgumentDefinition
-                    ? CommandAutocompleteCandidateKind.ArgumentValue
-                    : CommandAutocompleteCandidateKind.OptionValue;
-                candidates.Add(new CommandAutocompleteCandidate(candidate, kind));
+                string candidate = Convert.ToString(allowedValue, System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+                AddValueCandidate(candidates, candidate, member, partialValue, comparison);
             }
         }
 
         return CreateResult(input, cursorIndex, replacementStart, replacementLength, candidates);
+    }
+
+    private static void AddValueCandidate(
+        List<CommandAutocompleteCandidate> candidates,
+        string candidate,
+        CommandMemberDefinition member,
+        string partialValue,
+        StringComparison comparison)
+    {
+        if (!candidate.StartsWith(partialValue, comparison))
+        {
+            return;
+        }
+
+        CommandAutocompleteCandidateKind kind = member is CommandArgumentDefinition
+            ? CommandAutocompleteCandidateKind.ArgumentValue
+            : CommandAutocompleteCandidateKind.OptionValue;
+        candidates.Add(new CommandAutocompleteCandidate(candidate, kind));
     }
 
     private static IEnumerable<CommandAutocompleteCandidate> CreatePathCandidates(

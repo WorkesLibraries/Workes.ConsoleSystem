@@ -8,6 +8,7 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`. The pac
 
 - Added stateless command autocomplete on `main`, with command path, flag, option, and command-provided value suggestions.
 - Added opt-in dot-segment path completion and candidate replacement helpers.
+- Added opt-in autocomplete suggestions from an option's `AllowedValues` set; explicit value providers take precedence.
 - Added a focused command autocomplete guide. These changes are not included in the released 0.2.0 package.
 
 ## [0.2.0] - 2026-10-17

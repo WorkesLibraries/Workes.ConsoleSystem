@@ -143,6 +143,17 @@ public sealed class CommandBuilder
     }
 
     /// <summary>
+    /// Enables autocomplete suggestions from the allowed values of the most recently added option.
+    /// </summary>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder SuggestAllowedValues()
+    {
+        RequireLastOption().SuggestAllowedValues = true;
+        _lastValueMember = _lastOption;
+        return this;
+    }
+
+    /// <summary>
     /// Sets value autocomplete candidates on the most recently added positional argument or option.
     /// </summary>
     /// <param name="provider">The value candidate provider.</param>
@@ -333,6 +344,7 @@ public sealed class CommandBuilder
                 NormalizeRangeValue(x.RangeMinimum, x.RangeMaximum, x.Property.PropertyType, "minimum", x.Name),
                 NormalizeRangeValue(x.RangeMaximum, x.RangeMinimum, x.Property.PropertyType, "maximum", x.Name),
                 NormalizeAllowedValues(x.AllowedValues, x.Property.PropertyType, x.Name).AsReadOnly(),
+                x.SuggestAllowedValues,
                 x.ValueCandidateProvider)).AsReadOnly(),
             new List<CommandConstraintDefinition>(_constraints).AsReadOnly(),
             new CommandEchoInputDefinition(_echoInput),
@@ -622,5 +634,7 @@ public sealed class CommandBuilder
         public object? RangeMaximum { get; set; }
 
         public List<object?> AllowedValues { get; set; } = new List<object?>();
+
+        public bool SuggestAllowedValues { get; set; }
     }
 }
