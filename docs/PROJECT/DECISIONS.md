@@ -614,3 +614,21 @@ The provider strategy supports application-owned identity and policy while leavi
 #### Consequences
 
 Execution evaluates access before command validation and handler invocation. Access failures use ConsoleSystem failure kinds/codes and the normal command failure entry path. Autocomplete callbacks are synchronous and may run for each query; hosts should keep them fast and side-effect free. Help visibility is designed in its dedicated stage.
+
+### D-041: Prepare The Permission And Availability Features For 0.4.0
+
+#### Context
+
+Version 0.3.0 has been published. Stage 15 added opt-in command permissions, runtime availability checks, and autocomplete visibility behavior after that release.
+
+#### Decision
+
+Prepare version 0.4.0 as the next release target. Update package metadata, installation examples, release notes, and public documentation to include Stage 15. Do not publish the package as part of preparation.
+
+#### Reasoning
+
+0.4.0 is the next pre-1.0 feature version after the published 0.3.0 package and provides a distinct package version for the access-control additions.
+
+#### Consequences
+
+The project version and documented installation target become 0.4.0. Changelog content remains marked unreleased until publication. The published 0.3.0 artifact remains unchanged.

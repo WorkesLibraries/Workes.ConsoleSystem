@@ -8,16 +8,16 @@ This walkthrough creates a manager, configures its history, registers a typed co
 
 ## Installation
 
-Install version 0.3.0 from NuGet:
+Install version 0.4.0 from NuGet:
 
 ```bash
-dotnet add package Workes.ConsoleSystem --version 0.3.0
+dotnet add package Workes.ConsoleSystem --version 0.4.0
 ```
 
 Or add a package reference to your project file:
 
 ```xml
-<PackageReference Include="Workes.ConsoleSystem" Version="0.3.0" />
+<PackageReference Include="Workes.ConsoleSystem" Version="0.4.0" />
 ```
 
 NuGet restores the internal `Workes.ContentSystem` dependency automatically. Application code uses the ConsoleSystem API and does not need a separate ContentSystem reference. See the [README](../README.md#installation) for package details.
@@ -120,7 +120,7 @@ console.CommandHistory.Changed += (_, change) => RefreshCommandInput(change);
 
 Both events are synchronous and optional. Their ConsoleSystem-owned payloads report added, dropped, or cleared items. See [Command autocomplete](COMMAND_AUTOCOMPLETE.md) and [History change hooks](HISTORY_CHANGE_HOOKS.md) for candidate rules, event payloads, and ordering.
 
-The current development branch also supports restricting commands by caller permissions or runtime state. These APIs are not in the published 0.3.0 package; see [Command permissions and availability](COMMAND_ACCESS.md) for the provider, roles, wildcard rules, failure behavior, and autocomplete visibility settings.
+The 0.4.0 release target supports restricting commands by caller permissions or runtime state. These APIs are not in the published 0.3.0 package; see [Command permissions and availability](COMMAND_ACCESS.md) for the provider, roles, wildcard rules, failure behavior, and autocomplete visibility settings.
 
 ## What to read next
 

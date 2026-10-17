@@ -3,9 +3,9 @@
 [![NuGet](https://img.shields.io/nuget/v/Workes.ConsoleSystem.svg)](https://www.nuget.org/packages/Workes.ConsoleSystem)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/LICENSE)
 
-Workes.ConsoleSystem is an engine-neutral console foundation for applications, games, and tools. It provides one manager-owned API for logging, retained console entries, command input history, command autocomplete, optional history change events, and synchronous command registration, parsing, validation, and execution.
+Workes.ConsoleSystem is an engine-neutral console foundation for applications, games, and tools. It provides one manager-owned API for logging, retained console entries, command input history, command autocomplete, optional history change events, opt-in command permissions and availability checks, and synchronous command registration, parsing, validation, and execution.
 
-Version 0.3.0 continues the substantial rebuild introduced in 0.2.0 around `Workes.ContentSystem`, which provides internal retained-content storage. The earlier published 0.1.0 and 0.2.0 packages remain unchanged. ConsoleSystem keeps its own public manager, entry, text, command, and history APIs; consumers do not need to create or call ContentSystem objects directly. This release is not intended as a drop-in replacement for APIs from the earlier implementation.
+Version 0.4.0 continues the substantial rebuild introduced in 0.2.0 around `Workes.ContentSystem`, which provides internal retained-content storage. The published 0.1.0, 0.2.0, and 0.3.0 packages remain unchanged. ConsoleSystem keeps its own public manager, entry, text, command, and history APIs; consumers do not need to create or call ContentSystem objects directly. This release is not intended as a drop-in replacement for APIs from the earlier implementation.
 
 ## Highlights
 
@@ -14,6 +14,7 @@ Version 0.3.0 continues the substantial rebuild introduced in 0.2.0 around `Work
 - Represent logs, command input, output, failures, and custom entries with ConsoleSystem types.
 - Register typed commands and process them through parsing, validation, and synchronous handlers.
 - Offer stateless command, option, and configured value autocomplete for host input controls.
+- Restrict commands with optional caller permissions and runtime availability checks.
 - Subscribe to optional synchronous history change events for UI updates.
 - Keep presentation decisions in the host UI with semantic `ConsoleText` segments.
 - Configure the manager once; it snapshots the options and exposes a detached options snapshot.
@@ -23,13 +24,13 @@ Version 0.3.0 continues the substantial rebuild introduced in 0.2.0 around `Work
 Install the package from [NuGet](https://www.nuget.org/packages/Workes.ConsoleSystem):
 
 ```bash
-dotnet add package Workes.ConsoleSystem --version 0.3.0
+dotnet add package Workes.ConsoleSystem --version 0.4.0
 ```
 
 Or add a package reference:
 
 ```xml
-<PackageReference Include="Workes.ConsoleSystem" Version="0.3.0" />
+<PackageReference Include="Workes.ConsoleSystem" Version="0.4.0" />
 ```
 
 The package targets .NET Standard 2.1. Its internal storage dependency is restored transitively; normal usage goes through ConsoleSystem APIs.
@@ -83,12 +84,12 @@ The [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/m
 - [Command parsing](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_PARSING.md)
 - [Command validation](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_VALIDATION.md)
 - [Command autocomplete](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_AUTOCOMPLETE.md)
-- [Command permissions and availability](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_ACCESS.md) (unreleased)
+- [Command permissions and availability](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_ACCESS.md)
 - [Command execution](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_EXECUTION.md)
 - [Command outputs and failures](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md)
 
-Version 0.3.0 adds stateless autocomplete and optional history change events to the 0.2.0 foundation. Permission and availability APIs are in the unreleased development work and are not part of published 0.3.0. See the [Command autocomplete guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_AUTOCOMPLETE.md), [History change hooks](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/HISTORY_CHANGE_HOOKS.md), and [changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md) for details. History persistence is not part of the public API.
+Version 0.4.0 adds opt-in command permissions and runtime availability checks to the autocomplete and history change features in 0.3.0. See the [Command autocomplete guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_AUTOCOMPLETE.md), [Command permissions and availability](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_ACCESS.md), [History change hooks](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/HISTORY_CHANGE_HOOKS.md), and [changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md) for details. History persistence is not part of the public API.
 
 ## License
 

@@ -6,7 +6,7 @@
 var console = new ConsoleManager();
 ```
 
-For caller-specific command access, the unreleased development API accepts an `IConsolePermissionProvider` through the manager constructor. See [Command permissions and availability](COMMAND_ACCESS.md).
+For caller-specific command access, the 0.4.0 release target accepts an `IConsolePermissionProvider` through the manager constructor. See [Command permissions and availability](COMMAND_ACCESS.md).
 
 Pass `ConsoleManagerOptions` to customize behavior. Nested option sections can be omitted or set to `null`; omitted sections resolve to their defaults.
 
@@ -47,7 +47,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 | `History.CommandHistoryDuplicatePolicy` | `RejectConsecutive` | Whether the newest duplicate command string is suppressed. |
 | `Execution.EchoInput` | `true` | Default input echo during command execution. |
 
-`Autocomplete.ShowUnavailableCommands` is part of the unreleased access-control development API and is not included in the published 0.3.0 package.
+`Autocomplete.ShowUnavailableCommands` is part of the 0.4.0 release target and is not included in the published 0.3.0 package.
 
 Changing a capacity to zero or less, using an invalid enum value, providing an empty or overlapping boolean literal set, or configuring an invalid flag/option prefix fails when the manager snapshots the options. Boolean literal arrays are copied. The manager snapshots the complete option graph at construction; later changes to the original setup object do not affect it. Each read of `console.Options` is a new detached snapshot.
 

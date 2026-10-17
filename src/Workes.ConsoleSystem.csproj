@@ -7,13 +7,13 @@
     <LangVersion>10.0</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Workes.ConsoleSystem</PackageId>
-    <Version>0.3.0</Version>
-    <PackageReleaseNotes>Version 0.3.0 continues the ContentSystem-backed rebuild introduced in 0.2.0. It adds stateless command autocomplete and optional synchronous history change events while keeping ContentSystem out of the public API. It is not a drop-in upgrade from the legacy 0.1.0 package.</PackageReleaseNotes>
+    <Version>0.4.0</Version>
+    <PackageReleaseNotes>Version 0.4.0 continues the ContentSystem-backed rebuild introduced in 0.2.0. It adds opt-in command permissions, reusable permission roles, runtime availability checks, and access-aware autocomplete to the 0.3.0 foundation. ContentSystem remains outside the public API. This is not a drop-in upgrade from the legacy 0.1.0 package.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>Workes</Authors>
     <Company>Workes</Company>
     <Product>Workes.ConsoleSystem</Product>
-    <Description>An engine-neutral console foundation with manager-centered logging, retained entries, command history, typed synchronous command workflows, stateless autocomplete, and optional history change events. Workes.ContentSystem provides internal storage while the public API remains ConsoleSystem-owned.</Description>
+    <Description>An engine-neutral console foundation with manager-centered logging, retained entries, command history, typed synchronous command workflows, stateless autocomplete, optional history change events, and opt-in command permissions and availability checks. Workes.ContentSystem provides internal storage while the public API remains ConsoleSystem-owned.</Description>
     <PackageTags>console command-line logging history game development tools</PackageTags>
     <PackageProjectUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem.git</RepositoryUrl>

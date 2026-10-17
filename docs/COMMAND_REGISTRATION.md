@@ -2,7 +2,7 @@
 
 Define a command with `CommandBuilder`, call `Build()` to create an immutable `CommandDefinition`, then register it through `ConsoleManager`.
 
-> Permission and runtime availability methods are unreleased development APIs and are not included in the published 0.3.0 package.
+Permission and runtime availability methods are included in version 0.4.0 and are not included in published 0.3.0.
 
 ```csharp
 var command = new CommandBuilder("player.teleport")
