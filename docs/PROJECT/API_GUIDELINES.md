@@ -8,6 +8,8 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 The 0.5.0 package implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, synchronous execution, stateless autocomplete, optional history change notifications, and opt-in permission and availability checks. The command model uses required logical value IDs, resolved values, bulk defaults, and one optional trailing positional argument. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first snapshots, and clearing, and command execution records submissions in `CommandHistory`. The guidance below records the package's design rules; public docs must remain aligned with implemented APIs.
 
+The current repository source adds a manager-registered configurable help command after 0.5.0. Its access policy defaults to hiding blocked commands, and formatters and policies use ConsoleSystem-owned context types.
+
 ## API Design Principles
 
 - Keep the package engine-neutral and UI-neutral.
@@ -50,6 +52,8 @@ Use one command schema model rather than separate public types for each combinat
 - Complex commands should prefer small immutable typed state records.
 - Required positional arguments represent core command state; flags and named options represent optional state.
 - Build immutable definitions before registering them through the manager.
+- Keep optional help configuration in a dedicated builder, but register it through `ConsoleManager` because help needs the manager's live registry and caller access checks. Require one shared formatter and allow feature-specific formatter overrides.
+- Keep help output manager-centered and ConsoleSystem-owned. Default to hiding blocked commands; expose an explicit policy for callers who need another presentation.
 - Keep command path, parsing, binding, validation, execution, and autocomplete concepts separate even when normal submission orchestrates them together.
 - Keep handlers synchronous until a real asynchronous workflow is required.
 - Return command output and expected command failures through a result object rather than writing through a hidden output sink.

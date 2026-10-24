@@ -3,9 +3,11 @@
 [![NuGet](https://img.shields.io/nuget/v/Workes.ConsoleSystem.svg)](https://www.nuget.org/packages/Workes.ConsoleSystem)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/LICENSE)
 
-Workes.ConsoleSystem is an engine-neutral console foundation for applications, games, and tools. It provides one manager-owned API for logging, retained console entries, command input history, command autocomplete, optional history change events, opt-in command permissions and availability checks, and synchronous command registration, parsing, validation, and execution.
+Workes.ConsoleSystem is an engine-neutral console foundation for applications, games, and tools. It provides one manager-owned API for logging, retained console entries, command input history, command autocomplete, optional history change events, opt-in command permissions and availability checks, configurable help commands, and synchronous command registration, parsing, validation, and execution.
 
 Version 0.5.0 continues the substantial rebuild introduced in 0.2.0 around `Workes.ContentSystem`, which provides internal retained-content storage. It redesigns command values around logical IDs, a resolved values map, bulk defaults, and an optional trailing positional argument. ConsoleSystem keeps its own public manager, entry, text, command, and history APIs; consumers do not need to create or call ContentSystem objects directly. This release is not intended as a drop-in replacement for APIs from the earlier implementation.
+
+The repository source now also includes an opt-in configurable help command added after 0.5.0; it will be included in a future package release.
 
 ## Highlights
 
@@ -15,6 +17,7 @@ Version 0.5.0 continues the substantial rebuild introduced in 0.2.0 around `Work
 - Register typed commands and process them through parsing, validation, and synchronous handlers.
 - Offer stateless command, option, and configured value autocomplete for host input controls.
 - Restrict commands with optional caller permissions and runtime availability checks.
+- Register a configurable help command with positional or option-based search and command details.
 - Subscribe to optional synchronous history change events for UI updates.
 - Keep presentation decisions in the host UI with semantic `ConsoleText` segments.
 - Configure the manager once; it snapshots the options and exposes a detached options snapshot.
@@ -85,6 +88,7 @@ The [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/m
 - [Command validation](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_VALIDATION.md)
 - [Command autocomplete](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_AUTOCOMPLETE.md)
 - [Command permissions and availability](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_ACCESS.md)
+- [Configurable help command](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/HELP_COMMAND.md)
 - [Command execution](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_EXECUTION.md)
 - [Command outputs and failures](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md)

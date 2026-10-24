@@ -2,6 +2,16 @@
 
 This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
+## [24-10-2026]
+
+### Added
+
+- Added an opt-in, manager-registered help command with configurable overview, search, command-specific formatters, and policies for blocked commands.
+
+### Documentation
+
+- Added a focused help command guide and updated the README, Quick Start, API reference, architecture, and API guidelines.
+
 ## [0.5.0] - 24-10-2026
 
 ### Changed

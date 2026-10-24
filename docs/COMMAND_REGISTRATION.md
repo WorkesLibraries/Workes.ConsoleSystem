@@ -61,3 +61,5 @@ Flags and options can use aliases. Argument names and all flag/option names and 
 The manager owns registration. Registering a duplicate command path or a schema with conflicting flag/option names or aliases throws an argument or invalid-operation exception. `RegisterCommands` validates a batch before adding it, so invalid batches are not partially registered. There is no unregister or replacement operation.
 
 See [Command parsing](COMMAND_PARSING.md), [Command validation](COMMAND_VALIDATION.md), and [Command autocomplete](COMMAND_AUTOCOMPLETE.md) for input, validation, and suggestion behavior.
+
+For an opt-in command that formats an overview and supports configurable command search/help, see [Configurable help command](HELP_COMMAND.md).

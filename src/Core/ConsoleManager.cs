@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.Commands;
@@ -273,6 +274,90 @@ public sealed class ConsoleManager
         ValidateCommandIsNotDuplicate(command.Path, Commands.Definitions);
         Commands.Add(command);
         return command;
+    }
+
+    /// <summary>Registers a configurable help command for this manager's live command registry.</summary>
+    /// <param name="help">The help command configuration to register.</param>
+    /// <returns>The generated command definition registered with this manager.</returns>
+    public CommandDefinition RegisterHelpCommand(HelpCommandDefinition help)
+    {
+        if (help is null)
+        {
+            throw new ArgumentNullException(nameof(help));
+        }
+
+        CommandDefinition command = (GetHelpStateShape(help), help) switch
+        {
+            (0, _) => BuildHelpCommand<HelpStateEmpty>(help),
+            (1, _) => BuildHelpCommand<HelpStateQuery>(help),
+            (2, _) => BuildHelpCommand<HelpStateSearch>(help),
+            (3, _) => BuildHelpCommand<HelpStateQuerySearch>(help),
+            (4, _) => BuildHelpCommand<HelpStateCommand>(help),
+            (5, _) => BuildHelpCommand<HelpStateQueryCommand>(help),
+            (6, _) => BuildHelpCommand<HelpStateSearchCommand>(help),
+            (7, _) => BuildHelpCommand<HelpStateAll>(help),
+            _ => throw new InvalidOperationException("Unknown help command state shape.")
+        };
+        return RegisterCommand(command);
+    }
+
+    private static int GetHelpStateShape(HelpCommandDefinition help)
+    {
+        bool positional = help.SearchPositionalEnabled || help.CommandHelpPositionalEnabled;
+        return (positional ? 1 : 0)
+            | (help.SearchOptionEnabled ? 2 : 0)
+            | (help.CommandHelpOptionEnabled ? 4 : 0);
+    }
+
+    private CommandDefinition BuildHelpCommand<TState>(HelpCommandDefinition help)
+        where TState : HelpCommandState
+    {
+        var builder = new CommandBuilder(help.Path)
+            .Description("Shows help for registered commands.");
+
+        if (help.SearchPositionalEnabled || help.CommandHelpPositionalEnabled)
+        {
+            builder.Argument<TState>(state => state.Query, "help-query", "query")
+                .Optional();
+        }
+
+        if (help.SearchOptionEnabled)
+        {
+            builder.Option<TState>(
+                state => state.SearchQuery,
+                "help-search-query",
+                help.SearchOptionName!,
+                help.SearchOptionAliases.ToArray());
+        }
+
+        if (help.CommandHelpOptionEnabled)
+        {
+            builder.Option<TState>(
+                state => state.CommandQuery,
+                "help-command-query",
+                help.CommandHelpOptionName!,
+                help.CommandHelpOptionAliases.ToArray());
+        }
+
+        bool hasPositional = help.SearchPositionalEnabled || help.CommandHelpPositionalEnabled;
+        if (hasPositional && (help.SearchOptionEnabled || help.CommandHelpOptionEnabled)
+            || help.SearchOptionEnabled && help.CommandHelpOptionEnabled)
+        {
+            builder.Constraint<TState>(
+                "help-query-source-exclusive",
+                "Use one help query source and one help mode at a time.",
+                state =>
+                {
+                    int suppliedSources = (state.Query is null ? 0 : 1)
+                        + (state.SearchQuery is null ? 0 : 1)
+                        + (state.CommandQuery is null ? 0 : 1);
+                    return suppliedSources <= 1;
+                });
+        }
+
+        return builder
+            .Execute<TState>((context, state) => ExecuteHelpCommand(help, context, state))
+            .Build();
     }
 
     /// <summary>
@@ -562,26 +647,31 @@ public sealed class ConsoleManager
 
     private ConsoleFailure? ValidateCommandAccess(BoundCommand command, CommandAvailabilityContext context)
     {
+        return GetCommandAccessFailure(command.Definition, context);
+    }
+
+    private ConsoleFailure? GetCommandAccessFailure(CommandDefinition definition, CommandAvailabilityContext context)
+    {
         try
         {
-            string? permissionFailure = GetPermissionFailureMessage(command.Definition);
+            string? permissionFailure = GetPermissionFailureMessage(definition);
             if (permissionFailure is not null)
             {
                 return new ConsoleFailure(
                     ConsoleFailureKind.CommandAuthorization,
                     ConsoleFailureCodes.CommandPermissionDenied,
                     permissionFailure,
-                    source: command.Definition.Path);
+                    source: definition.Path);
             }
 
-            CommandAvailabilityResult availability = GetCommandAvailability(command.Definition, context);
+            CommandAvailabilityResult availability = GetCommandAvailability(definition, context);
             return availability.IsAvailable
                 ? null
                 : new ConsoleFailure(
                     ConsoleFailureKind.CommandAvailability,
                     ConsoleFailureCodes.CommandUnavailable,
                     availability.Reason!,
-                    source: command.Definition.Path);
+                    source: definition.Path);
         }
         catch (Exception exception)
         {
@@ -589,10 +679,316 @@ public sealed class ConsoleManager
             return ConsoleFailure.Wrap(
                 ConsoleFailureKind.Extension,
                 ConsoleFailureCodes.ExtensionRejected,
-                $"An access check for command '{command.Definition.Path}' failed.",
+                $"An access check for command '{definition.Path}' failed.",
                 cause,
-                component: command.Definition.Path,
-                source: command.Definition.Path);
+                component: definition.Path,
+                source: definition.Path);
+        }
+    }
+
+    private CommandResult ExecuteHelpCommand(
+        HelpCommandDefinition help,
+        CommandContext commandContext,
+        HelpCommandState state)
+    {
+        string? positionalQuery = NormalizeHelpQuery(state.Query);
+        string? searchOptionQuery = NormalizeHelpQuery(state.SearchQuery);
+        string? commandOptionQuery = NormalizeHelpQuery(state.CommandQuery);
+
+        if (searchOptionQuery is not null)
+        {
+            return FormatHelpMatches(help, searchOptionQuery, search: true, commandContext);
+        }
+
+        if (commandOptionQuery is not null)
+        {
+            CommandDefinition? definition = FindCommand(commandOptionQuery);
+            return definition is null
+                ? CommandResult.Success()
+                : FormatSpecificHelp(help, definition, commandOptionQuery, commandContext);
+        }
+
+        if (positionalQuery is null)
+        {
+            return FormatHelpMatches(help, searchTerm: null, search: false, commandContext);
+        }
+
+        if (help.CommandHelpPositionalEnabled)
+        {
+            CommandDefinition? exact = FindCommand(positionalQuery);
+            if (exact is not null)
+            {
+                ConsoleFailure? failure = GetCommandAccessFailure(
+                    exact,
+                    new CommandAvailabilityContext(commandContext.Input, cursorIndex: null, exact, command: null));
+                HelpCommandAccessDecision decision = failure is null
+                    ? HelpCommandAccessDecision.Show()
+                    : GetHelpAccessDecision(help, exact, positionalQuery, new[] { exact }, commandContext, failure);
+                if (decision.Kind == HelpCommandAccessDecisionKind.Show)
+                {
+                    return FormatSpecificHelp(help, exact, positionalQuery, commandContext, failure, decision);
+                }
+
+                if (decision.Kind == HelpCommandAccessDecisionKind.Respond)
+                {
+                    return ResultFromLines(decision.ResponseLines);
+                }
+            }
+        }
+
+        return help.SearchPositionalEnabled
+            ? FormatHelpMatches(help, positionalQuery, search: true, commandContext)
+            : CommandResult.Success();
+    }
+
+    private CommandResult FormatHelpMatches(
+        HelpCommandDefinition help,
+        string? searchTerm,
+        bool search,
+        CommandContext commandContext)
+    {
+        var definitions = new List<CommandDefinition>();
+        foreach (CommandDefinition definition in Commands.Definitions)
+        {
+            if (!search || definition.Path.IndexOf(searchTerm!, _options.CommandParsing.IsCaseSensitive
+                ? StringComparison.Ordinal
+                : StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                definitions.Add(definition);
+            }
+        }
+
+        IReadOnlyList<CommandDefinition> candidates = definitions.AsReadOnly();
+        var decisions = new Dictionary<CommandDefinition, (ConsoleFailure? Failure, HelpCommandAccessDecision Decision)>();
+        var visible = new List<CommandDefinition>();
+        foreach (CommandDefinition definition in definitions)
+        {
+            ConsoleFailure? failure = GetCommandAccessFailure(
+                definition,
+                new CommandAvailabilityContext(commandContext.Input, cursorIndex: null, definition, command: null));
+            HelpCommandAccessDecision decision = failure is null
+                ? HelpCommandAccessDecision.Show()
+                : GetHelpAccessDecision(help, definition, searchTerm, candidates, commandContext, failure);
+            decisions.Add(definition, (failure, decision));
+            if (decision.Kind == HelpCommandAccessDecisionKind.Show)
+            {
+                visible.Add(definition);
+            }
+        }
+
+        var visibleReadOnly = visible.AsReadOnly();
+        var outputs = new List<CommandOutput>();
+        foreach (CommandDefinition definition in definitions)
+        {
+            (ConsoleFailure? failure, HelpCommandAccessDecision decision) = decisions[definition];
+            if (decision.Kind == HelpCommandAccessDecisionKind.Hide)
+            {
+                continue;
+            }
+
+            if (decision.Kind == HelpCommandAccessDecisionKind.Respond)
+            {
+                AddBlock(outputs, decision.ResponseLines);
+                continue;
+            }
+
+            var context = new CommandHelpContext(definition, searchTerm, failure, visibleReadOnly);
+            List<string> lines = (search ? help.SearchFormatter : null) is Func<CommandHelpContext, List<string>> formatter
+                ? formatter(context)
+                : help.Formatter(context);
+            if (lines is null)
+            {
+                throw new InvalidOperationException("A help formatter returned null.");
+            }
+            AddBlock(outputs, lines);
+        }
+
+        return CommandResult.Success(outputs.ToArray());
+    }
+
+    private CommandResult FormatSpecificHelp(
+        HelpCommandDefinition help,
+        CommandDefinition definition,
+        string? searchTerm,
+        CommandContext commandContext,
+        ConsoleFailure? knownFailure = null,
+        HelpCommandAccessDecision? knownDecision = null)
+    {
+        ConsoleFailure? failure;
+        HelpCommandAccessDecision decision;
+        if (knownDecision is not null)
+        {
+            failure = knownFailure;
+            decision = knownDecision;
+        }
+        else
+        {
+            failure = GetCommandAccessFailure(
+                definition,
+                new CommandAvailabilityContext(commandContext.Input, cursorIndex: null, definition, command: null));
+            decision = failure is null
+                ? HelpCommandAccessDecision.Show()
+                : GetHelpAccessDecision(help, definition, searchTerm, new[] { definition }, commandContext, failure);
+        }
+
+        if (decision.Kind == HelpCommandAccessDecisionKind.Hide)
+        {
+            return CommandResult.Success();
+        }
+
+        if (decision.Kind == HelpCommandAccessDecisionKind.Respond)
+        {
+            return ResultFromLines(decision.ResponseLines);
+        }
+
+        var matches = Array.AsReadOnly(new[] { definition });
+        var context = new CommandHelpContext(definition, searchTerm, failure, matches);
+        List<string> lines = (help.CommandHelpFormatter ?? help.Formatter)(context)
+            ?? throw new InvalidOperationException("A help formatter returned null.");
+        return ResultFromLines(lines);
+    }
+
+    private HelpCommandAccessDecision GetHelpAccessDecision(
+        HelpCommandDefinition help,
+        CommandDefinition definition,
+        string? searchTerm,
+        IReadOnlyList<CommandDefinition> candidates,
+        CommandContext commandContext,
+        ConsoleFailure? knownFailure = null)
+    {
+        ConsoleFailure? failure = knownFailure ?? GetCommandAccessFailure(
+            definition,
+            new CommandAvailabilityContext(commandContext.Input, cursorIndex: null, definition, command: null));
+        if (failure is null)
+        {
+            return HelpCommandAccessDecision.Show();
+        }
+
+        var accessContext = new CommandHelpAccessContext(definition, searchTerm, failure, candidates);
+        return help.AccessPolicy(accessContext)
+            ?? throw new InvalidOperationException("The help command access policy returned null.");
+    }
+
+    private CommandDefinition? FindCommand(string path)
+    {
+        foreach (CommandDefinition definition in Commands.Definitions)
+        {
+            if (_commandPathComparer.Equals(definition.Path, path))
+            {
+                return definition;
+            }
+        }
+
+        return null;
+    }
+
+    private static string? NormalizeHelpQuery(string? query)
+    {
+        return string.IsNullOrWhiteSpace(query) ? null : query;
+    }
+
+    private static CommandResult ResultFromLines(IReadOnlyList<string> lines)
+    {
+        var outputs = new List<CommandOutput>();
+        AddBlock(outputs, lines);
+        return CommandResult.Success(outputs.ToArray());
+    }
+
+    private static void AddBlock(List<CommandOutput> outputs, IEnumerable<string> lines)
+    {
+        if (lines is null)
+        {
+            throw new InvalidOperationException("A help formatter or access policy returned null lines.");
+        }
+
+        var copy = new List<string>();
+        foreach (string line in lines)
+        {
+            copy.Add(line ?? throw new InvalidOperationException("Help output lines cannot contain null."));
+        }
+
+        if (copy.Count > 0)
+        {
+            outputs.Add(CommandOutput.Block(string.Join(Environment.NewLine, copy)));
+        }
+    }
+
+    // The command binder creates state from the exact constructor parameters represented by the enabled schema members.
+    // These small shapes keep disabled positional and option forms out of the registered command definition.
+    private abstract class HelpCommandState
+    {
+        protected HelpCommandState()
+        {
+        }
+
+        public string? Query { get; protected set; }
+        public string? SearchQuery { get; protected set; }
+        public string? CommandQuery { get; protected set; }
+    }
+
+    private sealed class HelpStateEmpty : HelpCommandState
+    {
+        public HelpStateEmpty() { }
+    }
+
+    private sealed class HelpStateQuery : HelpCommandState
+    {
+        public HelpStateQuery(string? Query)
+        {
+            this.Query = Query;
+        }
+    }
+
+    private sealed class HelpStateSearch : HelpCommandState
+    {
+        public HelpStateSearch(string? SearchQuery)
+        {
+            this.SearchQuery = SearchQuery;
+        }
+    }
+
+    private sealed class HelpStateCommand : HelpCommandState
+    {
+        public HelpStateCommand(string? CommandQuery)
+        {
+            this.CommandQuery = CommandQuery;
+        }
+    }
+
+    private sealed class HelpStateQuerySearch : HelpCommandState
+    {
+        public HelpStateQuerySearch(string? Query, string? SearchQuery)
+        {
+            this.Query = Query;
+            this.SearchQuery = SearchQuery;
+        }
+    }
+
+    private sealed class HelpStateQueryCommand : HelpCommandState
+    {
+        public HelpStateQueryCommand(string? Query, string? CommandQuery)
+        {
+            this.Query = Query;
+            this.CommandQuery = CommandQuery;
+        }
+    }
+
+    private sealed class HelpStateSearchCommand : HelpCommandState
+    {
+        public HelpStateSearchCommand(string? SearchQuery, string? CommandQuery)
+        {
+            this.SearchQuery = SearchQuery;
+            this.CommandQuery = CommandQuery;
+        }
+    }
+
+    private sealed class HelpStateAll : HelpCommandState
+    {
+        public HelpStateAll(string? Query, string? SearchQuery, string? CommandQuery)
+        {
+            this.Query = Query;
+            this.SearchQuery = SearchQuery;
+            this.CommandQuery = CommandQuery;
         }
     }
 

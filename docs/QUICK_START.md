@@ -20,11 +20,12 @@ Or add a package reference to your project file:
 <PackageReference Include="Workes.ConsoleSystem" Version="0.5.0" />
 ```
 
-NuGet restores the internal `Workes.ContentSystem` dependency automatically. Application code uses the ConsoleSystem API and does not need a separate ContentSystem reference. See the [README](../README.md#installation) for package details.
+NuGet restores the internal `Workes.ContentSystem` dependency automatically. Application code uses the ConsoleSystem API and does not need a separate ContentSystem reference. See the [README](../README.md#installation) for package details. The configurable help command described below was added to the repository after 0.5.0 and will ship in a future package release.
 
 ## Create and configure the manager
 
 ```csharp
+using System.Collections.Generic;
 using Workes.ConsoleSystem.Commands;
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.Core;
@@ -99,6 +100,23 @@ else
 
 Execution parses and validates the input before calling the handler. On success, the manager records any enabled input echo and then the declared and handler-produced outputs. A rejected command produces a structured failure result and a `CommandFailureEntry`. `TryExecuteCommand` returns `false` for command failures; `ExecuteCommand` is the throwing alternative. See [Command execution](COMMAND_EXECUTION.md) and [outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md).
 
+## Add an optional help command
+
+Use a formatter to decide how each registered command appears. Search and command-specific help are independent opt-ins; option names are supplied by the application:
+
+```csharp
+console.RegisterHelpCommand(new HelpCommandBuilder()
+    .FormatWith(context => new List<string>
+    {
+        $"{context.Command.Path} : {context.Command.Description}"
+    })
+    .EnableSearchOption("search", aliases: new[] { "s" })
+    .EnableCommandHelpOption("command")
+    .Build());
+```
+
+The command path defaults to `help`. See [Configurable help command](HELP_COMMAND.md) for positional query modes, distinct formatters, search behavior, and policies for commands blocked by permissions or availability.
+
 ## Autocomplete and history updates
 
 For a host input control, ask the manager for candidates at the current cursor position and apply the selected candidate:
@@ -135,3 +153,4 @@ Version 0.5.0 includes command permission and runtime availability checks, along
 - [Command validation](COMMAND_VALIDATION.md)
 - [Command autocomplete](COMMAND_AUTOCOMPLETE.md)
 - [Command permissions and availability](COMMAND_ACCESS.md)
+- [Configurable help command](HELP_COMMAND.md)

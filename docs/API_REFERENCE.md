@@ -14,6 +14,7 @@ Create one `ConsoleManager` per console instance. Configure it once, register de
 | Execute input and throw on failure | `ExecuteCommand(string)` | Returns a successful result; throws `ConsoleOperationException` with the structured failure otherwise. |
 | Execute a parsed command | `TryExecuteCommand(BoundCommand, out CommandResult)` or `ExecuteCommand(BoundCommand)` | Skips parsing but still records the original input, validates, invokes the handler, and records the outcome. |
 | Register definitions | `RegisterCommand(CommandDefinition)` or `RegisterCommands(IEnumerable<CommandDefinition>)` | Batch registration validates every definition before adding any of them. |
+| Register optional help | `RegisterHelpCommand(HelpCommandDefinition)` | Creates a normal registered command bound to this manager's current registry and caller access checks. |
 | Add a custom visible entry | `RecordEntry(IConsoleEntry)` | Adds the entry to the same bounded history as logs and command entries. |
 | Add command navigation input | `RecordCommandInput(string)` | Returns `false` for blank input or a suppressed consecutive duplicate. |
 | Write logs | `LogTrace`, `LogDebug`, `LogInformation`, `LogWarning`, `LogError`, `LogCritical` | Each method accepts either `string` or `ConsoleText` and records a `LogEntry`. |
@@ -44,6 +45,7 @@ Manager construction snapshots and validates the full options graph. Null nested
 
 - Definition: `CommandBuilder`, `CommandDefinition`, `CommandArgumentDefinition`, `CommandFlagDefinition`, `CommandOptionDefinition`, `CommandConstraintDefinition`, `CommandSuccessOutputDefinition`, and `CommandEchoInputDefinition`.
 - Access: `CommandAvailabilityContext` and `CommandAvailabilityResult`.
+- Help: `HelpCommandBuilder`, `HelpCommandDefinition`, `CommandHelpContext`, `CommandHelpAccessContext`, and the help access policy/decision types.
 - Autocomplete: `CommandAutocompleteContext`, `CommandAutocompleteCandidate`, `CommandAutocompleteCandidateKind`, and `CommandAutocompleteResult`.
 - Parsing and validation: `BoundCommand`, `CommandParseResult`, and `CommandValidationResult`.
 - Handler execution: `CommandContext` and `CommandResult`.
@@ -135,7 +137,7 @@ The complete constant list is in `ConsoleFailureCodes`. Messages are for people 
 
 ## Scope of the 0.5.0 package
 
-The 0.5.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, stateless autocomplete, optional history change events, command permissions, runtime availability checks, and the redesigned logical command value model. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
+The published 0.5.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, stateless autocomplete, optional history change events, command permissions, runtime availability checks, and the redesigned logical command value model. The current repository source additionally implements an opt-in configurable help command for a future package release. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
 
 ## Focused guides
 
@@ -149,6 +151,7 @@ The 0.5.0 package provides synchronous command handlers, retained in-memory hist
 - [Command validation](COMMAND_VALIDATION.md)
 - [Command autocomplete](COMMAND_AUTOCOMPLETE.md)
 - [Command permissions and availability](COMMAND_ACCESS.md) (introduced in 0.4.0)
+- [Configurable help command](HELP_COMMAND.md)
 - [Command execution](COMMAND_EXECUTION.md)
 - [Command outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Quick Start](QUICK_START.md)
