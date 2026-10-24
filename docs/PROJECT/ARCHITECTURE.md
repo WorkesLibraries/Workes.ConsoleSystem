@@ -65,6 +65,8 @@ The parser and autocomplete share `CommandTokenizer`. Parsing rejects unclosed q
 
 The optional help command remains manager-owned. Its formatters return ConsoleSystem output lines and receive command definitions, a read-only matched-command list, query text, generated syntax, and access status. Command and binding metadata is optional. A policy controls whether blocked commands are hidden, formatted, or replaced with response lines; the default hides blocked commands. Matching and ordering remain configurable while defaulting to case-aware path substring matching and registration order.
 
+The current source target for 0.8.0 adds handler-driven streamed output and transient progress. `CommandContext.WriteOutput` writes standard output entries through the manager's normal history path. Optional progress state is created per execution; handlers publish state by calling `ReportProgress`. The manager raises update and terminal notifications synchronously, while history stores only streamed/final output and failures. The published 0.7.0 package does not include these additions yet.
+
 `BoundCommand.Values` is the resolved logical-value view keyed by ID. Its `Arguments`, `Flags`, and `Options` maps retain only explicitly supplied source bindings. Binding-level rules and autocomplete belong to the specific positional or option binding; typed state constraints see the final resolved state. Optional positional input is limited to one final argument so it does not make later positional interpretation ambiguous.
 
 Console entries and semantic text remain engine-neutral. The host UI chooses how to render entry types and semantic segments. ConsoleSystem does not own a game engine, UI framework, markup language, theme, or rich-text conversion.

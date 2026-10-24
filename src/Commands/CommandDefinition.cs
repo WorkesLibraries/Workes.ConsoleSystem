@@ -26,6 +26,8 @@ public sealed class CommandDefinition
         IReadOnlyList<Func<CommandAvailabilityContext, CommandAvailabilityResult>> availabilityChecks,
         CommandEchoInputDefinition echoInput,
         IReadOnlyList<CommandSuccessOutputDefinition> successOutputs,
+        Type? progressStateType,
+        Func<object>? progressStateFactory,
         Delegate handler,
         bool isAsyncHandler)
     {
@@ -46,6 +48,8 @@ public sealed class CommandDefinition
         AvailabilityChecks = availabilityChecks ?? throw new ArgumentNullException(nameof(availabilityChecks));
         EchoInput = echoInput ?? throw new ArgumentNullException(nameof(echoInput));
         SuccessOutputs = successOutputs ?? throw new ArgumentNullException(nameof(successOutputs));
+        ProgressStateType = progressStateType;
+        ProgressStateFactory = progressStateFactory;
         Handler = handler ?? throw new ArgumentNullException(nameof(handler));
         IsAsyncHandler = isAsyncHandler;
     }
@@ -119,6 +123,9 @@ public sealed class CommandDefinition
     /// </summary>
     public IReadOnlyList<CommandSuccessOutputDefinition> SuccessOutputs { get; }
 
+    /// <summary>Gets the optional custom progress state type for each execution.</summary>
+    public Type? ProgressStateType { get; }
+
     /// <summary>
     /// Gets a value indicating whether the command has a stored execution handler.
     /// </summary>
@@ -126,6 +133,7 @@ public sealed class CommandDefinition
 
     internal Delegate Handler { get; }
     internal bool IsAsyncHandler { get; }
+    internal Func<object>? ProgressStateFactory { get; }
     internal CommandSyntaxFormatter? SyntaxFormatter { get; }
 
     internal IReadOnlyList<Func<CommandAvailabilityContext, CommandAvailabilityResult>> AvailabilityChecks { get; }

@@ -24,6 +24,8 @@ public sealed class CommandBuilder
     private readonly List<IReadOnlyList<string>> _requiredAnyPermissionGroups = new List<IReadOnlyList<string>>();
     private readonly List<Func<CommandAvailabilityContext, CommandAvailabilityResult>> _availabilityChecks = new List<Func<CommandAvailabilityContext, CommandAvailabilityResult>>();
     private readonly List<CommandSuccessOutputDefinition> _successOutputs = new List<CommandSuccessOutputDefinition>();
+    private Func<object>? _progressStateFactory;
+    private Type? _progressStateType;
     private string _description = string.Empty;
     private readonly List<string> _notes = new List<string>();
     private readonly List<string> _examples = new List<string>();
@@ -377,6 +379,34 @@ public sealed class CommandBuilder
     }
 
     /// <summary>
+    /// Configures a custom progress state type. A new instance is created for every command execution.
+    /// </summary>
+    /// <typeparam name="TProgressState">The reference type used to hold command-specific progress data.</typeparam>
+    /// <param name="factory">Creates the progress state instance for one execution.</param>
+    /// <returns>The current builder.</returns>
+    /// <exception cref="ArgumentNullException">The factory is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">A progress state has already been configured.</exception>
+    public CommandBuilder ProgressState<TProgressState>(Func<TProgressState> factory)
+        where TProgressState : class
+    {
+        if (factory is null)
+        {
+            throw new ArgumentNullException(nameof(factory));
+        }
+
+        if (_progressStateFactory is not null)
+        {
+            throw new InvalidOperationException("A command can configure only one progress state type.");
+        }
+
+        _progressStateType = typeof(TProgressState);
+        _progressStateFactory = () => factory()
+            ?? throw new InvalidOperationException($"The progress state factory for '{_path}' returned null.");
+        _lastValueMember = null;
+        return this;
+    }
+
+    /// <summary>
     /// Stores a simple command handler.
     /// </summary>
     /// <param name="handler">The command handler.</param>
@@ -529,6 +559,8 @@ public sealed class CommandBuilder
             new List<Func<CommandAvailabilityContext, CommandAvailabilityResult>>(_availabilityChecks).AsReadOnly(),
             new CommandEchoInputDefinition(_echoInput),
             new List<CommandSuccessOutputDefinition>(_successOutputs).AsReadOnly(),
+            _progressStateType,
+            _progressStateFactory,
             _handler,
             _handlerIsAsync ?? false);
     }

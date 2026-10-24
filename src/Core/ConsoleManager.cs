@@ -117,6 +117,12 @@ public sealed class ConsoleManager
     }
 
     /// <summary>
+    /// Occurs when a command reports progress and when a command that reported progress finishes.
+    /// </summary>
+    /// <remarks>Notifications are synchronous and run on the thread that reports progress or completes the command.</remarks>
+    public event EventHandler<CommandProgressChangedEventArgs>? CommandProgressChanged;
+
+    /// <summary>
     /// Gets the registered command definitions. Registration remains owned by this manager.
     /// </summary>
     public CommandSystem Commands { get; }
@@ -689,10 +695,12 @@ public sealed class ConsoleManager
         if (!outcome.Result.IsSuccess)
         {
             AppendFailure(outcome.Result.Failure!);
+            NotifyProgressCompleted(outcome);
             return outcome;
         }
 
         AppendSuccessOutputs(command.Definition, outcome.Result);
+        NotifyProgressCompleted(outcome);
         return outcome;
     }
 
@@ -747,20 +755,24 @@ public sealed class ConsoleManager
         if (!outcome.Result.IsSuccess)
         {
             AppendFailure(outcome.Result.Failure!);
+            NotifyProgressCompleted(outcome);
             return outcome;
         }
 
         AppendSuccessOutputs(command.Definition, outcome.Result);
+        NotifyProgressCompleted(outcome);
         return outcome;
     }
 
     private async Task<CommandExecutionOutcome> InvokeAsyncHandler(BoundCommand command, CancellationToken cancellationToken)
     {
         DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-        var context = new CommandContext(command.Input, command.Definition, command, timestamp, cancellationToken, _dispatcher);
+        CommandContext? context = null;
 
         try
         {
+            object? progressState = command.Definition.ProgressStateFactory?.Invoke();
+            context = CreateCommandContext(command, timestamp, cancellationToken, progressState);
             object? taskObject = command.Definition.StateType is null
                 ? command.Definition.Handler.DynamicInvoke(context)
                 : command.Definition.Handler.DynamicInvoke(context, command.State);
@@ -769,17 +781,17 @@ public sealed class ConsoleManager
             {
                 CommandResult? result = await resultTask.ConfigureAwait(false);
                 return result is null
-                    ? MissingAsyncHandlerResult(command.Definition)
-                    : new CommandExecutionOutcome(result, null);
+                    ? MissingAsyncHandlerResult(command.Definition, context)
+                    : new CommandExecutionOutcome(result, null, context);
             }
 
             if (taskObject is Task task)
             {
                 await task.ConfigureAwait(false);
-                return new CommandExecutionOutcome(CommandResult.Success(), null);
+                return new CommandExecutionOutcome(CommandResult.Success(), null, context);
             }
 
-            return MissingAsyncHandlerResult(command.Definition);
+            return MissingAsyncHandlerResult(command.Definition, context);
         }
         catch (Exception exception)
         {
@@ -788,49 +800,116 @@ public sealed class ConsoleManager
             {
                 return new CommandExecutionOutcome(
                     CommandResult.Failed(CreateCancellationFailure(command.Definition, causeException)),
-                    causeException);
+                    causeException,
+                    context);
             }
 
-            return CreateHandlerFailure(command.Definition, causeException);
+            CommandExecutionOutcome failed = CreateHandlerFailure(command.Definition, causeException);
+            return new CommandExecutionOutcome(failed.Result, failed.HandlerException, context);
+        }
+        finally
+        {
+            context?.Complete();
         }
     }
 
     private CommandExecutionOutcome InvokeHandler(BoundCommand command, CancellationToken cancellationToken)
     {
         DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-        var context = new CommandContext(command.Input, command.Definition, command, timestamp, cancellationToken, _dispatcher);
+        CommandContext? context = null;
 
         try
         {
+            object? progressState = command.Definition.ProgressStateFactory?.Invoke();
+            context = CreateCommandContext(command, timestamp, cancellationToken, progressState);
             object? result = command.Definition.StateType is null
                 ? ((Func<CommandContext, CommandResult>)command.Definition.Handler)(context)
                 : command.Definition.Handler.DynamicInvoke(context, command.State);
 
             if (result is CommandResult commandResult)
             {
-                return new CommandExecutionOutcome(commandResult, null);
+                return new CommandExecutionOutcome(commandResult, null, context);
             }
 
-            return MissingHandlerResult(command.Definition, "returned no command result");
+            return MissingHandlerResult(command.Definition, "returned no command result", context);
         }
         catch (Exception exception)
         {
-            return CreateHandlerFailure(command.Definition, UnwrapHandlerException(exception));
+            CommandExecutionOutcome failed = CreateHandlerFailure(command.Definition, UnwrapHandlerException(exception));
+            return new CommandExecutionOutcome(failed.Result, failed.HandlerException, context);
+        }
+        finally
+        {
+            context?.Complete();
         }
     }
 
-    private static CommandExecutionOutcome MissingAsyncHandlerResult(CommandDefinition definition)
+    private CommandContext CreateCommandContext(
+        BoundCommand command,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken,
+        object? progressState)
     {
-        return MissingHandlerResult(definition, "returned no task or command result");
+        return new CommandContext(
+            command.Input,
+            command.Definition,
+            command,
+            timestamp,
+            cancellationToken,
+            _dispatcher,
+            progressState,
+            output => History.RecordEntry(new CommandOutputEntry(DateTimeOffset.UtcNow, output)),
+            ReportCommandProgress);
     }
 
-    private static CommandExecutionOutcome MissingHandlerResult(CommandDefinition definition, string reason)
+    private void ReportCommandProgress(CommandContext context, string message)
+    {
+        CommandProgressChanged?.Invoke(this, new CommandProgressChangedEventArgs(
+            CommandProgressEventKind.Updated,
+            context,
+            message,
+            context.ProgressState,
+            outcome: null));
+    }
+
+    private void NotifyProgressCompleted(CommandExecutionOutcome execution)
+    {
+        CommandContext? context = execution.Context;
+        if (context is null || !context.HasReportedProgress)
+        {
+            return;
+        }
+
+        CommandProgressOutcome outcome = execution.Result.IsSuccess
+            ? CommandProgressOutcome.Succeeded
+            : execution.Result.Failure?.Code == ConsoleFailureCodes.CommandExecutionCancelled
+                ? CommandProgressOutcome.Cancelled
+                : CommandProgressOutcome.Failed;
+
+        CommandProgressChanged?.Invoke(this, new CommandProgressChangedEventArgs(
+            CommandProgressEventKind.Completed,
+            context,
+            message: null,
+            context.ProgressState,
+            outcome));
+    }
+
+    private static CommandExecutionOutcome MissingAsyncHandlerResult(CommandDefinition definition, CommandContext context)
+    {
+        return MissingHandlerResult(definition, "returned no task or command result", context);
+    }
+
+    private static CommandExecutionOutcome MissingHandlerResult(
+        CommandDefinition definition,
+        string reason,
+        CommandContext? context = null)
     {
         return new CommandExecutionOutcome(
             CommandResult.Failed(ConsoleFailures.CommandExecution(
                 $"Command '{definition.Path}' {reason}.",
                 definition.Path)),
-            null);
+            null,
+            context);
     }
 
     private static CommandExecutionOutcome CreateHandlerFailure(CommandDefinition definition, Exception exception)
@@ -1379,14 +1458,17 @@ public sealed class ConsoleManager
 
     private readonly struct CommandExecutionOutcome
     {
-        public CommandExecutionOutcome(CommandResult result, Exception? handlerException)
+        public CommandExecutionOutcome(CommandResult result, Exception? handlerException, CommandContext? context = null)
         {
             Result = result ?? throw new ArgumentNullException(nameof(result));
             HandlerException = handlerException;
+            Context = context;
         }
 
         public CommandResult Result { get; }
 
         public Exception? HandlerException { get; }
+
+        public CommandContext? Context { get; }
     }
 }

@@ -8,6 +8,8 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 The 0.7.0 package implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, manager-centered logging, bounded console and command input histories, command registration, parsing, validation, synchronous and asynchronous execution, cooperative cancellation, optional callback dispatch, stateless autocomplete, history change notifications, permission and availability checks, and configurable help. The command model uses required logical value IDs, resolved values, bulk defaults, and one optional trailing positional argument. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, and its history APIs expose detached snapshots and clearing. The guidance below records the package's design rules; public docs must remain aligned with implemented APIs.
 
+Current source also contains the Stage 19 additions planned for 0.8.0: immediate handler output, optional execution-scoped progress state, and transient manager progress notifications. Do not describe these as available in the published 0.7.0 package until release preparation and publication.
+
 Help defaults to the Simple formatter, hides blocked commands, uses case-aware path substring matching, and preserves registration order. Its richer metadata, detailed formatting, generated syntax, error callbacks, search matcher, ordering, and access policies remain optional. Collection metadata and alias inputs are snapshotted.
 
 ## API Design Principles

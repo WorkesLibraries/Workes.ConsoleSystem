@@ -144,6 +144,10 @@ The complete constant list is in `ConsoleFailureCodes`. Messages are for people 
 
 The 0.7.0 package provides synchronous and asynchronous command handlers, async manager execution, cooperative cancellation, optional host callback dispatch, synchronized in-memory histories, semantic text, stateless autocomplete, optional history change events, command permissions and availability checks, the redesigned logical command value model, and an opt-in configurable help command. It does not include history persistence, UI controls, markup parsing, streaming output, or a renderer. The host owns presentation, input widgets, filtering, persistence, and UI thread coordination.
 
+## Current source target: 0.8.0
+
+The current source adds streaming output and transient command progress, planned for 0.8.0. This section describes the checkout; the published 0.7.0 package does not contain these members. `CommandContext.WriteOutput(CommandOutput)` immediately records a standard output entry. `CommandBuilder.ProgressState<T>(Func<T>)` optionally creates a fresh reference-type state for each execution, which a handler reads with `GetProgressState<T>()` and publishes with `ReportProgress(string)`. The manager's `CommandProgressChanged` event reports updates and, after final history writes, a terminal outcome when at least one update was reported. See [Command execution](COMMAND_EXECUTION.md) and [History change hooks](HISTORY_CHANGE_HOOKS.md) for examples and ordering.
+
 ## Focused guides
 
 - [Manager and configuration](MANAGER_AND_CONFIGURATION.md)
@@ -156,6 +160,7 @@ The 0.7.0 package provides synchronous and asynchronous command handlers, async 
 - [Command validation](COMMAND_VALIDATION.md)
 - [Command autocomplete](COMMAND_AUTOCOMPLETE.md)
 - [Command permissions and availability](COMMAND_ACCESS.md) (introduced in 0.4.0)
+- [Command execution](COMMAND_EXECUTION.md)
 - [Configurable help command](HELP_COMMAND.md)
 - [Command execution](COMMAND_EXECUTION.md)
 - [Command outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md)

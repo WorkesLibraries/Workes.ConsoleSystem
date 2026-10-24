@@ -2,6 +2,23 @@
 
 This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
+## [0.8.0] - 24-10-2026
+
+### Added
+
+- Added `CommandContext.WriteOutput` for immediate, retained output from synchronous and asynchronous handlers.
+- Added optional per-execution progress state through `CommandBuilder.ProgressState<T>` and `CommandContext.GetProgressState<T>()`.
+- Added transient progress updates and terminal outcomes through `ConsoleManager.CommandProgressChanged`.
+- Preserved streamed output in history across later command failure or cancellation; terminal progress events follow final history writes.
+
+### Documentation
+
+- Documented streamed output ordering, progress state, terminal outcomes, history integration, and host-thread responsibilities.
+
+### Release status
+
+- This changelog entry describes the 0.8.0 target. Package metadata and installation examples remain at the released 0.7.0 version until separate release preparation.
+
 ## [0.7.0] - 24-10-2026
 
 ### Added

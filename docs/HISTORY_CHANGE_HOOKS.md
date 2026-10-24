@@ -52,7 +52,9 @@ console.CommandHistory.Changed += (_, change) =>
 
 ## Timing and event handlers
 
-Events are raised synchronously after the history mutation commits, so `Entries` already reflects the reported change while a handler runs. Event argument collections are read-only snapshots. During command execution, command input history is updated first. If echo is enabled, the visible input entry follows; failure or output entries follow the execution result. Each visible entry raises its own event, and successful execution writes declared success outputs before handler-returned outputs.
+Events are raised synchronously after the history mutation commits, so `Entries` already reflects the reported change while a handler runs. Event argument collections are read-only snapshots. During command execution, command input history is updated first. If echo is enabled, the visible input entry follows. A handler may call `CommandContext.WriteOutput` to append a normal output entry immediately; each streamed entry raises its own change event. Final failure or output entries follow handler completion, and successful execution writes declared success outputs before handler-returned outputs.
+
+Command progress uses the separate `ConsoleManager.CommandProgressChanged` event. Progress is transient and never enters history. It reports updates synchronously on the reporting thread and sends a terminal outcome after final outputs or a failure entry, but only when the handler reported at least one update. Hosts should marshal UI changes themselves. Subscriber exceptions propagate after any history mutation has committed; a progress update subscriber exception is observed by the handler as an exception.
 
 Subscriber exceptions follow normal .NET event behavior: they propagate to the code performing the mutation, while the history mutation remains committed. Keep UI event handlers short and handle their own failures where appropriate.
 
