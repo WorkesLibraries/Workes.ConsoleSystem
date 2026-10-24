@@ -2,7 +2,7 @@
 
 All items in visible history implement the ConsoleSystem-owned `IConsoleEntry` interface, which exposes a `DateTimeOffset Timestamp`. Built-in entry types are:
 
-- `LogEntry`: a log level and semantic text content.
+- `LogEntry`: a log level, semantic text content, and optional source and exception metadata.
 - `CommandInputEntry`: submitted command input when echo is enabled.
 - `CommandOutputEntry`: inline or block output from command execution.
 - `CommandFailureEntry`: structured command failure plus visible text.
@@ -49,3 +49,9 @@ console.RecordEntry(new NetworkEventEntry(DateTimeOffset.UtcNow, "peer-17"));
 ```
 
 History retains the same entry instance, so custom entries should be treated as immutable after recording. The public contracts are ConsoleSystem-owned; callers do not create or manage ContentSystem entries or records.
+
+## Log metadata
+
+`LogEntry.Source` is an optional source or category string. `LogEntry.Exception` is an optional standard .NET `Exception` reference. Both properties are `null` when omitted. History retains the exception reference for as long as it retains the entry; it does not serialize or clone exception objects.
+
+Integrations that receive logs from another framework can populate these fields when the source provides that information. They can leave either field unset when it is unavailable or not useful. See the [adapter author guide](ADAPTER_AUTHOR_GUIDE.md).

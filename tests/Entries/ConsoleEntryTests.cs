@@ -32,6 +32,57 @@ public sealed class ConsoleEntryTests
     }
 
     [Test]
+    public void LogEntry_PreservesOptionalSourceAndExceptionMetadata()
+    {
+        var exception = new InvalidOperationException("Connection failed.");
+        var entry = new LogEntry(
+            DateTimeOffset.UnixEpoch,
+            LogLevel.Error,
+            "Could not connect.",
+            source: "network.client",
+            exception: exception);
+
+        Assert.That(entry.Source, Is.EqualTo("network.client"));
+        Assert.That(entry.Exception, Is.SameAs(exception));
+    }
+
+    [Test]
+    public void LogEntry_MetadataDefaultsToNullForExistingConstructionPatterns()
+    {
+        var stringEntry = new LogEntry(DateTimeOffset.UnixEpoch, LogLevel.Information, "Ready.");
+        var contentEntry = new LogEntry(DateTimeOffset.UnixEpoch, LogLevel.Information, ConsoleText.Plain("Ready."));
+
+        Assert.That(stringEntry.Source, Is.Null);
+        Assert.That(stringEntry.Exception, Is.Null);
+        Assert.That(contentEntry.Source, Is.Null);
+        Assert.That(contentEntry.Exception, Is.Null);
+        Assert.That(
+            typeof(LogEntry).GetConstructor(new[] { typeof(DateTimeOffset), typeof(LogLevel), typeof(string) }),
+            Is.Not.Null);
+        Assert.That(
+            typeof(LogEntry).GetConstructor(new[] { typeof(DateTimeOffset), typeof(LogLevel), typeof(ConsoleText) }),
+            Is.Not.Null);
+    }
+
+    [Test]
+    public void LogEntry_SourceAndExceptionCanBeProvidedIndependently()
+    {
+        var exception = new InvalidOperationException("Connection failed.");
+        var sourceOnly = new LogEntry(DateTimeOffset.UnixEpoch, LogLevel.Error, "Failed.", "network.client");
+        var exceptionOnly = new LogEntry(
+            DateTimeOffset.UnixEpoch,
+            LogLevel.Error,
+            "Failed.",
+            source: null,
+            exception: exception);
+
+        Assert.That(sourceOnly.Source, Is.EqualTo("network.client"));
+        Assert.That(sourceOnly.Exception, Is.Null);
+        Assert.That(exceptionOnly.Source, Is.Null);
+        Assert.That(exceptionOnly.Exception, Is.SameAs(exception));
+    }
+
+    [Test]
     public void LogEntry_NullMessageOrContentThrows()
     {
         Assert.Throws<ArgumentNullException>(() => new LogEntry(DateTimeOffset.UnixEpoch, LogLevel.Warning, (string)null!));

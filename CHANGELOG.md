@@ -2,6 +2,17 @@
 
 This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
+## [0.9.0] - 24-10-2026
+
+### Added
+
+- Added optional source and exception metadata to `LogEntry` for host presentation and adapter use.
+- Added an adapter author guide and starter prompts for Unity, Godot, and Microsoft.Extensions.Logging packages.
+
+### Architecture
+
+- Kept severity mapping and source-specific metadata inside separate adapter packages; the core package remains platform-agnostic and exposes no generic bridge API.
+
 ## [0.8.0] - 24-10-2026
 
 ### Added

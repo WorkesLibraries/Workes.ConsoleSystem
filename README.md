@@ -5,11 +5,12 @@
 
 Workes.ConsoleSystem is an engine-neutral console foundation for applications, games, and tools. It provides one manager-owned API for logging, retained console entries, command input history, command autocomplete, optional history change events, opt-in command permissions and availability checks, configurable help commands, and synchronous or asynchronous command registration, parsing, validation, and execution.
 
-Version 0.8.0 adds immediate streamed command output, optional per-execution progress state, and transient progress notifications with terminal outcomes. It also supports asynchronous command handlers, cooperative cancellation, optional host-thread callback dispatch, and synchronized histories for overlapping commands. It continues the rebuild introduced in 0.2.0 around `Workes.ContentSystem`, which provides internal retained-content storage. ConsoleSystem keeps its own public manager, entry, text, command, and history APIs; consumers do not need to create or call ContentSystem objects directly. This pre-1.0 release is not intended as a drop-in replacement for earlier APIs.
+Version 0.9.0 adds optional source and exception metadata to log entries and documents how to build separate platform adapters. It includes streamed command output, per-execution progress, asynchronous handlers, cooperative cancellation, explicit host-thread callback dispatch, and synchronized histories. It continues the rebuild introduced in 0.2.0 around `Workes.ContentSystem`, which provides internal retained-content storage. ConsoleSystem keeps its own public manager, entry, text, command, and history APIs; consumers do not need to create or call ContentSystem objects directly. This pre-1.0 release is not intended as a drop-in replacement for earlier APIs.
 
 ## Highlights
 
 - Record Trace through Critical logs directly on `ConsoleManager`.
+- Attach optional source and exception metadata to externally sourced log entries.
 - Keep bounded, oldest-first console history and separate command navigation history.
 - Represent logs, command input, output, failures, and custom entries with ConsoleSystem types.
 - Register typed commands and process them through parsing, validation, and synchronous or asynchronous handlers.
@@ -26,13 +27,13 @@ Version 0.8.0 adds immediate streamed command output, optional per-execution pro
 Install the package from [NuGet](https://www.nuget.org/packages/Workes.ConsoleSystem):
 
 ```bash
-dotnet add package Workes.ConsoleSystem --version 0.8.0
+dotnet add package Workes.ConsoleSystem --version 0.9.0
 ```
 
 Or add a package reference:
 
 ```xml
-<PackageReference Include="Workes.ConsoleSystem" Version="0.8.0" />
+<PackageReference Include="Workes.ConsoleSystem" Version="0.9.0" />
 ```
 
 The package targets .NET Standard 2.1. Its internal storage dependency is restored transitively; normal usage goes through ConsoleSystem APIs.
@@ -79,6 +80,7 @@ The [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/m
 - [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/QUICK_START.md)
 - [Manager and configuration](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/MANAGER_AND_CONFIGURATION.md)
 - [Logging](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/LOGGING.md)
+- [Adapter author guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/ADAPTER_AUTHOR_GUIDE.md)
 - [Entries and semantic text](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/ENTRIES_AND_TEXT.md)
 - [Console and command histories](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/HISTORY.md)
 - [History change hooks](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/HISTORY_CHANGE_HOOKS.md)
@@ -92,7 +94,7 @@ The [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/m
 - [Command outputs and failures](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md)
 
-Version 0.8.0 adds streamed handler output and transient progress reporting to async command handlers, cancellation, and explicit host-thread callback dispatch. These features build on the logical command value model, permissions, availability checks, autocomplete, and configurable help. See the [Command execution guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_EXECUTION.md) and [changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md) for details. History persistence is not part of the public API.
+Version 0.9.0 adds optional log source and exception metadata and a guide for writing independent logging adapters. It also retains streamed output, progress reporting, async execution, and explicit host-thread callback dispatch. See the [adapter author guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/ADAPTER_AUTHOR_GUIDE.md), [Command execution guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_EXECUTION.md), and [changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md) for details. History persistence is not part of the public API.
 
 ## License
 

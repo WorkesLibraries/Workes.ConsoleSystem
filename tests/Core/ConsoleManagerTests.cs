@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.Core;
@@ -346,6 +347,19 @@ public sealed class ConsoleManagerTests
                 }
             }
         }
+    }
+
+    [Test]
+    public void CoreAssembly_DoesNotReferencePlatformAdapterPackages()
+    {
+        string?[] references = typeof(ConsoleManager).Assembly
+            .GetReferencedAssemblies()
+            .Select(reference => reference.Name)
+            .ToArray();
+
+        Assert.That(references, Does.Not.Contain("UnityEngine.CoreModule"));
+        Assert.That(references, Does.Not.Contain("GodotSharp"));
+        Assert.That(references, Does.Not.Contain("Microsoft.Extensions.Logging.Abstractions"));
     }
 
     private static bool ContainsContentSystemType(Type type)

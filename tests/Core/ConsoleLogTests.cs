@@ -53,6 +53,25 @@ public sealed class ConsoleLogTests
     }
 
     [Test]
+    public void RecordEntry_PreservesLogMetadataInHistory()
+    {
+        var console = new ConsoleManager();
+        var exception = new InvalidOperationException("Connection failed.");
+        var entry = new LogEntry(
+            DateTimeOffset.UnixEpoch,
+            LogLevel.Error,
+            "Could not connect.",
+            source: "network.client",
+            exception: exception);
+
+        console.RecordEntry(entry);
+
+        var recorded = (LogEntry)console.History.Entries[0];
+        Assert.That(recorded.Source, Is.EqualTo("network.client"));
+        Assert.That(recorded.Exception, Is.SameAs(exception));
+    }
+
+    [Test]
     public void LoggingMethods_RejectNullMessageOrContent()
     {
         var console = new ConsoleManager();

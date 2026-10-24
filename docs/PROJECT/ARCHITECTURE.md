@@ -6,7 +6,7 @@ Describe the intended internal structure of Workes.ConsoleSystem and its relatio
 
 ## Current State And Target
 
-The 0.8.0 package target includes manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, synchronous and asynchronous command execution, streamed output, per-execution progress state and transient progress notifications, cooperative cancellation, optional host dispatch, stateless autocomplete, optional history change events, command access checks, the logical command value model, and configurable help. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to shared history. An internal `ConsoleLog` helper creates those entries through the same history path and is not public. `CommandHistory` separately retains submitted strings for UI navigation and raises optional change notifications. This document records the architecture carried forward from Workes.ConsoleSystem.Old.
+The 0.9.0 package target includes manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, synchronous and asynchronous command execution, streamed output, per-execution progress state and transient progress notifications, cooperative cancellation, optional host dispatch, stateless autocomplete, optional history change events, command access checks, the logical command value model, configurable help, and optional log source/exception metadata. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to shared history. An internal `ConsoleLog` helper creates those entries through the same history path and is not public. `CommandHistory` separately retains submitted strings for UI navigation and raises optional change notifications. This document records the architecture carried forward from Workes.ConsoleSystem.Old.
 
 The public console workflows and overall design philosophy should remain close to the old package. The principal architectural change is that console-visible retained content is stored through Workes.ContentSystem instead of a second console-owned history collection.
 
@@ -18,7 +18,7 @@ ConsoleSystem should depend on ContentSystem rather than copy its sequence/histo
 
 ## Main Components
 
-The following components are implemented in the 0.8.0 package unless explicitly marked as future work.
+The following components are implemented in the 0.9.0 package unless explicitly marked as future work.
 
 - `ConsoleManager` is the root for one console instance. It coordinates console history, command input history, logging, synchronous/asynchronous command workflows, and optional host dispatcher injection. It is not a singleton and does not rely on global state.
 - The manager accepts an `IConsolePermissionProvider` associated with its caller. The provider is an injected runtime service, while configuration snapshots continue to contain settings only.
@@ -35,6 +35,8 @@ The following components are implemented in the 0.8.0 package unless explicitly 
 ## ContentSystem Integration
 
 The normal console history uses a ContentSystem sequence with drop-oldest retention. The console's configured history capacity maps to that sequence's capacity. Internally, an adapter wraps console entries for storage; ContentSystem records and IDs stay private to the implementation. `ConsoleManager.RecordEntry(IConsoleEntry)` writes custom or built-in entries, and `ConsoleManager.History` exposes configured capacity, detached oldest-first `Entries` snapshots, and `Clear()`. Manager logging methods use the internal `ConsoleLog` helper to create `LogEntry` values and submit them through the same ConsoleHistory write path.
+
+External logging adapters remain separate packages. They map provider-specific severities to ConsoleSystem `LogLevel` values, create ConsoleSystem `LogEntry` instances, and use `ConsoleManager.RecordEntry`. `LogEntry.Source` and `LogEntry.Exception` are optional source-neutral metadata; the core defines no generic bridge, severity mapping, or provider subscription model.
 
 The intended flow is:
 

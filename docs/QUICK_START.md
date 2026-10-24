@@ -8,16 +8,16 @@ This walkthrough creates a manager, configures its history, registers a typed co
 
 ## Installation
 
-Install version 0.8.0 from NuGet:
+Install version 0.9.0 from NuGet:
 
 ```bash
-dotnet add package Workes.ConsoleSystem --version 0.8.0
+dotnet add package Workes.ConsoleSystem --version 0.9.0
 ```
 
 Or add a package reference to your project file:
 
 ```xml
-<PackageReference Include="Workes.ConsoleSystem" Version="0.8.0" />
+<PackageReference Include="Workes.ConsoleSystem" Version="0.9.0" />
 ```
 
 NuGet restores the internal `Workes.ContentSystem` dependency automatically. Application code uses the ConsoleSystem API and does not need a separate ContentSystem reference. See the [README](../README.md#installation) for package details.
@@ -140,12 +140,13 @@ console.CommandHistory.Changed += (_, change) => RefreshCommandInput(change);
 
 Both events are synchronous and optional. Their ConsoleSystem-owned payloads report added, dropped, or cleared items. See [Command autocomplete](COMMAND_AUTOCOMPLETE.md) and [History change hooks](HISTORY_CHANGE_HOOKS.md) for candidate rules, event payloads, and ordering.
 
-Version 0.8.0 also supports async command handlers, cancellation, explicit host-thread callbacks through `ICommandDispatcher`, immediate streamed output, and transient progress notifications. The manager's async methods can execute both synchronous and asynchronous commands. See [Command execution](COMMAND_EXECUTION.md) for examples and ordering details. The package also includes command permissions, runtime availability checks, the logical command value model, and configurable help; see [Command permissions and availability](COMMAND_ACCESS.md), [Command registration](COMMAND_REGISTRATION.md), and [Configurable help](HELP_COMMAND.md).
+Version 0.9.0 also supports optional log source and exception metadata for integrations. Async command handlers, cancellation, explicit host-thread callbacks through `ICommandDispatcher`, immediate streamed output, and transient progress notifications are described in [Command execution](COMMAND_EXECUTION.md). The package also includes command permissions, runtime availability checks, the logical command value model, and configurable help; see [Command permissions and availability](COMMAND_ACCESS.md), [Command registration](COMMAND_REGISTRATION.md), and [Configurable help](HELP_COMMAND.md).
 
 ## What to read next
 
 - [Manager and configuration](MANAGER_AND_CONFIGURATION.md)
 - [Logging](LOGGING.md)
+- [Adapter author guide](ADAPTER_AUTHOR_GUIDE.md)
 - [Entries and semantic text](ENTRIES_AND_TEXT.md)
 - [Console and command histories](HISTORY.md)
 - [History change hooks](HISTORY_CHANGE_HOOKS.md)

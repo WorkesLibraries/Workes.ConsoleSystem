@@ -670,3 +670,23 @@ Explicit sync and async APIs avoid sync-over-async deadlocks and make cancellati
 #### Consequences
 
 Applications choose async manager methods for definitions that may use async handlers. Concurrent command output and failure entries are recorded in completion order, while input and echo reflect submission order. History events remain synchronous and run on the thread that wrote the history; hosts marshal UI updates themselves. Intermediate or streamed output is not supported by this stage.
+
+### D-044: Keep External Logging Adapters Separate From The Core
+
+#### Context
+
+ConsoleSystem should support logs from common engines and logging frameworks without taking dependencies on those platforms or embedding assumptions about how their severities and metadata should be represented.
+
+#### Decision
+
+Keep the core package platform-agnostic and do not add a generic bridge abstraction. Add optional `Source` and `Exception` properties to `LogEntry`, using a nullable string and the original standard .NET exception object. Adapters remain responsible for provider-specific severity mappings, source metadata choices, callback subscriptions, and disposal. Each adapter should ship a useful default severity mapping and allow consumers to customize or ignore individual levels. Adapter authors submit ConsoleSystem entries through `ConsoleManager.RecordEntry`.
+
+Create separate adapter packages for Unity, Godot, and Microsoft.Extensions.Logging. Keep the core adapter-author guide and reusable package starter prompts in this repository. Each adapter package follows the Project Formula, uses the `WorkesLibraries` GitHub organization, starts on `main`, and is locally committed without pushing by Codex; the user pushes.
+
+#### Reasoning
+
+`ConsoleManager.RecordEntry(IConsoleEntry)` already provides the common integration seam and normal history behavior. A second generic attachment API would duplicate it while making the core responsible for lifecycle details that differ between providers. Two optional, source-neutral fields cover common metadata needs without introducing a generic metadata bag or framework-specific types.
+
+#### Consequences
+
+The core remains usable without adapter packages. Exception references are held as long as their `LogEntry` is retained and are not serialized or formatted automatically. Each adapter must document its own level mapping, threading behavior, and subscription lifetime. Custom integrations use the same documented entry-and-manager pattern.
