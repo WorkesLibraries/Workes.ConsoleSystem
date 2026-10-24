@@ -15,10 +15,6 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`. The pac
 
 - Documented streamed output ordering, progress state, terminal outcomes, history integration, and host-thread responsibilities.
 
-### Release status
-
-- This changelog entry describes the 0.8.0 target. Package metadata and installation examples remain at the released 0.7.0 version until separate release preparation.
-
 ## [0.7.0] - 24-10-2026
 
 ### Added

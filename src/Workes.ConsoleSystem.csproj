@@ -7,13 +7,13 @@
     <LangVersion>10.0</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Workes.ConsoleSystem</PackageId>
-    <Version>0.7.0</Version>
-    <PackageReleaseNotes>Version 0.7.0 adds asynchronous simple and typed command handlers, async manager execution methods, cooperative cancellation, optional host-thread callback dispatch, and synchronized history access for overlapping commands. It continues the ContentSystem-backed rebuild introduced in 0.2.0; ContentSystem remains outside the public API. This pre-1.0 release is not a drop-in upgrade from earlier package versions.</PackageReleaseNotes>
+    <Version>0.8.0</Version>
+    <PackageReleaseNotes>Version 0.8.0 adds immediate streamed command output, optional per-execution progress state, and transient manager progress notifications with terminal outcomes. It also includes asynchronous command execution, cooperative cancellation, optional host-thread callback dispatch, and synchronized histories. The package continues the ContentSystem-backed rebuild introduced in 0.2.0; ContentSystem remains outside the public API. This pre-1.0 release is not a drop-in upgrade from earlier package versions.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>Workes</Authors>
     <Company>Workes</Company>
     <Product>Workes.ConsoleSystem</Product>
-    <Description>An engine-neutral console foundation with manager-centered logging, retained entries, command history, typed synchronous and asynchronous command workflows, stateless autocomplete, permissions, availability checks, and an opt-in configurable help command. Workes.ContentSystem provides internal storage while the public API remains ConsoleSystem-owned.</Description>
+    <Description>An engine-neutral console foundation with manager-centered logging, retained entries, command history, typed synchronous and asynchronous command workflows, streamed output, progress reporting, stateless autocomplete, permissions, availability checks, and an opt-in configurable help command. Workes.ContentSystem provides internal storage while the public API remains ConsoleSystem-owned.</Description>
     <PackageTags>console command-line logging history game development tools</PackageTags>
     <PackageProjectUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem</PackageProjectUrl>
     <RepositoryUrl>https://github.com/WorkesLibraries/Workes.ConsoleSystem.git</RepositoryUrl>

@@ -47,7 +47,7 @@ var console = new ConsoleManager(new ConsoleManagerOptions
 | `History.CommandHistoryDuplicatePolicy` | `RejectConsecutive` | Whether the newest duplicate command string is suppressed. |
 | `Execution.EchoInput` | `true` | Default input echo during command execution. |
 
-`Autocomplete.ShowUnavailableCommands` was introduced in version 0.4.0 and remains available in the 0.7.0 package.
+`Autocomplete.ShowUnavailableCommands` was introduced in version 0.4.0 and remains available in the 0.8.0 package.
 
 Changing a capacity to zero or less, using an invalid enum value, providing an empty or overlapping boolean literal set, or configuring an invalid flag/option prefix fails when the manager snapshots the options. Boolean literal arrays are copied. The manager snapshots the complete option graph at construction; later changes to the original setup object do not affect it. Each read of `console.Options` is a new detached snapshot.
 

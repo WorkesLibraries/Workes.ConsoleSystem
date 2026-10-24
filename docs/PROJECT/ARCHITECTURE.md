@@ -6,7 +6,7 @@ Describe the intended internal structure of Workes.ConsoleSystem and its relatio
 
 ## Current State And Target
 
-The released 0.7.0 package includes manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, synchronous and asynchronous command execution, cooperative cancellation, optional host dispatch, stateless autocomplete, optional history change events, command access checks, the logical command value model, and configurable help. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to shared history. An internal `ConsoleLog` helper creates those entries through the same history path and is not public. `CommandHistory` separately retains submitted strings for UI navigation and raises optional change notifications. This document records the architecture carried forward from Workes.ConsoleSystem.Old.
+The 0.8.0 package target includes manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, synchronous and asynchronous command execution, streamed output, per-execution progress state and transient progress notifications, cooperative cancellation, optional host dispatch, stateless autocomplete, optional history change events, command access checks, the logical command value model, and configurable help. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to shared history. An internal `ConsoleLog` helper creates those entries through the same history path and is not public. `CommandHistory` separately retains submitted strings for UI navigation and raises optional change notifications. This document records the architecture carried forward from Workes.ConsoleSystem.Old.
 
 The public console workflows and overall design philosophy should remain close to the old package. The principal architectural change is that console-visible retained content is stored through Workes.ContentSystem instead of a second console-owned history collection.
 
@@ -18,7 +18,7 @@ ConsoleSystem should depend on ContentSystem rather than copy its sequence/histo
 
 ## Main Components
 
-The following components are implemented in the 0.7.0 package unless explicitly marked as future work.
+The following components are implemented in the 0.8.0 package unless explicitly marked as future work.
 
 - `ConsoleManager` is the root for one console instance. It coordinates console history, command input history, logging, synchronous/asynchronous command workflows, and optional host dispatcher injection. It is not a singleton and does not rely on global state.
 - The manager accepts an `IConsolePermissionProvider` associated with its caller. The provider is an injected runtime service, while configuration snapshots continue to contain settings only.
@@ -65,7 +65,7 @@ The parser and autocomplete share `CommandTokenizer`. Parsing rejects unclosed q
 
 The optional help command remains manager-owned. Its formatters return ConsoleSystem output lines and receive command definitions, a read-only matched-command list, query text, generated syntax, and access status. Command and binding metadata is optional. A policy controls whether blocked commands are hidden, formatted, or replaced with response lines; the default hides blocked commands. Matching and ordering remain configurable while defaulting to case-aware path substring matching and registration order.
 
-The current source target for 0.8.0 adds handler-driven streamed output and transient progress. `CommandContext.WriteOutput` writes standard output entries through the manager's normal history path. Optional progress state is created per execution; handlers publish state by calling `ReportProgress`. The manager raises update and terminal notifications synchronously, while history stores only streamed/final output and failures. The published 0.7.0 package does not include these additions yet.
+`CommandContext.WriteOutput` writes standard output entries through the manager's normal history path. Optional progress state is created per execution; handlers publish state by calling `ReportProgress`. The manager raises update and terminal notifications synchronously, while history stores only streamed/final output and failures.
 
 `BoundCommand.Values` is the resolved logical-value view keyed by ID. Its `Arguments`, `Flags`, and `Options` maps retain only explicitly supplied source bindings. Binding-level rules and autocomplete belong to the specific positional or option binding; typed state constraints see the final resolved state. Optional positional input is limited to one final argument so it does not make later positional interpretation ambiguous.
 
