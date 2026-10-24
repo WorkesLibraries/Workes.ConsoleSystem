@@ -374,8 +374,8 @@ public sealed class CommandParsingTests
     {
         var console = new ConsoleManager();
         CommandDefinition command = new CommandBuilder("server.restart")
-            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "I")
+            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", aliases: new[] { "i" })
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "I" })
             .Execute<RestartState>((ctx, state) => CommandResult.Success())
             .Build();
 
@@ -574,8 +574,8 @@ public sealed class CommandParsingTests
     {
         return new CommandBuilder("server.restart")
             .Argument<RestartState>(x => x.Reason, "reason", "reason")
-            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", aliases: new[] { "i" })
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "d" })
             .Defaults(("delay", 10))
             .Execute<RestartState>((ctx, state) => CommandResult.Success())
             .Build();

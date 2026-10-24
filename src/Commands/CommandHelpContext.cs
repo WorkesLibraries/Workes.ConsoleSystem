@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Workes.ConsoleSystem.Core;
+using Workes.ConsoleSystem.Configuration;
 
 namespace Workes.ConsoleSystem.Commands;
 
@@ -11,12 +12,16 @@ public sealed class CommandHelpContext
         CommandDefinition command,
         string? searchTerm,
         ConsoleFailure? accessFailure,
-        IReadOnlyList<CommandDefinition> matchedCommands)
+        IReadOnlyList<CommandDefinition> matchedCommands,
+        string? syntax,
+        CommandParsingOptions parsingOptions)
     {
         Command = command ?? throw new ArgumentNullException(nameof(command));
         SearchTerm = searchTerm;
         AccessFailure = accessFailure;
         MatchedCommands = matchedCommands ?? throw new ArgumentNullException(nameof(matchedCommands));
+        Syntax = syntax;
+        OptionPrefix = parsingOptions.FlagAndOptionPrefix;
     }
 
     /// <summary>Gets the command currently being considered for help output.</summary>
@@ -33,6 +38,12 @@ public sealed class CommandHelpContext
 
     /// <summary>Gets the read-only command set matching the current overview or search.</summary>
     public IReadOnlyList<CommandDefinition> MatchedCommands { get; }
+
+    /// <summary>Gets command syntax for the active manager, or null when syntax is absent.</summary>
+    public string? Syntax { get; }
+
+    /// <summary>Gets the option prefix used by the active manager.</summary>
+    public string OptionPrefix { get; }
 }
 
 /// <summary>Provides access-check information to a help command's blocked-command policy.</summary>

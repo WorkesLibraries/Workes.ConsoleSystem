@@ -5,10 +5,12 @@ Define a command with `CommandBuilder`, call `Build()` to create an immutable `C
 ```csharp
 var command = new CommandBuilder("player.teleport")
     .Description("Moves a player to a zone.")
+    .Notes(new[] { "The destination must be loaded." })
+    .Examples(new[] { "player.teleport Alex nether" })
     .Argument<TeleportState>(state => state.Player, id: "player", name: "player")
-    .Argument<TeleportState>(state => state.Zone, id: "destination", name: "zone")
+    .Argument<TeleportState>(state => state.Zone, id: "destination", name: "zone", description: "Destination zone.", examples: new[] { "spawn", "nether" })
         .Optional()
-    .Option<TeleportState>(state => state.Zone, id: "destination", name: "destination")
+    .Option<TeleportState>(state => state.Zone, id: "destination", name: "destination", description: "Destination zone.", examples: new[] { "spawn", "nether" })
     .Flag<TeleportState>(state => state.Silent, id: "silent", name: "silent", aliases: new[] { "s" })
     .Option<TeleportState>(state => state.Height, id: "height", name: "height", aliases: new[] { "h" })
         .Range(0, 500)
@@ -55,6 +57,14 @@ Flags and options can use aliases. Argument names and all flag/option names and 
 `SuggestAllowedValues()` opts the most recent argument or option into autocomplete suggestions from its allowed-value set. It remains opt-in. `ValueCandidates(...)` attaches a synchronous suggestion provider to the most recent argument or option and takes precedence over allowed-value suggestions. See [Command autocomplete](COMMAND_AUTOCOMPLETE.md).
 
 `Constraint<TState>` adds a state-level predicate. `RequirePermission(...)`, `RequireAnyPermission(...)`, and `AvailableWhen(...)` add optional access rules. `Description`, `EchoInput`/`DoNotEchoInput`, and `SuccessOutputInline`/`SuccessOutputBlock` add command metadata.
+
+## Help metadata and aliases
+
+`Description(...)` sets the short command description. `Notes(...)` accepts optional explanatory lines, and `Examples(...)` accepts complete command invocations. `Argument(...)` and `Option(...)` accept optional `description` and `examples` arguments; their examples are sample values for that binding. `Flag(...)` accepts an optional description. Omitted strings are empty and omitted collections are empty read-only snapshots. The opt-in Detailed help formatter uses metadata only when present.
+
+Use `.Syntax("...")` for authored usage text, or `.GenerateSyntaxWith()` for the canonical parser-aware syntax. Pass a custom `CommandSyntaxFormatter` to generate another style. A command can leave syntax absent; manual and generated syntax cannot both be set.
+
+Aliases now use an optional collection instead of variadic strings. For example, write `.Option<State>(..., aliases: new[] { "d", "delay" })`. This is a pre-1.0 source change from `.Option<State>(..., "d", "delay")`.
 
 `Execute(context => ...)` accepts a simple handler without typed state; `Execute<TState>((context, state) => ...)` receives the resolved state. The handler returns `CommandResult.Success(...)` or `CommandResult.Failed(...)`.
 

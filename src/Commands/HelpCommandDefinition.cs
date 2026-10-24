@@ -19,7 +19,15 @@ public sealed class HelpCommandDefinition
         string? commandHelpOptionName,
         IReadOnlyList<string> commandHelpOptionAliases,
         Func<CommandHelpContext, List<string>>? commandHelpFormatter,
-        HelpCommandAccessPolicy accessPolicy)
+        HelpCommandAccessPolicy accessPolicy,
+        bool errorsEnabled,
+        HelpCommandErrorFormatter unknownCommand,
+        HelpCommandErrorFormatter noSearchResults,
+        HelpCommandErrorFormatter permissionDenied,
+        HelpCommandErrorFormatter unavailable,
+        HelpCommandSearchMatcher searchMatcher,
+        HelpCommandResultOrder resultOrder,
+        IComparer<CommandDefinition>? resultComparer)
     {
         Path = path;
         Formatter = formatter;
@@ -34,6 +42,14 @@ public sealed class HelpCommandDefinition
         CommandHelpOptionAliases = commandHelpOptionAliases;
         CommandHelpFormatter = commandHelpFormatter;
         AccessPolicy = accessPolicy;
+        ErrorsEnabled = errorsEnabled;
+        UnknownCommand = unknownCommand;
+        NoSearchResults = noSearchResults;
+        PermissionDenied = permissionDenied;
+        Unavailable = unavailable;
+        SearchMatcher = searchMatcher;
+        ResultOrder = resultOrder;
+        ResultComparer = resultComparer;
     }
 
     /// <summary>Gets the registered command path.</summary>
@@ -51,4 +67,12 @@ public sealed class HelpCommandDefinition
     internal IReadOnlyList<string> CommandHelpOptionAliases { get; }
     internal Func<CommandHelpContext, List<string>>? CommandHelpFormatter { get; }
     internal HelpCommandAccessPolicy AccessPolicy { get; }
+    internal bool ErrorsEnabled { get; }
+    internal HelpCommandErrorFormatter UnknownCommand { get; }
+    internal HelpCommandErrorFormatter NoSearchResults { get; }
+    internal HelpCommandErrorFormatter PermissionDenied { get; }
+    internal HelpCommandErrorFormatter Unavailable { get; }
+    internal HelpCommandSearchMatcher SearchMatcher { get; }
+    internal HelpCommandResultOrder ResultOrder { get; }
+    internal IComparer<CommandDefinition>? ResultComparer { get; }
 }

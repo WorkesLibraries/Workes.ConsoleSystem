@@ -704,7 +704,7 @@ public sealed class ConsoleManager
         {
             CommandDefinition? definition = FindCommand(commandOptionQuery);
             return definition is null
-                ? CommandResult.Success()
+                ? ResultFromLines(GetHelpError(help, HelpCommandErrorKind.UnknownCommand, commandOptionQuery, null, null, Array.Empty<CommandDefinition>()))
                 : FormatSpecificHelp(help, definition, commandOptionQuery, commandContext);
         }
 
@@ -733,6 +733,14 @@ public sealed class ConsoleManager
                 {
                     return ResultFromLines(decision.ResponseLines);
                 }
+                if (decision.Kind == HelpCommandAccessDecisionKind.UseConfiguredError)
+                    return ResultFromLines(GetHelpError(help, GetAccessErrorKind(failure!), positionalQuery, exact, failure, new[] { exact }));
+                if (decision.Kind == HelpCommandAccessDecisionKind.Hide && !help.SearchPositionalEnabled)
+                    return ResultFromLines(GetHelpError(help, HelpCommandErrorKind.UnknownCommand, positionalQuery, null, null, Array.Empty<CommandDefinition>()));
+            }
+            else if (help.CommandHelpPositionalEnabled && !help.SearchPositionalEnabled)
+            {
+                return ResultFromLines(GetHelpError(help, HelpCommandErrorKind.UnknownCommand, positionalQuery, null, null, Array.Empty<CommandDefinition>()));
             }
         }
 
@@ -750,13 +758,16 @@ public sealed class ConsoleManager
         var definitions = new List<CommandDefinition>();
         foreach (CommandDefinition definition in Commands.Definitions)
         {
-            if (!search || definition.Path.IndexOf(searchTerm!, _options.CommandParsing.IsCaseSensitive
-                ? StringComparison.Ordinal
-                : StringComparison.OrdinalIgnoreCase) >= 0)
+            if (!search || help.SearchMatcher(definition, searchTerm!, _options.CommandParsing.IsCaseSensitive))
             {
                 definitions.Add(definition);
             }
         }
+
+        if (help.ResultComparer is not null)
+            definitions = definitions.OrderBy(definition => definition, help.ResultComparer).ToList();
+        else if (help.ResultOrder == HelpCommandResultOrder.Alphabetical)
+            definitions = definitions.OrderBy(definition => definition.Path, StringComparer.OrdinalIgnoreCase).ToList();
 
         IReadOnlyList<CommandDefinition> candidates = definitions.AsReadOnly();
         var decisions = new Dictionary<CommandDefinition, (ConsoleFailure? Failure, HelpCommandAccessDecision Decision)>();
@@ -791,8 +802,13 @@ public sealed class ConsoleManager
                 AddBlock(outputs, decision.ResponseLines);
                 continue;
             }
+            if (decision.Kind == HelpCommandAccessDecisionKind.UseConfiguredError)
+            {
+                AddBlock(outputs, GetHelpError(help, GetAccessErrorKind(failure!), searchTerm, definition, failure, candidates));
+                continue;
+            }
 
-            var context = new CommandHelpContext(definition, searchTerm, failure, visibleReadOnly);
+            var context = CreateHelpContext(definition, searchTerm, failure, visibleReadOnly);
             List<string> lines = (search ? help.SearchFormatter : null) is Func<CommandHelpContext, List<string>> formatter
                 ? formatter(context)
                 : help.Formatter(context);
@@ -802,6 +818,9 @@ public sealed class ConsoleManager
             }
             AddBlock(outputs, lines);
         }
+
+        if (outputs.Count == 0 && search && help.ErrorsEnabled)
+            AddBlock(outputs, GetHelpError(help, HelpCommandErrorKind.NoSearchResults, searchTerm, null, null, candidates));
 
         return CommandResult.Success(outputs.ToArray());
     }
@@ -833,7 +852,7 @@ public sealed class ConsoleManager
 
         if (decision.Kind == HelpCommandAccessDecisionKind.Hide)
         {
-            return CommandResult.Success();
+            return ResultFromLines(GetHelpError(help, HelpCommandErrorKind.UnknownCommand, searchTerm, null, null, Array.Empty<CommandDefinition>()));
         }
 
         if (decision.Kind == HelpCommandAccessDecisionKind.Respond)
@@ -841,11 +860,44 @@ public sealed class ConsoleManager
             return ResultFromLines(decision.ResponseLines);
         }
 
+        if (decision.Kind == HelpCommandAccessDecisionKind.UseConfiguredError)
+            return ResultFromLines(GetHelpError(help, GetAccessErrorKind(failure!), searchTerm, definition, failure, new[] { definition }));
+
         var matches = Array.AsReadOnly(new[] { definition });
-        var context = new CommandHelpContext(definition, searchTerm, failure, matches);
+        var context = CreateHelpContext(definition, searchTerm, failure, matches);
         List<string> lines = (help.CommandHelpFormatter ?? help.Formatter)(context)
             ?? throw new InvalidOperationException("A help formatter returned null.");
         return ResultFromLines(lines);
+    }
+
+    private CommandHelpContext CreateHelpContext(CommandDefinition definition, string? searchTerm, ConsoleFailure? failure, IReadOnlyList<CommandDefinition> matches)
+    {
+        string? syntax = null;
+        if (definition.Syntax is not null) syntax = definition.Syntax;
+        else if (definition.SyntaxFormatter is not null)
+        {
+            syntax = definition.SyntaxFormatter(new CommandSyntaxContext(definition, CommandParsingOptions.CreateSnapshot(_options.CommandParsing)));
+            if (syntax is null) throw new InvalidOperationException("A command syntax formatter returned null.");
+        }
+        return new CommandHelpContext(definition, searchTerm, failure, matches, syntax, CommandParsingOptions.CreateSnapshot(_options.CommandParsing));
+    }
+
+    private static HelpCommandErrorKind GetAccessErrorKind(ConsoleFailure failure) =>
+        failure.Kind == ConsoleFailureKind.CommandAuthorization ? HelpCommandErrorKind.PermissionDenied : HelpCommandErrorKind.Unavailable;
+
+    private static IReadOnlyList<string> GetHelpError(HelpCommandDefinition help, HelpCommandErrorKind kind, string? query, CommandDefinition? command, ConsoleFailure? failure, IReadOnlyList<CommandDefinition> matches)
+    {
+        if (!help.ErrorsEnabled) return Array.Empty<string>();
+        var context = new HelpCommandErrorContext(kind, query, command, failure, matches);
+        HelpCommandErrorFormatter formatter = kind switch
+        {
+            HelpCommandErrorKind.UnknownCommand => help.UnknownCommand,
+            HelpCommandErrorKind.NoSearchResults => help.NoSearchResults,
+            HelpCommandErrorKind.PermissionDenied => help.PermissionDenied,
+            _ => help.Unavailable
+        };
+        string? message = formatter(context);
+        return string.IsNullOrEmpty(message) ? Array.Empty<string>() : new[] { message };
     }
 
     private HelpCommandAccessDecision GetHelpAccessDecision(

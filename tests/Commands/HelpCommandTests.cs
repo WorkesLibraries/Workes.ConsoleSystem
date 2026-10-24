@@ -239,7 +239,8 @@ public sealed class HelpCommandTests
         RegisterHelp(explainingConsole, new HelpCommandBuilder()
             .FormatWith(context => new List<string> { context.Command.Path })
             .EnableCommandHelpOption("command")
-            .AccessPolicy(HelpCommandAccessPolicies.ExplainBlocked));
+            .AccessPolicy(HelpCommandAccessPolicies.ExplainBlocked)
+            .Errors());
 
         CommandResult explained = explainingConsole.ExecuteCommand("help --command admin.kick");
         Assert.That(explained.Outputs.Single().PlainText, Is.EqualTo("You do not have access to command 'admin.kick'."));
@@ -283,9 +284,9 @@ public sealed class HelpCommandTests
     }
 
     [Test]
-    public void Build_RequiresSharedFormatterAndManagerRejectsDuplicateHelpPath()
+    public void Build_UsesDefaultFormatterAndManagerRejectsDuplicateHelpPath()
     {
-        Assert.Throws<InvalidOperationException>(() => new HelpCommandBuilder().Build());
+        Assert.That(new HelpCommandBuilder().Build(), Is.Not.Null);
 
         var console = new ConsoleManager();
         RegisterHelp(console, new HelpCommandBuilder().FormatWith(_ => new List<string>()));

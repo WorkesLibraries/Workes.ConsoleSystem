@@ -14,7 +14,7 @@ public sealed class CommandFlagDefinition : CommandMemberDefinition
         string name,
         IReadOnlyList<string> aliases,
         string description)
-        : base(propertyName, typeof(bool), id, name, aliases, description, null)
+        : base(propertyName, typeof(bool), id, name, aliases, description, Array.Empty<string>(), null)
     {
     }
 }

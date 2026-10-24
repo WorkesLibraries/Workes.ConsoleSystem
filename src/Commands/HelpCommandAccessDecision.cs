@@ -29,6 +29,11 @@ public sealed class HelpCommandAccessDecision
         HelpCommandAccessDecisionKind.Show,
         Array.Empty<string>());
 
+    /// <summary>Uses the configured permission or availability message for the blocked command.</summary>
+    public static HelpCommandAccessDecision UseConfiguredError() => new HelpCommandAccessDecision(
+        HelpCommandAccessDecisionKind.UseConfiguredError,
+        Array.Empty<string>());
+
     /// <summary>Returns custom lines instead of formatted command details.</summary>
     public static HelpCommandAccessDecision Respond(IEnumerable<string> lines)
     {
@@ -52,7 +57,10 @@ public enum HelpCommandAccessDecisionKind
     Show,
 
     /// <summary>Use the decision's response lines instead of the command formatter.</summary>
-    Respond
+    Respond,
+
+    /// <summary>Use the configured permission or availability error formatter.</summary>
+    UseConfiguredError
 }
 
 /// <summary>Receives help context for commands that fail a permission or availability check.</summary>
@@ -67,7 +75,7 @@ public static class HelpCommandAccessPolicies
     /// <summary>Shows blocked commands using the configured formatters.</summary>
     public static HelpCommandAccessPolicy ShowBlocked { get; } = _ => HelpCommandAccessDecision.Show();
 
-    /// <summary>Returns a concise permission or availability response for each blocked command.</summary>
+    /// <summary>Uses the configured permission or availability error for blocked commands.</summary>
     public static HelpCommandAccessPolicy ExplainBlocked { get; } = context =>
     {
         if (context is null)
@@ -75,12 +83,6 @@ public static class HelpCommandAccessPolicies
             throw new ArgumentNullException(nameof(context));
         }
 
-        string message = context.AccessFailure?.Kind switch
-        {
-            Workes.ConsoleSystem.Core.ConsoleFailureKind.CommandAuthorization => $"You do not have access to command '{context.Command.Path}'.",
-            Workes.ConsoleSystem.Core.ConsoleFailureKind.CommandAvailability => $"Command '{context.Command.Path}' cannot be used right now.",
-            _ => $"Command '{context.Command.Path}' is unavailable."
-        };
-        return HelpCommandAccessDecision.Respond(new[] { message });
+        return HelpCommandAccessDecision.UseConfiguredError();
     };
 }

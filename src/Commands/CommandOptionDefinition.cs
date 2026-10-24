@@ -15,12 +15,13 @@ public sealed class CommandOptionDefinition : CommandMemberDefinition
         string name,
         IReadOnlyList<string> aliases,
         string description,
+        IReadOnlyList<string> examples,
         object? rangeMinimum,
         object? rangeMaximum,
         IReadOnlyList<object?> allowedValues,
         bool suggestAllowedValues,
         Func<CommandAutocompleteContext, IEnumerable<string>>? valueCandidateProvider)
-        : base(propertyName, valueType, id, name, aliases, description, valueCandidateProvider, false, rangeMinimum, rangeMaximum, allowedValues, suggestAllowedValues)
+        : base(propertyName, valueType, id, name, aliases, description, examples, valueCandidateProvider, false, rangeMinimum, rangeMaximum, allowedValues, suggestAllowedValues)
     {
     }
 }

@@ -6,7 +6,7 @@ Describe the intended internal structure of Workes.ConsoleSystem and its relatio
 
 ## Current State And Target
 
-The published 0.5.0 package includes manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, synchronous command execution, stateless autocomplete, optional history change events, command permission and availability checks, and the redesigned logical command value model. The current repository source additionally includes a configurable help command for a future release. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to shared history. An internal `ConsoleLog` helper creates those entries through the same history path and is not public. `CommandHistory` separately retains submitted strings for UI navigation and raises optional change notifications. This document records the architecture carried forward from Workes.ConsoleSystem.Old and distinguishes the published package from current source and planned work.
+The 0.6.0 package includes manager configuration, ContentSystem-backed visible history, typed entries and semantic text, manager-centered logging, command input history, command registration, parsing, validation, synchronous command execution, stateless autocomplete, optional history change events, command access checks, the logical command value model, and configurable help. The help layer adds command/binding metadata, optional manual or parser-aware generated syntax, built-in formatters, lookup errors, matching, and ordering. `ConsoleManager` exposes six logging levels with string and semantic-text overloads; all calls append typed `LogEntry` values to shared history. An internal `ConsoleLog` helper creates those entries through the same history path and is not public. `CommandHistory` separately retains submitted strings for UI navigation and raises optional change notifications. This document records the architecture carried forward from Workes.ConsoleSystem.Old.
 
 The public console workflows and overall design philosophy should remain close to the old package. The principal architectural change is that console-visible retained content is stored through Workes.ContentSystem instead of a second console-owned history collection.
 
@@ -18,7 +18,7 @@ ConsoleSystem should depend on ContentSystem rather than copy its sequence/histo
 
 ## Main Components
 
-The following components are implemented in the 0.5.0 package unless explicitly marked as future work.
+The following components are implemented in the 0.6.0 package unless explicitly marked as future work.
 
 - `ConsoleManager` is the root for one console instance. It coordinates console history, command input history, logging, and command workflows. It is not a singleton and does not rely on global state.
 - The manager accepts an `IConsolePermissionProvider` associated with its caller. The provider is an injected runtime service, while configuration snapshots continue to contain settings only.
@@ -61,7 +61,7 @@ Normal command submission is manager-owned and runs parsing, access checks, vali
 
 The parser and autocomplete share `CommandTokenizer`. Parsing rejects unclosed quoted input; autocomplete accepts it while the user is editing. Autocomplete reads registered command definitions, returns candidates and replacement ranges, and invokes optional synchronous value providers without writing history or executing commands.
 
-The optional help command remains manager-owned. Its formatters return ConsoleSystem output lines and receive command definitions, a read-only matched-command list, query text, and access status. A policy controls whether blocked commands are hidden, formatted, or replaced with response lines. The default hides blocked commands.
+The optional help command remains manager-owned. Its formatters return ConsoleSystem output lines and receive command definitions, a read-only matched-command list, query text, generated syntax, and access status. Command and binding metadata is optional. A policy controls whether blocked commands are hidden, formatted, or replaced with response lines; the default hides blocked commands. Matching and ordering remain configurable while defaulting to case-aware path substring matching and registration order.
 
 `BoundCommand.Values` is the resolved logical-value view keyed by ID. Its `Arguments`, `Flags`, and `Options` maps retain only explicitly supplied source bindings. Binding-level rules and autocomplete belong to the specific positional or option binding; typed state constraints see the final resolved state. Optional positional input is limited to one final argument so it does not make later positional interpretation ambiguous.
 

@@ -5,9 +5,7 @@
 
 Workes.ConsoleSystem is an engine-neutral console foundation for applications, games, and tools. It provides one manager-owned API for logging, retained console entries, command input history, command autocomplete, optional history change events, opt-in command permissions and availability checks, configurable help commands, and synchronous command registration, parsing, validation, and execution.
 
-Version 0.5.0 continues the substantial rebuild introduced in 0.2.0 around `Workes.ContentSystem`, which provides internal retained-content storage. It redesigns command values around logical IDs, a resolved values map, bulk defaults, and an optional trailing positional argument. ConsoleSystem keeps its own public manager, entry, text, command, and history APIs; consumers do not need to create or call ContentSystem objects directly. This release is not intended as a drop-in replacement for APIs from the earlier implementation.
-
-The repository source now also includes an opt-in configurable help command added after 0.5.0; it will be included in a future package release.
+Version 0.6.0 continues the rebuild introduced in 0.2.0 around `Workes.ContentSystem`, which provides internal retained-content storage. It adds richer command metadata, parser-aware syntax, built-in Simple and Detailed help formatters, configurable help errors, search matching, and result ordering. ConsoleSystem keeps its own public manager, entry, text, command, and history APIs; consumers do not need to create or call ContentSystem objects directly. This pre-1.0 release is not intended as a drop-in replacement for earlier APIs.
 
 ## Highlights
 
@@ -27,13 +25,13 @@ The repository source now also includes an opt-in configurable help command adde
 Install the package from [NuGet](https://www.nuget.org/packages/Workes.ConsoleSystem):
 
 ```bash
-dotnet add package Workes.ConsoleSystem --version 0.5.0
+dotnet add package Workes.ConsoleSystem --version 0.6.0
 ```
 
 Or add a package reference:
 
 ```xml
-<PackageReference Include="Workes.ConsoleSystem" Version="0.5.0" />
+<PackageReference Include="Workes.ConsoleSystem" Version="0.6.0" />
 ```
 
 The package targets .NET Standard 2.1. Its internal storage dependency is restored transitively; normal usage goes through ConsoleSystem APIs.
@@ -93,7 +91,7 @@ The [Quick Start](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/m
 - [Command outputs and failures](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md)
 
-Version 0.5.0 adds logical command value IDs, bulk defaults, and an optional trailing positional argument to the opt-in command permissions, runtime availability checks, autocomplete, and history change features from earlier releases. See the [Command registration guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_REGISTRATION.md), [Command parsing guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_PARSING.md), [Command autocomplete guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_AUTOCOMPLETE.md), [Command permissions and availability](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_ACCESS.md), and [changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md) for details. History persistence is not part of the public API.
+Version 0.6.0 adds metadata and a highly configurable opt-in help command to the logical command value model, permissions, availability checks, autocomplete, and history change features. See the [Command registration guide](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/COMMAND_REGISTRATION.md), [Configurable help command](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/docs/HELP_COMMAND.md), and [changelog](https://github.com/WorkesLibraries/Workes.ConsoleSystem/blob/main/CHANGELOG.md) for details. History persistence is not part of the public API.
 
 ## License
 

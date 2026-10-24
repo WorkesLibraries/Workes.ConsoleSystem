@@ -2,15 +2,23 @@
 
 This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
-## [24-10-2026]
+## [0.6.0] - 24-10-2026
 
 ### Added
 
 - Added an opt-in, manager-registered help command with configurable overview, search, command-specific formatters, and policies for blocked commands.
+- Added optional command notes and invocation examples, plus argument/option descriptions and sample values.
+- Added manual or parser-aware generated syntax, built-in Simple and Detailed help formatters, opt-in configurable lookup errors, custom search matching, and result ordering.
+- Replaced `params` aliases with optional `IReadOnlyList<string>` collections and documented the source migration.
 
 ### Documentation
 
-- Added a focused help command guide and updated the README, Quick Start, API reference, architecture, and API guidelines.
+- Expanded the help guide and updated the README, Quick Start, API reference, command guides, architecture, and API guidelines for 0.6.0.
+
+### Compatibility
+
+- Alias parameters now accept an optional `IReadOnlyList<string>` instead of `params string[]`. Existing calls that pass aliases as individual strings must pass a collection.
+- The opt-in help command now has a built-in Simple formatter and no longer requires `.FormatWith(...)`.
 
 ## [0.5.0] - 24-10-2026
 

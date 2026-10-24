@@ -2,7 +2,7 @@
 
 `ConsoleManager.GetAutocomplete(input, cursorIndex)` suggests schema-aware completions for the text at the cursor. Autocomplete returns data for a host UI; it does not own a selected item, keyboard behavior, or rendered menu.
 
-Stateless autocomplete was introduced in version 0.3.0. Permission and availability filtering described in [Command access](COMMAND_ACCESS.md) was added in version 0.4.0. Version 0.5.0 also supports positional argument candidates and suppresses an alternate input binding after another binding supplies the same logical ID.
+Stateless autocomplete was introduced in version 0.3.0. Permission and availability filtering described in [Command access](COMMAND_ACCESS.md) was added in version 0.4.0. Positional argument candidates and suppression of alternate input bindings after one source supplies a logical ID were added in 0.5.0.
 
 ## Query and apply a candidate
 

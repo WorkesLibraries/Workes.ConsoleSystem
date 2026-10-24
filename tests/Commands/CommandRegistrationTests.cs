@@ -29,8 +29,8 @@ public sealed class CommandRegistrationTests
         CommandDefinition command = new CommandBuilder("server.restart")
             .Description("Restart the server.")
             .Argument<RestartCommandState>(x => x.Reason, "reason", "reason")
-            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
-            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", aliases: new[] { "i" })
+            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "d" })
             .Defaults(("delay", 10))
             .Range(0, 60)
             .AllowedValues(0, 10, 30, 60)
@@ -115,8 +115,8 @@ public sealed class CommandRegistrationTests
     public void Build_DuplicateMemberNameOrAliasThrows()
     {
         var builder = new CommandBuilder("server.restart")
-            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
-            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "delay", "i")
+            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", aliases: new[] { "i" })
+            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "i" })
             .Execute<RestartCommandState>((ctx, state) => CommandResult.Success());
 
         Assert.Throws<InvalidOperationException>(() => builder.Build());
@@ -217,8 +217,8 @@ public sealed class CommandRegistrationTests
         });
 
         CommandDefinition command = new CommandBuilder("server.restart")
-            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
-            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", aliases: new[] { "i" })
+            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "d" })
             .Execute<RestartCommandState>((ctx, state) => CommandResult.Success())
             .Build();
 

@@ -14,13 +14,14 @@ public sealed class CommandArgumentDefinition : CommandMemberDefinition
         string id,
         string name,
         string description,
+        IReadOnlyList<string> examples,
         Func<CommandAutocompleteContext, IEnumerable<string>>? valueCandidateProvider,
         bool isOptional,
         object? rangeMinimum,
         object? rangeMaximum,
         IReadOnlyList<object?> allowedValues,
         bool suggestAllowedValues)
-        : base(propertyName, valueType, id, name, Array.Empty<string>(), description, valueCandidateProvider, isOptional, rangeMinimum, rangeMaximum, allowedValues, suggestAllowedValues)
+        : base(propertyName, valueType, id, name, Array.Empty<string>(), description, examples, valueCandidateProvider, isOptional, rangeMinimum, rangeMaximum, allowedValues, suggestAllowedValues)
     {
     }
 }

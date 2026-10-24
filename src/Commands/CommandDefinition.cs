@@ -11,6 +11,10 @@ public sealed class CommandDefinition
     internal CommandDefinition(
         string path,
         string description,
+        IReadOnlyList<string> notes,
+        IReadOnlyList<string> examples,
+        string? syntax,
+        CommandSyntaxFormatter? syntaxFormatter,
         Type? stateType,
         IReadOnlyList<CommandArgumentDefinition> arguments,
         IReadOnlyList<CommandFlagDefinition> flags,
@@ -26,6 +30,10 @@ public sealed class CommandDefinition
     {
         Path = path ?? throw new ArgumentNullException(nameof(path));
         Description = description ?? throw new ArgumentNullException(nameof(description));
+        Notes = notes ?? throw new ArgumentNullException(nameof(notes));
+        Examples = examples ?? throw new ArgumentNullException(nameof(examples));
+        Syntax = syntax;
+        SyntaxFormatter = syntaxFormatter;
         StateType = stateType;
         Arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
         Flags = flags ?? throw new ArgumentNullException(nameof(flags));
@@ -49,6 +57,18 @@ public sealed class CommandDefinition
     /// Gets a short description of the command.
     /// </summary>
     public string Description { get; }
+
+    /// <summary>Gets optional command notes.</summary>
+    public IReadOnlyList<string> Notes { get; }
+
+    /// <summary>Gets complete invocation examples for this command.</summary>
+    public IReadOnlyList<string> Examples { get; }
+
+    /// <summary>Gets manually authored syntax, or <see langword="null"/> when syntax is absent or generated.</summary>
+    public string? Syntax { get; }
+
+    /// <summary>Gets whether this command has manually supplied or generated syntax.</summary>
+    public bool HasSyntax => Syntax is not null || SyntaxFormatter is not null;
 
     /// <summary>
     /// Gets the typed command state type, if the command uses one.
@@ -103,6 +123,7 @@ public sealed class CommandDefinition
     public bool HasHandler => Handler is not null;
 
     internal Delegate Handler { get; }
+    internal CommandSyntaxFormatter? SyntaxFormatter { get; }
 
     internal IReadOnlyList<Func<CommandAvailabilityContext, CommandAvailabilityResult>> AvailabilityChecks { get; }
 }

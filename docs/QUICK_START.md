@@ -8,19 +8,19 @@ This walkthrough creates a manager, configures its history, registers a typed co
 
 ## Installation
 
-Install version 0.5.0 from NuGet:
+Install version 0.6.0 from NuGet:
 
 ```bash
-dotnet add package Workes.ConsoleSystem --version 0.5.0
+dotnet add package Workes.ConsoleSystem --version 0.6.0
 ```
 
 Or add a package reference to your project file:
 
 ```xml
-<PackageReference Include="Workes.ConsoleSystem" Version="0.5.0" />
+<PackageReference Include="Workes.ConsoleSystem" Version="0.6.0" />
 ```
 
-NuGet restores the internal `Workes.ContentSystem` dependency automatically. Application code uses the ConsoleSystem API and does not need a separate ContentSystem reference. See the [README](../README.md#installation) for package details. The configurable help command described below was added to the repository after 0.5.0 and will ship in a future package release.
+NuGet restores the internal `Workes.ContentSystem` dependency automatically. Application code uses the ConsoleSystem API and does not need a separate ContentSystem reference. See the [README](../README.md#installation) for package details.
 
 ## Create and configure the manager
 
@@ -140,7 +140,7 @@ console.CommandHistory.Changed += (_, change) => RefreshCommandInput(change);
 
 Both events are synchronous and optional. Their ConsoleSystem-owned payloads report added, dropped, or cleared items. See [Command autocomplete](COMMAND_AUTOCOMPLETE.md) and [History change hooks](HISTORY_CHANGE_HOOKS.md) for candidate rules, event payloads, and ordering.
 
-Version 0.5.0 includes command permission and runtime availability checks, along with logical command value IDs, bulk defaults, and optional trailing positional input. See [Command permissions and availability](COMMAND_ACCESS.md) for access behavior, and [Command registration](COMMAND_REGISTRATION.md) for the current value model.
+Version 0.6.0 includes command permission and runtime availability checks, the logical command value model, and configurable help. See [Command permissions and availability](COMMAND_ACCESS.md), [Command registration](COMMAND_REGISTRATION.md), and [Configurable help](HELP_COMMAND.md).
 
 ## What to read next
 

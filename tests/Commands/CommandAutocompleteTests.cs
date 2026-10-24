@@ -289,7 +289,7 @@ public sealed class CommandAutocompleteTests
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
             .Argument<RestartState>(x => x.Reason, "reason", "reason")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "d" })
                 .ValueCandidates(ctx => new[] { "10", "30", "60" })
             .Execute<RestartState>((ctx, state) => CommandResult.Success())
             .Build());
@@ -312,7 +312,7 @@ public sealed class CommandAutocompleteTests
         });
         console.RegisterCommand(new CommandBuilder("server.restart")
             .Argument<RestartState>(x => x.Reason, "reason", "reason")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "d" })
                 .ValueCandidates(ctx => new[] { "10", "30", "60" })
             .Execute<RestartState>((ctx, state) => CommandResult.Success())
             .Build());
@@ -336,7 +336,7 @@ public sealed class CommandAutocompleteTests
         });
         console.RegisterCommand(new CommandBuilder("server.restart")
             .Argument<RestartState>(x => x.Reason, "reason", "reason")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "d" })
                 .ValueCandidates(ctx => new[] { "10", "30", "60" })
             .Execute<RestartState>((ctx, state) => CommandResult.Success())
             .Build());
@@ -352,7 +352,7 @@ public sealed class CommandAutocompleteTests
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
             .Argument<RestartState>(x => x.Reason, "reason", "reason")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "d" })
                 .AllowedValues(10, 30, 60)
             .Execute<RestartState>((ctx, state) => CommandResult.Success())
             .Build());
@@ -369,7 +369,7 @@ public sealed class CommandAutocompleteTests
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
             .Argument<RestartState>(x => x.Reason, "reason", "reason")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "d" })
                 .AllowedValues(10, 30, 60)
                 .SuggestAllowedValues()
             .Execute<RestartState>((ctx, state) => CommandResult.Success())
@@ -388,7 +388,7 @@ public sealed class CommandAutocompleteTests
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
             .Argument<RestartState>(x => x.Reason, "reason", "reason")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "d" })
                 .AllowedValues(10, 30, 60)
                 .SuggestAllowedValues()
                 .ValueCandidates(ctx => new[] { "30" })
@@ -610,8 +610,8 @@ public sealed class CommandAutocompleteTests
     {
         return new CommandBuilder("server.restart")
             .Argument<RestartState>(x => x.Reason, "reason", "reason")
-            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", aliases: new[] { "i" })
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", aliases: new[] { "d" })
             .Execute<RestartState>((ctx, state) => CommandResult.Success())
             .Build();
     }

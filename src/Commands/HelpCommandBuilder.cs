@@ -8,7 +8,7 @@ namespace Workes.ConsoleSystem.Commands;
 public sealed class HelpCommandBuilder
 {
     private readonly string _path;
-    private Func<CommandHelpContext, List<string>>? _formatter;
+    private Func<CommandHelpContext, List<string>> _formatter = HelpCommandFormatters.Simple;
     private bool _searchPositionalEnabled;
     private bool _searchOptionEnabled;
     private string? _searchOptionName;
@@ -20,6 +20,14 @@ public sealed class HelpCommandBuilder
     private readonly List<string> _commandHelpOptionAliases = new List<string>();
     private Func<CommandHelpContext, List<string>>? _commandHelpFormatter;
     private HelpCommandAccessPolicy _accessPolicy = HelpCommandAccessPolicies.HideBlocked;
+    private bool _errorsEnabled;
+    private HelpCommandErrorFormatter _unknownCommand = HelpCommandErrorMessages.UnknownCommand;
+    private HelpCommandErrorFormatter _noSearchResults = HelpCommandErrorMessages.NoSearchResults;
+    private HelpCommandErrorFormatter _permissionDenied = HelpCommandErrorMessages.PermissionDenied;
+    private HelpCommandErrorFormatter _unavailable = HelpCommandErrorMessages.Unavailable;
+    private HelpCommandSearchMatcher _searchMatcher = HelpCommandSearchMatchers.PathSubstring;
+    private HelpCommandResultOrder _resultOrder = HelpCommandResultOrder.Registration;
+    private System.Collections.Generic.IComparer<CommandDefinition>? _resultComparer;
 
     /// <summary>Creates a help command builder.</summary>
     /// <param name="path">The help command path. Defaults to <c>help</c>.</param>
@@ -51,7 +59,7 @@ public sealed class HelpCommandBuilder
     public HelpCommandBuilder EnableSearchOption(
         string name,
         Func<CommandHelpContext, List<string>>? formatter = null,
-        params string[] aliases)
+        IReadOnlyList<string>? aliases = null)
     {
         _searchOptionName = ValidateName(name, nameof(name));
         _searchOptionAliases.Clear();
@@ -77,7 +85,7 @@ public sealed class HelpCommandBuilder
     public HelpCommandBuilder EnableCommandHelpOption(
         string name,
         Func<CommandHelpContext, List<string>>? formatter = null,
-        params string[] aliases)
+        IReadOnlyList<string>? aliases = null)
     {
         _commandHelpOptionName = ValidateName(name, nameof(name));
         _commandHelpOptionAliases.Clear();
@@ -95,15 +103,48 @@ public sealed class HelpCommandBuilder
         return this;
     }
 
+    /// <summary>Enables built-in lookup errors and overrides any messages supplied here.</summary>
+    public HelpCommandBuilder Errors(
+        HelpCommandErrorFormatter? unknownCommand = null,
+        HelpCommandErrorFormatter? noSearchResults = null,
+        HelpCommandErrorFormatter? permissionDenied = null,
+        HelpCommandErrorFormatter? unavailable = null)
+    {
+        _errorsEnabled = true;
+        _unknownCommand = unknownCommand ?? HelpCommandErrorMessages.UnknownCommand;
+        _noSearchResults = noSearchResults ?? HelpCommandErrorMessages.NoSearchResults;
+        _permissionDenied = permissionDenied ?? HelpCommandErrorMessages.PermissionDenied;
+        _unavailable = unavailable ?? HelpCommandErrorMessages.Unavailable;
+        return this;
+    }
+
+    /// <summary>Sets the command-path matching rule for searches.</summary>
+    public HelpCommandBuilder SearchWith(HelpCommandSearchMatcher matcher)
+    {
+        _searchMatcher = matcher ?? throw new ArgumentNullException(nameof(matcher));
+        return this;
+    }
+
+    /// <summary>Sets built-in result ordering.</summary>
+    public HelpCommandBuilder OrderResults(HelpCommandResultOrder order)
+    {
+        if (!Enum.IsDefined(typeof(HelpCommandResultOrder), order)) throw new ArgumentOutOfRangeException(nameof(order));
+        _resultOrder = order;
+        _resultComparer = null;
+        return this;
+    }
+
+    /// <summary>Sets a custom result ordering comparer.</summary>
+    public HelpCommandBuilder OrderResults(System.Collections.Generic.IComparer<CommandDefinition> comparer)
+    {
+        _resultComparer = comparer ?? throw new ArgumentNullException(nameof(comparer));
+        return this;
+    }
+
     /// <summary>Builds an immutable help command configuration.</summary>
     public HelpCommandDefinition Build()
     {
         CommandPathValidation.Validate(_path);
-
-        if (_formatter is null)
-        {
-            throw new InvalidOperationException("A shared formatter must be configured before building a help command.");
-        }
 
         return new HelpCommandDefinition(
             _path,
@@ -118,7 +159,15 @@ public sealed class HelpCommandBuilder
             _commandHelpOptionName,
             new List<string>(_commandHelpOptionAliases).AsReadOnly(),
             _commandHelpFormatter,
-            _accessPolicy);
+            _accessPolicy,
+            _errorsEnabled,
+            _unknownCommand,
+            _noSearchResults,
+            _permissionDenied,
+            _unavailable,
+            _searchMatcher,
+            _resultOrder,
+            _resultComparer);
     }
 
     private static string ValidateName(string value, string parameterName)
@@ -136,14 +185,10 @@ public sealed class HelpCommandBuilder
         return value;
     }
 
-    private static List<string> ValidateAliases(string[] aliases, string parameterName)
+    private static List<string> ValidateAliases(IReadOnlyList<string>? aliases, string parameterName)
     {
-        if (aliases is null)
-        {
-            throw new ArgumentNullException(parameterName);
-        }
-
-        var copy = new List<string>(aliases.Length);
+        var copy = new List<string>(aliases?.Count ?? 0);
+        if (aliases is null) return copy;
         foreach (string alias in aliases)
         {
             string validAlias = ValidateName(alias, parameterName);

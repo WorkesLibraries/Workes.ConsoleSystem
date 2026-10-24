@@ -135,9 +135,9 @@ Built-in failure codes use the `workes.console.` prefix. Common command codes in
 
 The complete constant list is in `ConsoleFailureCodes`. Messages are for people and may change; branch on `Kind` and `Code`. Failures created for thrown handlers include the original exception details through nested causes. See [Command outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md) for construction examples.
 
-## Scope of the 0.5.0 package
+## Scope of the 0.6.0 package
 
-The published 0.5.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, stateless autocomplete, optional history change events, command permissions, runtime availability checks, and the redesigned logical command value model. The current repository source additionally implements an opt-in configurable help command for a future package release. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
+The 0.6.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, stateless autocomplete, optional history change events, command permissions, runtime availability checks, the redesigned logical command value model, and an opt-in configurable help command with metadata, syntax, error, matching, and ordering customization. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
 
 ## Focused guides
 

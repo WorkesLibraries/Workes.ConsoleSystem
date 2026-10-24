@@ -24,6 +24,10 @@ public sealed class CommandBuilder
     private readonly List<Func<CommandAvailabilityContext, CommandAvailabilityResult>> _availabilityChecks = new List<Func<CommandAvailabilityContext, CommandAvailabilityResult>>();
     private readonly List<CommandSuccessOutputDefinition> _successOutputs = new List<CommandSuccessOutputDefinition>();
     private string _description = string.Empty;
+    private readonly List<string> _notes = new List<string>();
+    private readonly List<string> _examples = new List<string>();
+    private string? _syntax;
+    private CommandSyntaxFormatter? _syntaxFormatter;
     private Type? _stateType;
     private Delegate? _handler;
     private ValueMemberDraft? _lastValueMember;
@@ -51,6 +55,42 @@ public sealed class CommandBuilder
         return this;
     }
 
+    /// <summary>Sets optional notes displayed by detailed help formatters.</summary>
+    public CommandBuilder Notes(IReadOnlyList<string>? notes)
+    {
+        _notes.Clear();
+        if (notes is not null) _notes.AddRange(ValidateTextList(notes, nameof(notes)));
+        _lastValueMember = null;
+        return this;
+    }
+
+    /// <summary>Sets complete command invocation examples.</summary>
+    public CommandBuilder Examples(IReadOnlyList<string>? examples)
+    {
+        _examples.Clear();
+        if (examples is not null) _examples.AddRange(ValidateTextList(examples, nameof(examples)));
+        _lastValueMember = null;
+        return this;
+    }
+
+    /// <summary>Sets manually authored command syntax. This is exclusive with generated syntax.</summary>
+    public CommandBuilder Syntax(string syntax)
+    {
+        if (_syntaxFormatter is not null) throw new InvalidOperationException("Manual and generated syntax are mutually exclusive.");
+        _syntax = syntax ?? throw new ArgumentNullException(nameof(syntax));
+        _lastValueMember = null;
+        return this;
+    }
+
+    /// <summary>Sets generated command syntax using a custom or built-in formatter.</summary>
+    public CommandBuilder GenerateSyntaxWith(CommandSyntaxFormatter? formatter = null)
+    {
+        if (_syntax is not null) throw new InvalidOperationException("Manual and generated syntax are mutually exclusive.");
+        _syntaxFormatter = formatter ?? CommandSyntaxFormatters.Canonical;
+        _lastValueMember = null;
+        return this;
+    }
+
     /// <summary>
     /// Adds a positional argument. Arguments are required unless marked optional.
     /// </summary>
@@ -58,12 +98,14 @@ public sealed class CommandBuilder
     /// <param name="propertySelector">The state property selector.</param>
     /// <param name="id">The logical state value ID.</param>
     /// <param name="name">The argument name.</param>
+    /// <param name="description">Optional help description.</param>
+    /// <param name="examples">Optional sample values.</param>
     /// <returns>The current builder.</returns>
-    public CommandBuilder Argument<TState>(Expression<Func<TState, object?>> propertySelector, string id, string name)
+    public CommandBuilder Argument<TState>(Expression<Func<TState, object?>> propertySelector, string id, string name, string description = "", IReadOnlyList<string>? examples = null)
     {
         PropertyInfo property = GetProperty(propertySelector);
         UseStateType(typeof(TState));
-        var argument = new ArgumentDraft(property, ValidateName(id, nameof(id)), ValidateName(name, nameof(name)), string.Empty);
+        var argument = new ArgumentDraft(property, ValidateName(id, nameof(id)), ValidateName(name, nameof(name)), description ?? throw new ArgumentNullException(nameof(description)), examples is null ? new List<string>() : ValidateTextList(examples, nameof(examples)));
         _arguments.Add(argument);
         _lastValueMember = argument;
         _lastArgument = argument;
@@ -78,12 +120,13 @@ public sealed class CommandBuilder
     /// <param name="id">The logical state value ID.</param>
     /// <param name="name">The canonical flag name.</param>
     /// <param name="aliases">The flag aliases.</param>
+    /// <param name="description">Optional help description.</param>
     /// <returns>The current builder.</returns>
-    public CommandBuilder Flag<TState>(Expression<Func<TState, object?>> propertySelector, string id, string name, params string[] aliases)
+    public CommandBuilder Flag<TState>(Expression<Func<TState, object?>> propertySelector, string id, string name, IReadOnlyList<string>? aliases = null, string description = "")
     {
         PropertyInfo property = GetProperty(propertySelector);
         UseStateType(typeof(TState));
-        _flags.Add(new FlagDraft(property, ValidateName(id, nameof(id)), ValidateName(name, nameof(name)), ValidateAliases(aliases), string.Empty));
+        _flags.Add(new FlagDraft(property, ValidateName(id, nameof(id)), ValidateName(name, nameof(name)), ValidateAliases(aliases), description ?? throw new ArgumentNullException(nameof(description))));
         _lastValueMember = null;
         _lastArgument = null;
         return this;
@@ -97,12 +140,14 @@ public sealed class CommandBuilder
     /// <param name="id">The logical state value ID.</param>
     /// <param name="name">The canonical option name.</param>
     /// <param name="aliases">The option aliases.</param>
+    /// <param name="description">Optional help description.</param>
+    /// <param name="examples">Optional sample values.</param>
     /// <returns>The current builder.</returns>
-    public CommandBuilder Option<TState>(Expression<Func<TState, object?>> propertySelector, string id, string name, params string[] aliases)
+    public CommandBuilder Option<TState>(Expression<Func<TState, object?>> propertySelector, string id, string name, IReadOnlyList<string>? aliases = null, string description = "", IReadOnlyList<string>? examples = null)
     {
         PropertyInfo property = GetProperty(propertySelector);
         UseStateType(typeof(TState));
-        var option = new OptionDraft(property, ValidateName(id, nameof(id)), ValidateName(name, nameof(name)), ValidateAliases(aliases), string.Empty);
+        var option = new OptionDraft(property, ValidateName(id, nameof(id)), ValidateName(name, nameof(name)), ValidateAliases(aliases), description ?? throw new ArgumentNullException(nameof(description)), examples is null ? new List<string>() : ValidateTextList(examples, nameof(examples)));
         _options.Add(option);
         _lastValueMember = option;
         _lastArgument = null;
@@ -379,6 +424,10 @@ public sealed class CommandBuilder
         return new CommandDefinition(
             _path,
             _description,
+            new List<string>(_notes).AsReadOnly(),
+            new List<string>(_examples).AsReadOnly(),
+            _syntax,
+            _syntaxFormatter,
             _stateType,
             _arguments.ConvertAll(x => new CommandArgumentDefinition(
                 x.Property.Name,
@@ -386,6 +435,7 @@ public sealed class CommandBuilder
                 x.Id,
                 x.Name,
                 x.Description,
+                new List<string>(x.Examples).AsReadOnly(),
                 x.ValueCandidateProvider,
                 x.IsOptional,
                 NormalizeRangeValue(x.RangeMinimum, x.RangeMaximum, x.Property.PropertyType, "minimum", x.Name),
@@ -405,6 +455,7 @@ public sealed class CommandBuilder
                 x.Name,
                 new List<string>(x.Aliases).AsReadOnly(),
                 x.Description,
+                new List<string>(x.Examples).AsReadOnly(),
                 NormalizeRangeValue(x.RangeMinimum, x.RangeMaximum, x.Property.PropertyType, "minimum", x.Name),
                 NormalizeRangeValue(x.RangeMaximum, x.RangeMinimum, x.Property.PropertyType, "maximum", x.Name),
                 NormalizeAllowedValues(x.AllowedValues, x.Property.PropertyType, x.Name).AsReadOnly(),
@@ -462,20 +513,23 @@ public sealed class CommandBuilder
         return value;
     }
 
-    private static List<string> ValidateAliases(string[] aliases)
+    private static List<string> ValidateAliases(IReadOnlyList<string>? aliases)
     {
-        if (aliases is null)
-        {
-            throw new ArgumentNullException(nameof(aliases));
-        }
-
-        var result = new List<string>(aliases.Length);
+        var result = new List<string>(aliases?.Count ?? 0);
+        if (aliases is null) return result;
         foreach (string alias in aliases)
         {
             result.Add(ValidateName(alias, nameof(aliases)));
         }
 
         return result;
+    }
+
+    private static List<string> ValidateTextList(IReadOnlyList<string> values, string parameterName)
+    {
+        var copy = new List<string>(values.Count);
+        foreach (string value in values) copy.Add(value ?? throw new ArgumentException("Metadata collections cannot contain null.", parameterName));
+        return copy;
     }
 
     private void UseStateType(Type stateType)
@@ -604,7 +658,8 @@ public sealed class CommandBuilder
 
         foreach (ArgumentDraft argument in _arguments)
         {
-            AddUnique(seen, argument.Name);
+            bool alternateNamedSource = argument.IsOptional && _options.Exists(option => option.Id == argument.Id);
+            if (!alternateNamedSource) AddUnique(seen, argument.Name);
         }
 
         foreach (FlagDraft flag in _flags)
@@ -738,12 +793,13 @@ public sealed class CommandBuilder
 
     private sealed class ArgumentDraft : ValueMemberDraft
     {
-        public ArgumentDraft(PropertyInfo property, string id, string name, string description)
+        public ArgumentDraft(PropertyInfo property, string id, string name, string description, List<string> examples)
         {
             Property = property;
             Id = id;
             Name = name;
             Description = description;
+            Examples = examples;
         }
 
         public PropertyInfo Property { get; }
@@ -753,6 +809,7 @@ public sealed class CommandBuilder
         public string Name { get; }
 
         public string Description { get; }
+        public List<string> Examples { get; }
     }
 
     private sealed class FlagDraft
@@ -783,13 +840,14 @@ public sealed class CommandBuilder
 
     private sealed class OptionDraft : ValueMemberDraft
     {
-        public OptionDraft(PropertyInfo property, string id, string name, List<string> aliases, string description)
+        public OptionDraft(PropertyInfo property, string id, string name, List<string> aliases, string description, List<string> examples)
         {
             Property = property;
             Id = id;
             Name = name;
             Aliases = aliases;
             Description = description;
+            Examples = examples;
         }
 
         public PropertyInfo Property { get; }
@@ -800,6 +858,7 @@ public sealed class CommandBuilder
         public List<string> Aliases { get; }
 
         public string Description { get; }
+        public List<string> Examples { get; }
 
     }
 }

@@ -15,6 +15,7 @@ public abstract class CommandMemberDefinition
         string name,
         IReadOnlyList<string> aliases,
         string description,
+        IReadOnlyList<string>? examples,
         Func<CommandAutocompleteContext, IEnumerable<string>>? valueCandidateProvider,
         bool isOptional = false,
         object? rangeMinimum = null,
@@ -28,6 +29,7 @@ public abstract class CommandMemberDefinition
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Aliases = aliases ?? throw new ArgumentNullException(nameof(aliases));
         Description = description ?? throw new ArgumentNullException(nameof(description));
+        Examples = examples ?? Array.Empty<string>();
         ValueCandidateProvider = valueCandidateProvider;
         IsOptional = isOptional;
         RangeMinimum = rangeMinimum;
@@ -63,6 +65,9 @@ public abstract class CommandMemberDefinition
     /// Gets the optional member description.
     /// </summary>
     public string Description { get; }
+
+    /// <summary>Gets sample values for this argument or option.</summary>
+    public IReadOnlyList<string> Examples { get; }
 
     /// <summary>Gets whether this is an optional positional argument.</summary>
     public bool IsOptional { get; }

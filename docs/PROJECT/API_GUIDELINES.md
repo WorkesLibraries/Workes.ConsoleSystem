@@ -6,9 +6,9 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 ## Current Status
 
-The 0.5.0 package implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, synchronous execution, stateless autocomplete, optional history change notifications, and opt-in permission and availability checks. The command model uses required logical value IDs, resolved values, bulk defaults, and one optional trailing positional argument. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first snapshots, and clearing, and command execution records submissions in `CommandHistory`. The guidance below records the package's design rules; public docs must remain aligned with implemented APIs.
+The 0.6.0 package implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, synchronous execution, stateless autocomplete, optional history change notifications, opt-in permission and availability checks, and the configurable help command. The command model uses required logical value IDs, resolved values, bulk defaults, and one optional trailing positional argument. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first snapshots, and clearing, and command execution records submissions in `CommandHistory`. The guidance below records the package's design rules; public docs must remain aligned with implemented APIs.
 
-The current repository source adds a manager-registered configurable help command after 0.5.0. Its access policy defaults to hiding blocked commands, and formatters and policies use ConsoleSystem-owned context types.
+Help defaults to the Simple formatter, hides blocked commands, uses case-aware path substring matching, and preserves registration order. Its richer metadata, detailed formatting, generated syntax, error callbacks, search matcher, ordering, and access policies remain optional. Collection metadata and alias inputs are snapshotted.
 
 ## API Design Principles
 
@@ -52,14 +52,15 @@ Use one command schema model rather than separate public types for each combinat
 - Complex commands should prefer small immutable typed state records.
 - Required positional arguments represent core command state; flags and named options represent optional state.
 - Build immutable definitions before registering them through the manager.
-- Keep optional help configuration in a dedicated builder, but register it through `ConsoleManager` because help needs the manager's live registry and caller access checks. Require one shared formatter and allow feature-specific formatter overrides.
+- Keep optional help configuration in a dedicated builder, but register it through `ConsoleManager` because help needs the manager's live registry and caller access checks. Supply a useful Simple formatter by default, offer Detailed as an opt-in preset, and allow feature-specific formatter overrides.
+- Keep command metadata optional and snapshot collection inputs. Generated syntax must use the active parser settings; custom formatters must tolerate absent metadata.
 - Keep help output manager-centered and ConsoleSystem-owned. Default to hiding blocked commands; expose an explicit policy for callers who need another presentation.
 - Keep command path, parsing, binding, validation, execution, and autocomplete concepts separate even when normal submission orchestrates them together.
 - Keep handlers synchronous until a real asynchronous workflow is required.
 - Return command output and expected command failures through a result object rather than writing through a hidden output sink.
 - Construct `CommandResult` through the explicit `Success(...)` and `Failed(...)` factories; do not add equivalent public constructors.
 
-The base command surface, stateless autocomplete, and history events were introduced by version 0.3.0. Permission and availability APIs were introduced in 0.4.0. The current 0.5.0 package adds the redesigned command value model; this file describes the principles that should guide later changes.
+The base command surface, stateless autocomplete, and history events were introduced by version 0.3.0. Permission and availability APIs were introduced in 0.4.0, and the redesigned command value model arrived in 0.5.0. Version 0.6.0 adds metadata-rich configurable help and collection-based aliases; this file describes the principles that should guide later changes.
 
 ## Configuration Style
 
