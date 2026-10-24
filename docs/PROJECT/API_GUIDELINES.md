@@ -6,7 +6,7 @@ Describe the public API design principles for Workes.ConsoleSystem. This is proj
 
 ## Current Status
 
-Published version 0.3.0 implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, synchronous execution, stateless autocomplete, and optional history change notifications. The 0.4.0 release target adds opt-in permission and availability checks. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first snapshots, and clearing, and command execution records submissions in `CommandHistory`. The guidance below records the package's design rules; public docs must remain aligned with published and release-target APIs.
+The 0.5.0 package implements `ConsoleManager` and its snapshotted options, ConsoleSystem-owned entries and semantic text, an internal ContentSystem adapter, a `ConsoleHistory` read/clear facade, manager-centered logging for all six `LogLevel` values, bounded command input history, command registration, parsing, validation, synchronous execution, stateless autocomplete, optional history change notifications, and opt-in permission and availability checks. The command model uses required logical value IDs, resolved values, bulk defaults, and one optional trailing positional argument. Logging accepts strings and semantic `ConsoleText`; every level is recorded without package-side filtering. Consumers use manager methods rather than a separate public logger. `ConsoleManager.RecordEntry(IConsoleEntry)` writes visible entries, `ConsoleManager.History` exposes capacity, detached oldest-first snapshots, and clearing, and command execution records submissions in `CommandHistory`. The guidance below records the package's design rules; public docs must remain aligned with implemented APIs.
 
 ## API Design Principles
 
@@ -55,7 +55,7 @@ Use one command schema model rather than separate public types for each combinat
 - Return command output and expected command failures through a result object rather than writing through a hidden output sink.
 - Construct `CommandResult` through the explicit `Success(...)` and `Failed(...)` factories; do not add equivalent public constructors.
 
-The base command surface, stateless autocomplete, and history events are implemented in published version 0.3.0. Permission and availability APIs are implemented for the 0.4.0 release target. The focused user guides identify release-target APIs; this file describes the principles that should guide later changes.
+The base command surface, stateless autocomplete, and history events were introduced by version 0.3.0. Permission and availability APIs were introduced in 0.4.0. The current 0.5.0 package adds the redesigned command value model; this file describes the principles that should guide later changes.
 
 ## Configuration Style
 

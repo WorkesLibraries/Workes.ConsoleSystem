@@ -2,7 +2,7 @@
 
 This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
-## [24-10-2026]
+## [0.5.0] - 24-10-2026
 
 ### Changed
 
@@ -13,6 +13,10 @@ This file records notable user-facing changes to `Workes.ConsoleSystem`. The pac
 ### Documentation
 
 - Updated command registration, parsing, validation, autocomplete, API reference, Quick Start, README, architecture, and API guidelines for the new model.
+
+### Compatibility
+
+- Changed command registration so every argument, flag, and option requires a logical value ID. This pre-1.0 API change is not source-compatible with earlier command definitions.
 
 ## [0.4.0] - 17-10-2026
 

@@ -128,14 +128,14 @@ Built-in failure codes use the `workes.console.` prefix. Common command codes in
 | `CommandValueInvalid` / `CommandStateBindingFailed` | A value cannot be converted or the typed state cannot be constructed. |
 | `CommandConstraintRejected` | An option rule or state constraint rejected the command. |
 | `CommandExecutionRejected` | The handler returned failure or threw. |
-| `CommandPermissionDenied` | A required caller permission was not granted (0.4.0 release target). |
-| `CommandUnavailable` | A runtime availability check blocked the command (0.4.0 release target). |
+| `CommandPermissionDenied` | A required caller permission was not granted (introduced in 0.4.0). |
+| `CommandUnavailable` | A runtime availability check blocked the command (introduced in 0.4.0). |
 
 The complete constant list is in `ConsoleFailureCodes`. Messages are for people and may change; branch on `Kind` and `Code`. Failures created for thrown handlers include the original exception details through nested causes. See [Command outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md) for construction examples.
 
-## Scope of published version 0.3.0 and the 0.4.0 release target
+## Scope of the 0.5.0 package
 
-The published 0.3.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, stateless autocomplete, and optional history change events. Version 0.4.0 adds command permissions and runtime availability checks, including autocomplete visibility controls. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
+The 0.5.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, stateless autocomplete, optional history change events, command permissions, runtime availability checks, and the redesigned logical command value model. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
 
 ## Focused guides
 
@@ -148,7 +148,7 @@ The published 0.3.0 package provides synchronous command handlers, retained in-m
 - [Command parsing](COMMAND_PARSING.md)
 - [Command validation](COMMAND_VALIDATION.md)
 - [Command autocomplete](COMMAND_AUTOCOMPLETE.md)
-- [Command permissions and availability](COMMAND_ACCESS.md) (0.4.0 release target)
+- [Command permissions and availability](COMMAND_ACCESS.md) (introduced in 0.4.0)
 - [Command execution](COMMAND_EXECUTION.md)
 - [Command outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md)
 - [Quick Start](QUICK_START.md)

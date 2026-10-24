@@ -2,7 +2,7 @@
 
 `ConsoleManager.GetAutocomplete(input, cursorIndex)` suggests schema-aware completions for the text at the cursor. Autocomplete returns data for a host UI; it does not own a selected item, keyboard behavior, or rendered menu.
 
-Stateless autocomplete is included in published 0.3.0. Permission and availability filtering described in [Command access](COMMAND_ACCESS.md) is added in version 0.4.0.
+Stateless autocomplete was introduced in version 0.3.0. Permission and availability filtering described in [Command access](COMMAND_ACCESS.md) was added in version 0.4.0. Version 0.5.0 also supports positional argument candidates and suppresses an alternate input binding after another binding supplies the same logical ID.
 
 ## Query and apply a candidate
 
@@ -28,7 +28,7 @@ Each `CommandAutocompleteCandidate` exposes:
 - `DisplayText`: text suitable for showing in a suggestion list; it defaults to `Text`.
 - `Kind`: one of `CommandPath`, `ArgumentValue`, `Flag`, `Option`, or `OptionValue`.
 - `Description`: optional description. Command paths use the command description; the current builder does not expose member descriptions, so built-in flag and option suggestions have an empty description.
-- `IsAvailable` and `UnavailableReason`: access status for command path candidates when blocked-command suggestions are enabled. These properties are added in version 0.4.0.
+- `IsAvailable` and `UnavailableReason`: access status for command path candidates when blocked-command suggestions are enabled. These properties were added in version 0.4.0.
 
 Candidates are returned in command registration and schema order. The UI chooses which candidate is selected and how to cycle or display candidates.
 

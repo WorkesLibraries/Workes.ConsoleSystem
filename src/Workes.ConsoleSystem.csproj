@@ -7,8 +7,8 @@
     <LangVersion>10.0</LangVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Workes.ConsoleSystem</PackageId>
-    <Version>0.4.0</Version>
-    <PackageReleaseNotes>Version 0.4.0 continues the ContentSystem-backed rebuild introduced in 0.2.0. It adds opt-in command permissions, reusable permission roles, runtime availability checks, and access-aware autocomplete to the 0.3.0 foundation. ContentSystem remains outside the public API. This is not a drop-in upgrade from the legacy 0.1.0 package.</PackageReleaseNotes>
+    <Version>0.5.0</Version>
+    <PackageReleaseNotes>Version 0.5.0 continues the ContentSystem-backed rebuild introduced in 0.2.0. It redesigns command values around logical IDs, resolved value maps, bulk defaults, and one optional trailing positional argument, while preserving explicit-source views and binding-specific rules. It also includes command permissions, runtime availability checks, and access-aware autocomplete. ContentSystem remains outside the public API. This is not a drop-in upgrade from the legacy 0.1.0 package.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Authors>Workes</Authors>
     <Company>Workes</Company>

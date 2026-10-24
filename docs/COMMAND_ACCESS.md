@@ -2,7 +2,7 @@
 
 Command access checks are optional. Commands without permission requirements work with a plain `ConsoleManager`. A command can require caller permissions, be available only under runtime conditions, or use both checks.
 
-This guide documents the command access APIs added for version 0.4.0. The published 0.3.0 package does not include permissions, availability checks, or access-aware autocomplete.
+This guide documents the command access APIs introduced in version 0.4.0. They are included in the 0.5.0 package alongside the redesigned command value model.
 
 ## Configure the caller's permissions
 
