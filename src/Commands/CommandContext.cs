@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 
 namespace Workes.ConsoleSystem.Commands;
 
@@ -7,12 +8,20 @@ namespace Workes.ConsoleSystem.Commands;
 /// </summary>
 public sealed class CommandContext
 {
-    internal CommandContext(string input, CommandDefinition definition, BoundCommand command, DateTimeOffset timestamp)
+    internal CommandContext(
+        string input,
+        CommandDefinition definition,
+        BoundCommand command,
+        DateTimeOffset timestamp,
+        CancellationToken cancellationToken,
+        ICommandDispatcher? dispatcher)
     {
         Input = input ?? throw new ArgumentNullException(nameof(input));
         Definition = definition ?? throw new ArgumentNullException(nameof(definition));
         Command = command ?? throw new ArgumentNullException(nameof(command));
         Timestamp = timestamp;
+        CancellationToken = cancellationToken;
+        Dispatcher = dispatcher;
     }
 
     /// <summary>
@@ -34,4 +43,14 @@ public sealed class CommandContext
     /// Gets the time associated with this execution.
     /// </summary>
     public DateTimeOffset Timestamp { get; }
+
+    /// <summary>
+    /// Gets the token that cancels this asynchronous command execution, or <see cref="CancellationToken.None"/>
+    /// for synchronous execution.
+    /// </summary>
+    public CancellationToken CancellationToken { get; }
+
+    /// <summary>Gets the optional host dispatcher for explicitly dispatched work.</summary>
+    /// <remarks>The dispatcher is <see langword="null"/> when none was configured on the manager.</remarks>
+    public ICommandDispatcher? Dispatcher { get; }
 }

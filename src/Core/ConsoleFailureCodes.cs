@@ -105,6 +105,12 @@ public static class ConsoleFailureCodes
     /// </summary>
     public const string CommandExecutionRejected = PackagePrefix + "command.execution.rejected";
 
+    /// <summary>An asynchronous command was invoked through the synchronous API.</summary>
+    public const string CommandRequiresAsyncExecution = PackagePrefix + "command.execution.async_required";
+
+    /// <summary>Command execution was cancelled by its cancellation token.</summary>
+    public const string CommandExecutionCancelled = PackagePrefix + "command.execution.cancelled";
+
     /// <summary>Command execution was blocked because a required permission was missing.</summary>
     public const string CommandPermissionDenied = PackagePrefix + "command.permission.denied";
 

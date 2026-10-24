@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Workes.ConsoleSystem.Configuration;
 using Workes.ConsoleSystem.Commands;
 using Workes.ConsoleSystem.Entries;
@@ -20,6 +22,7 @@ public sealed class ConsoleManager
 {
     private readonly ConsoleManagerOptions _options;
     private readonly IConsolePermissionProvider? _permissionProvider;
+    private readonly ICommandDispatcher? _dispatcher;
     private readonly StringComparer _commandPathComparer;
     private readonly ConsoleLog _log;
 
@@ -46,9 +49,24 @@ public sealed class ConsoleManager
     /// <param name="options">The setup options to snapshot for this console instance.</param>
     /// <param name="permissionProvider">The optional caller permission provider.</param>
     public ConsoleManager(ConsoleManagerOptions options, IConsolePermissionProvider? permissionProvider)
+        : this(options, permissionProvider, dispatcher: null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance with options, the permission provider, and an optional host dispatcher.
+    /// </summary>
+    /// <param name="options">The setup options to snapshot for this console instance.</param>
+    /// <param name="permissionProvider">The optional caller permission provider.</param>
+    /// <param name="dispatcher">The optional host dispatcher used explicitly by command handlers.</param>
+    public ConsoleManager(
+        ConsoleManagerOptions options,
+        IConsolePermissionProvider? permissionProvider,
+        ICommandDispatcher? dispatcher)
     {
         _options = ConsoleManagerOptions.CreateSnapshot(options);
         _permissionProvider = permissionProvider;
+        _dispatcher = dispatcher;
         _commandPathComparer = _options.CommandParsing.IsCaseSensitive
             ? StringComparer.Ordinal
             : StringComparer.OrdinalIgnoreCase;
@@ -235,6 +253,79 @@ public sealed class ConsoleManager
 
         result = ExecuteBoundCommand(command, recordCommandInput: true).Result;
         return result.IsSuccess;
+    }
+
+    /// <summary>
+    /// Attempts to execute command input asynchronously and returns the structured result for command failures.
+    /// </summary>
+    /// <param name="input">The command input to execute.</param>
+    /// <param name="cancellationToken">The token that cancels this execution.</param>
+    /// <returns>The command result; expected command failures are returned rather than thrown.</returns>
+    public async Task<CommandResult> TryExecuteCommandAsync(string input, CancellationToken cancellationToken = default)
+    {
+        if (input is null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        return (await ExecuteCommandAsyncCore(input, cancellationToken).ConfigureAwait(false)).Result;
+    }
+
+    /// <summary>
+    /// Attempts to execute a previously parsed command asynchronously.
+    /// </summary>
+    /// <param name="command">The bound command to execute.</param>
+    /// <param name="cancellationToken">The token that cancels this execution.</param>
+    /// <returns>The command result; expected command failures are returned rather than thrown.</returns>
+    public async Task<CommandResult> TryExecuteCommandAsync(BoundCommand command, CancellationToken cancellationToken = default)
+    {
+        if (command is null)
+        {
+            throw new ArgumentNullException(nameof(command));
+        }
+
+        return (await ExecuteBoundCommandAsync(command, recordCommandInput: true, cancellationToken).ConfigureAwait(false)).Result;
+    }
+
+    /// <summary>
+    /// Executes command input asynchronously, throwing when the command fails.
+    /// </summary>
+    /// <param name="input">The command input to execute.</param>
+    /// <param name="cancellationToken">The token that cancels this execution.</param>
+    /// <returns>The successful command result.</returns>
+    /// <exception cref="ConsoleOperationException">The command was rejected, failed, or was cancelled.</exception>
+    public async Task<CommandResult> ExecuteCommandAsync(string input, CancellationToken cancellationToken = default)
+    {
+        if (input is null)
+        {
+            throw new ArgumentNullException(nameof(input));
+        }
+
+        CommandExecutionOutcome outcome = await ExecuteCommandAsyncCore(input, cancellationToken).ConfigureAwait(false);
+        ThrowIfFailed(outcome);
+        return outcome.Result;
+    }
+
+    /// <summary>
+    /// Executes a previously parsed command asynchronously, throwing when the command fails.
+    /// </summary>
+    /// <param name="command">The bound command to execute.</param>
+    /// <param name="cancellationToken">The token that cancels this execution.</param>
+    /// <returns>The successful command result.</returns>
+    /// <exception cref="ConsoleOperationException">The command was rejected, failed, or was cancelled.</exception>
+    public async Task<CommandResult> ExecuteCommandAsync(BoundCommand command, CancellationToken cancellationToken = default)
+    {
+        if (command is null)
+        {
+            throw new ArgumentNullException(nameof(command));
+        }
+
+        CommandExecutionOutcome outcome = await ExecuteBoundCommandAsync(
+            command,
+            recordCommandInput: true,
+            cancellationToken).ConfigureAwait(false);
+        ThrowIfFailed(outcome);
+        return outcome.Result;
     }
 
     /// <summary>
@@ -546,41 +637,7 @@ public sealed class ConsoleManager
 
     private CommandExecutionOutcome InvokeHandler(BoundCommand command)
     {
-        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
-        var context = new CommandContext(command.Input, command.Definition, command, timestamp);
-
-        try
-        {
-            object? result = command.Definition.StateType is null
-                ? ((Func<CommandContext, CommandResult>)command.Definition.Handler)(context)
-                : command.Definition.Handler.DynamicInvoke(context, command.State);
-
-            if (result is CommandResult commandResult)
-            {
-                return new CommandExecutionOutcome(commandResult, null);
-            }
-
-            return new CommandExecutionOutcome(
-                CommandResult.Failed(ConsoleFailures.CommandExecution(
-                    $"Command '{command.Definition.Path}' returned no command result.",
-                    command.Definition.Path)),
-                null);
-        }
-        catch (Exception exception)
-        {
-            Exception causeException = exception is TargetInvocationException { InnerException: not null } invocationException
-                ? invocationException.InnerException
-                : exception;
-            ConsoleFailure cause = ConsoleFailure.FromException(
-                causeException,
-                ConsoleFailureKind.CommandExecution,
-                ConsoleFailureCodes.CommandExecutionRejected);
-            ConsoleFailure failure = ConsoleFailures.CommandExecution(
-                $"Command '{command.Definition.Path}' failed during execution.",
-                command.Definition.Path,
-                cause);
-            return new CommandExecutionOutcome(CommandResult.Failed(failure), causeException);
-        }
+        return InvokeHandler(command, CancellationToken.None);
     }
 
     private CommandExecutionOutcome ExecuteCommandCore(string input)
@@ -619,6 +676,15 @@ public sealed class ConsoleManager
             return Fail(validation.Failure!);
         }
 
+        if (command.Definition.IsAsyncHandler)
+        {
+            return Fail(new ConsoleFailure(
+                ConsoleFailureKind.CommandExecution,
+                ConsoleFailureCodes.CommandRequiresAsyncExecution,
+                $"Command '{command.Definition.Path}' requires asynchronous execution.",
+                source: command.Definition.Path));
+        }
+
         CommandExecutionOutcome outcome = InvokeHandler(command);
         if (!outcome.Result.IsSuccess)
         {
@@ -628,6 +694,182 @@ public sealed class ConsoleManager
 
         AppendSuccessOutputs(command.Definition, outcome.Result);
         return outcome;
+    }
+
+    private async Task<CommandExecutionOutcome> ExecuteCommandAsyncCore(string input, CancellationToken cancellationToken)
+    {
+        RecordCommandInput(input);
+        CommandParseResult parse = ParseCommand(input);
+        if (!parse.IsSuccess)
+        {
+            AppendEcho(input, null);
+            return Fail(parse.Failure!);
+        }
+
+        return await ExecuteBoundCommandAsync(parse.Command!, recordCommandInput: false, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<CommandExecutionOutcome> ExecuteBoundCommandAsync(
+        BoundCommand command,
+        bool recordCommandInput,
+        CancellationToken cancellationToken)
+    {
+        if (recordCommandInput)
+        {
+            RecordCommandInput(command.Input);
+        }
+
+        AppendEcho(command.Input, command.Definition);
+
+        if (cancellationToken.IsCancellationRequested)
+        {
+            return Fail(CreateCancellationFailure(command.Definition));
+        }
+
+        ConsoleFailure? accessFailure = ValidateCommandAccess(
+            command,
+            new CommandAvailabilityContext(command.Input, cursorIndex: null, command.Definition, command));
+        if (accessFailure is not null)
+        {
+            return Fail(accessFailure);
+        }
+
+        CommandValidationResult validation = ValidateCommand(command);
+        if (!validation.IsSuccess)
+        {
+            return Fail(validation.Failure!);
+        }
+
+        CommandExecutionOutcome outcome = command.Definition.IsAsyncHandler
+            ? await InvokeAsyncHandler(command, cancellationToken).ConfigureAwait(false)
+            : InvokeHandler(command, cancellationToken);
+
+        if (!outcome.Result.IsSuccess)
+        {
+            AppendFailure(outcome.Result.Failure!);
+            return outcome;
+        }
+
+        AppendSuccessOutputs(command.Definition, outcome.Result);
+        return outcome;
+    }
+
+    private async Task<CommandExecutionOutcome> InvokeAsyncHandler(BoundCommand command, CancellationToken cancellationToken)
+    {
+        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        var context = new CommandContext(command.Input, command.Definition, command, timestamp, cancellationToken, _dispatcher);
+
+        try
+        {
+            object? taskObject = command.Definition.StateType is null
+                ? command.Definition.Handler.DynamicInvoke(context)
+                : command.Definition.Handler.DynamicInvoke(context, command.State);
+
+            if (taskObject is Task<CommandResult> resultTask)
+            {
+                CommandResult? result = await resultTask.ConfigureAwait(false);
+                return result is null
+                    ? MissingAsyncHandlerResult(command.Definition)
+                    : new CommandExecutionOutcome(result, null);
+            }
+
+            if (taskObject is Task task)
+            {
+                await task.ConfigureAwait(false);
+                return new CommandExecutionOutcome(CommandResult.Success(), null);
+            }
+
+            return MissingAsyncHandlerResult(command.Definition);
+        }
+        catch (Exception exception)
+        {
+            Exception causeException = UnwrapHandlerException(exception);
+            if (causeException is OperationCanceledException && cancellationToken.IsCancellationRequested)
+            {
+                return new CommandExecutionOutcome(
+                    CommandResult.Failed(CreateCancellationFailure(command.Definition, causeException)),
+                    causeException);
+            }
+
+            return CreateHandlerFailure(command.Definition, causeException);
+        }
+    }
+
+    private CommandExecutionOutcome InvokeHandler(BoundCommand command, CancellationToken cancellationToken)
+    {
+        DateTimeOffset timestamp = DateTimeOffset.UtcNow;
+        var context = new CommandContext(command.Input, command.Definition, command, timestamp, cancellationToken, _dispatcher);
+
+        try
+        {
+            object? result = command.Definition.StateType is null
+                ? ((Func<CommandContext, CommandResult>)command.Definition.Handler)(context)
+                : command.Definition.Handler.DynamicInvoke(context, command.State);
+
+            if (result is CommandResult commandResult)
+            {
+                return new CommandExecutionOutcome(commandResult, null);
+            }
+
+            return MissingHandlerResult(command.Definition, "returned no command result");
+        }
+        catch (Exception exception)
+        {
+            return CreateHandlerFailure(command.Definition, UnwrapHandlerException(exception));
+        }
+    }
+
+    private static CommandExecutionOutcome MissingAsyncHandlerResult(CommandDefinition definition)
+    {
+        return MissingHandlerResult(definition, "returned no task or command result");
+    }
+
+    private static CommandExecutionOutcome MissingHandlerResult(CommandDefinition definition, string reason)
+    {
+        return new CommandExecutionOutcome(
+            CommandResult.Failed(ConsoleFailures.CommandExecution(
+                $"Command '{definition.Path}' {reason}.",
+                definition.Path)),
+            null);
+    }
+
+    private static CommandExecutionOutcome CreateHandlerFailure(CommandDefinition definition, Exception exception)
+    {
+        ConsoleFailure cause = ConsoleFailure.FromException(
+            exception,
+            ConsoleFailureKind.CommandExecution,
+            ConsoleFailureCodes.CommandExecutionRejected);
+        ConsoleFailure failure = ConsoleFailures.CommandExecution(
+            $"Command '{definition.Path}' failed during execution.",
+            definition.Path,
+            cause);
+        return new CommandExecutionOutcome(CommandResult.Failed(failure), exception);
+    }
+
+    private static Exception UnwrapHandlerException(Exception exception)
+    {
+        while (exception is TargetInvocationException { InnerException: not null } invocationException)
+        {
+            exception = invocationException.InnerException;
+        }
+
+        return exception;
+    }
+
+    private static ConsoleFailure CreateCancellationFailure(CommandDefinition definition, Exception? exception = null)
+    {
+        ConsoleFailure? cause = exception is null
+            ? null
+            : ConsoleFailure.FromException(
+                exception,
+                ConsoleFailureKind.CommandExecution,
+                ConsoleFailureCodes.CommandExecutionRejected);
+        return new ConsoleFailure(
+            ConsoleFailureKind.CommandExecution,
+            ConsoleFailureCodes.CommandExecutionCancelled,
+            $"Command '{definition.Path}' was cancelled.",
+            source: definition.Path,
+            cause: cause);
     }
 
     private static void ThrowIfFailed(CommandExecutionOutcome outcome)

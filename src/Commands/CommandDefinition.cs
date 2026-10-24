@@ -26,7 +26,8 @@ public sealed class CommandDefinition
         IReadOnlyList<Func<CommandAvailabilityContext, CommandAvailabilityResult>> availabilityChecks,
         CommandEchoInputDefinition echoInput,
         IReadOnlyList<CommandSuccessOutputDefinition> successOutputs,
-        Delegate handler)
+        Delegate handler,
+        bool isAsyncHandler)
     {
         Path = path ?? throw new ArgumentNullException(nameof(path));
         Description = description ?? throw new ArgumentNullException(nameof(description));
@@ -46,6 +47,7 @@ public sealed class CommandDefinition
         EchoInput = echoInput ?? throw new ArgumentNullException(nameof(echoInput));
         SuccessOutputs = successOutputs ?? throw new ArgumentNullException(nameof(successOutputs));
         Handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        IsAsyncHandler = isAsyncHandler;
     }
 
     /// <summary>
@@ -123,6 +125,7 @@ public sealed class CommandDefinition
     public bool HasHandler => Handler is not null;
 
     internal Delegate Handler { get; }
+    internal bool IsAsyncHandler { get; }
     internal CommandSyntaxFormatter? SyntaxFormatter { get; }
 
     internal IReadOnlyList<Func<CommandAvailabilityContext, CommandAvailabilityResult>> AvailabilityChecks { get; }

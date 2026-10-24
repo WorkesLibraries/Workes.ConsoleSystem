@@ -650,3 +650,23 @@ IDs let command state remain one coherent model while making source choice expli
 #### Consequences
 
 This is an intentional pre-1.0 public API change. Existing command definitions must add IDs and migrate option-local defaults to `Defaults(...)`. The help command remains a later stage and should build on these command definitions without exposing ContentSystem types.
+
+### D-043: Support Asynchronous Command Handlers With Explicit Host Dispatch
+
+#### Context
+
+Commands often need asynchronous I/O, while the package must preserve its manager-centered workflow and remain independent of any game engine or UI framework. Concurrent handlers also mean the two manager-owned histories can receive writes from overlapping executions.
+
+#### Decision
+
+Allow each command definition to use either a synchronous handler or an asynchronous handler. Async handlers may return `Task<CommandResult>` or `Task`; successful task-only handlers imply `CommandResult.Success()`. Provide async manager try and throwing methods for both raw input and parsed commands. Async methods execute both handler kinds, while synchronous methods return a structured failure for async-only definitions and never block. Accept an optional cancellation token on async manager methods and expose it through `CommandContext`; sync contexts receive `CancellationToken.None`. Treat an `OperationCanceledException` as cancellation only when that execution token is requested. Cancellation remains cooperative, so a handler that ignores cancellation and returns normally retains its result.
+
+Allow optional `ICommandDispatcher` injection for handlers that need a specific host callback to run on a selected thread. The dispatcher executes only the supplied callback; ConsoleSystem does not schedule the whole handler or guarantee continuation thread affinity. Serialize history reads, writes, clears, and synchronous notifications. Record async input and configured echo before awaiting; append final output/failure when the handler completes. Do not hold history locks while invoking handlers or dispatcher callbacks.
+
+#### Reasoning
+
+Explicit sync and async APIs avoid sync-over-async deadlocks and make cancellation visible to handlers. A host-provided callback dispatcher supports engine-bound work without embedding engine dependencies. Thread-safe history internals make overlapping commands safe while leaving output order naturally determined by completion time.
+
+#### Consequences
+
+Applications choose async manager methods for definitions that may use async handlers. Concurrent command output and failure entries are recorded in completion order, while input and echo reflect submission order. History events remain synchronous and run on the thread that wrote the history; hosts marshal UI updates themselves. Intermediate or streamed output is not supported by this stage.

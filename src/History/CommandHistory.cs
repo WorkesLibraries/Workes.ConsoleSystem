@@ -11,6 +11,7 @@ public sealed class CommandHistory
 {
     private const int DefaultCapacity = 100;
 
+    private readonly object _gate = new object();
     private readonly List<string> _entries = new List<string>();
     private readonly CommandHistoryDuplicatePolicy _duplicatePolicy;
 
@@ -46,7 +47,16 @@ public sealed class CommandHistory
     /// <summary>
     /// Gets a detached snapshot of submitted command inputs in oldest-first order.
     /// </summary>
-    public IReadOnlyList<string> Entries => Array.AsReadOnly(_entries.ToArray());
+    public IReadOnlyList<string> Entries
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return Array.AsReadOnly(_entries.ToArray());
+            }
+        }
+    }
 
     /// <summary>
     /// Occurs synchronously after retained command inputs change.
@@ -58,22 +68,25 @@ public sealed class CommandHistory
     /// </summary>
     public void Clear()
     {
-        if (_entries.Count == 0)
+        lock (_gate)
         {
-            return;
-        }
+            if (_entries.Count == 0)
+            {
+                return;
+            }
 
-        EventHandler<CommandHistoryChangedEventArgs>? changed = Changed;
-        string[]? clearedInputs = changed is null ? null : _entries.ToArray();
-        _entries.Clear();
-        if (changed is not null && clearedInputs is not null)
-        {
-            changed.Invoke(this, new CommandHistoryChangedEventArgs(
-                HistoryChangeKind.Cleared,
-                Array.Empty<string>(),
-                Array.Empty<string>(),
-                clearedInputs,
-                _entries.Count));
+            EventHandler<CommandHistoryChangedEventArgs>? changed = Changed;
+            string[]? clearedInputs = changed is null ? null : _entries.ToArray();
+            _entries.Clear();
+            if (changed is not null && clearedInputs is not null)
+            {
+                changed.Invoke(this, new CommandHistoryChangedEventArgs(
+                    HistoryChangeKind.Cleared,
+                    Array.Empty<string>(),
+                    Array.Empty<string>(),
+                    clearedInputs,
+                    _entries.Count));
+            }
         }
     }
 
@@ -84,34 +97,37 @@ public sealed class CommandHistory
             throw new ArgumentNullException(nameof(input));
         }
 
-        if (string.IsNullOrWhiteSpace(input) || IsRejectedDuplicate(input))
+        lock (_gate)
         {
-            return false;
-        }
-
-        EventHandler<CommandHistoryChangedEventArgs>? changed = Changed;
-        string[] droppedInputs = Array.Empty<string>();
-        if (_entries.Count == Capacity)
-        {
-            if (changed is not null)
+            if (string.IsNullOrWhiteSpace(input) || IsRejectedDuplicate(input))
             {
-                droppedInputs = new[] { _entries[0] };
+                return false;
             }
 
-            _entries.RemoveAt(0);
-        }
+            EventHandler<CommandHistoryChangedEventArgs>? changed = Changed;
+            string[] droppedInputs = Array.Empty<string>();
+            if (_entries.Count == Capacity)
+            {
+                if (changed is not null)
+                {
+                    droppedInputs = new[] { _entries[0] };
+                }
 
-        _entries.Add(input);
-        if (changed is not null)
-        {
-            changed.Invoke(this, new CommandHistoryChangedEventArgs(
-                HistoryChangeKind.Added,
-                new[] { input },
-                droppedInputs,
-                Array.Empty<string>(),
-                _entries.Count));
+                _entries.RemoveAt(0);
+            }
+
+            _entries.Add(input);
+            if (changed is not null)
+            {
+                changed.Invoke(this, new CommandHistoryChangedEventArgs(
+                    HistoryChangeKind.Added,
+                    new[] { input },
+                    droppedInputs,
+                    Array.Empty<string>(),
+                    _entries.Count));
+            }
+            return true;
         }
-        return true;
     }
 
     private bool IsRejectedDuplicate(string input)

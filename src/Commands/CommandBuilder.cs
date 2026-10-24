@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 using Workes.ConsoleSystem.Permissions;
 using Workes.ConsoleSystem.Presentation;
 
@@ -33,6 +34,7 @@ public sealed class CommandBuilder
     private ValueMemberDraft? _lastValueMember;
     private ArgumentDraft? _lastArgument;
     private bool? _echoInput;
+    private bool? _handlerIsAsync;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CommandBuilder"/> class.
@@ -386,7 +388,7 @@ public sealed class CommandBuilder
             throw new InvalidOperationException("A typed command must use a typed command handler.");
         }
 
-        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        SetHandler(handler ?? throw new ArgumentNullException(nameof(handler)), isAsync: false);
         _lastValueMember = null;
         return this;
     }
@@ -399,8 +401,67 @@ public sealed class CommandBuilder
     /// <returns>The current builder.</returns>
     public CommandBuilder Execute<TState>(Func<CommandContext, TState, CommandResult> handler)
     {
+        EnsureHandlerKind(isAsync: false);
         UseStateType(typeof(TState));
-        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        SetHandler(handler ?? throw new ArgumentNullException(nameof(handler)), isAsync: false);
+        _lastValueMember = null;
+        return this;
+    }
+
+    /// <summary>Stores an asynchronous simple command handler that returns a result.</summary>
+    /// <param name="handler">The handler to invoke.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder ExecuteAsync(Func<CommandContext, Task<CommandResult>> handler)
+    {
+        if (_stateType is not null)
+        {
+            throw new InvalidOperationException("A typed command must use a typed command handler.");
+        }
+
+        SetHandler(handler ?? throw new ArgumentNullException(nameof(handler)), isAsync: true);
+        _lastValueMember = null;
+        return this;
+    }
+
+    /// <summary>Stores an asynchronous simple command handler with no explicit result.</summary>
+    /// <remarks>A successful completion is treated as a successful <see cref="CommandResult"/>.</remarks>
+    /// <param name="handler">The handler to invoke.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder ExecuteAsync(Func<CommandContext, Task> handler)
+    {
+        if (_stateType is not null)
+        {
+            throw new InvalidOperationException("A typed command must use a typed command handler.");
+        }
+
+        SetHandler(handler ?? throw new ArgumentNullException(nameof(handler)), isAsync: true);
+        _lastValueMember = null;
+        return this;
+    }
+
+    /// <summary>Stores an asynchronous typed command handler that returns a result.</summary>
+    /// <typeparam name="TState">The command state type.</typeparam>
+    /// <param name="handler">The handler to invoke.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder ExecuteAsync<TState>(Func<CommandContext, TState, Task<CommandResult>> handler)
+    {
+        EnsureHandlerKind(isAsync: true);
+        UseStateType(typeof(TState));
+        SetHandler(handler ?? throw new ArgumentNullException(nameof(handler)), isAsync: true);
+        _lastValueMember = null;
+        return this;
+    }
+
+    /// <summary>Stores an asynchronous typed command handler with no explicit result.</summary>
+    /// <remarks>A successful completion is treated as a successful <see cref="CommandResult"/>.</remarks>
+    /// <typeparam name="TState">The command state type.</typeparam>
+    /// <param name="handler">The handler to invoke.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder ExecuteAsync<TState>(Func<CommandContext, TState, Task> handler)
+    {
+        EnsureHandlerKind(isAsync: true);
+        UseStateType(typeof(TState));
+        SetHandler(handler ?? throw new ArgumentNullException(nameof(handler)), isAsync: true);
         _lastValueMember = null;
         return this;
     }
@@ -468,7 +529,23 @@ public sealed class CommandBuilder
             new List<Func<CommandAvailabilityContext, CommandAvailabilityResult>>(_availabilityChecks).AsReadOnly(),
             new CommandEchoInputDefinition(_echoInput),
             new List<CommandSuccessOutputDefinition>(_successOutputs).AsReadOnly(),
-            _handler);
+            _handler,
+            _handlerIsAsync ?? false);
+    }
+
+    private void SetHandler(Delegate handler, bool isAsync)
+    {
+        EnsureHandlerKind(isAsync);
+        _handler = handler;
+        _handlerIsAsync = isAsync;
+    }
+
+    private void EnsureHandlerKind(bool isAsync)
+    {
+        if (_handlerIsAsync.HasValue && _handlerIsAsync.Value != isAsync)
+        {
+            throw new InvalidOperationException("A command cannot mix synchronous and asynchronous handlers.");
+        }
     }
 
     private static PropertyInfo GetProperty<TState, TValue>(Expression<Func<TState, TValue>> selector)

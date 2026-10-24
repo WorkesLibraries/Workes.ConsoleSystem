@@ -56,11 +56,11 @@ Use one command schema model rather than separate public types for each combinat
 - Keep command metadata optional and snapshot collection inputs. Generated syntax must use the active parser settings; custom formatters must tolerate absent metadata.
 - Keep help output manager-centered and ConsoleSystem-owned. Default to hiding blocked commands; expose an explicit policy for callers who need another presentation.
 - Keep command path, parsing, binding, validation, execution, and autocomplete concepts separate even when normal submission orchestrates them together.
-- Keep handlers synchronous until a real asynchronous workflow is required.
+- Support async handlers through explicit async APIs; do not block synchronous methods waiting for async work. Use cooperative cancellation and an optional host dispatcher for explicit callbacks, without promising handler-wide thread affinity.
 - Return command output and expected command failures through a result object rather than writing through a hidden output sink.
 - Construct `CommandResult` through the explicit `Success(...)` and `Failed(...)` factories; do not add equivalent public constructors.
 
-The base command surface, stateless autocomplete, and history events were introduced by version 0.3.0. Permission and availability APIs were introduced in 0.4.0, and the redesigned command value model arrived in 0.5.0. Version 0.6.0 adds metadata-rich configurable help and collection-based aliases; this file describes the principles that should guide later changes.
+The base command surface, stateless autocomplete, and history events were introduced by version 0.3.0. Permission and availability APIs were introduced in 0.4.0, the redesigned command value model arrived in 0.5.0, and version 0.6.0 added metadata-rich configurable help and collection-based aliases. Current development adds async execution and cooperative concurrency support while keeping release versioning in the release-preparation step.
 
 ## Configuration Style
 

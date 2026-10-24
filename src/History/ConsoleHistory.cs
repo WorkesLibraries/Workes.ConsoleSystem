@@ -11,6 +11,7 @@ namespace Workes.ConsoleSystem.History;
 /// </summary>
 public sealed class ConsoleHistory
 {
+    private readonly object _gate = new object();
     private readonly ContentSequenceManager _contentSequence;
 
     internal ConsoleHistory(ContentSequenceManager contentSequence, int capacity)
@@ -42,14 +43,17 @@ public sealed class ConsoleHistory
     {
         get
         {
-            IReadOnlyList<ContentEntryRecord> records = _contentSequence.Records;
-            var entries = new IConsoleEntry[records.Count];
-            for (int i = 0; i < records.Count; i++)
+            lock (_gate)
             {
-                entries[i] = ((ContentEntryAdapter)records[i].Entry).ConsoleEntry;
-            }
+                IReadOnlyList<ContentEntryRecord> records = _contentSequence.Records;
+                var entries = new IConsoleEntry[records.Count];
+                for (int i = 0; i < records.Count; i++)
+                {
+                    entries[i] = ((ContentEntryAdapter)records[i].Entry).ConsoleEntry;
+                }
 
-            return Array.AsReadOnly(entries);
+                return Array.AsReadOnly(entries);
+            }
         }
     }
 
@@ -58,7 +62,10 @@ public sealed class ConsoleHistory
     /// </summary>
     public void Clear()
     {
-        _contentSequence.Clear();
+        lock (_gate)
+        {
+            _contentSequence.Clear();
+        }
     }
 
     internal void RecordEntry(IConsoleEntry entry)
@@ -68,36 +75,42 @@ public sealed class ConsoleHistory
             throw new ArgumentNullException(nameof(entry));
         }
 
-        _contentSequence.Add(new ContentEntryAdapter(entry));
+        lock (_gate)
+        {
+            _contentSequence.Add(new ContentEntryAdapter(entry));
+        }
     }
 
     private void OnContentChanged(object? sender, ContentChangedEventArgs e)
     {
-        EventHandler<ConsoleHistoryChangedEventArgs>? changed = Changed;
-        if (changed is null)
+        lock (_gate)
         {
-            return;
-        }
+            EventHandler<ConsoleHistoryChangedEventArgs>? changed = Changed;
+            if (changed is null)
+            {
+                return;
+            }
 
-        if (e.Cleared)
-        {
-            changed.Invoke(this, new ConsoleHistoryChangedEventArgs(
-                HistoryChangeKind.Cleared,
-                Array.Empty<IConsoleEntry>(),
-                Array.Empty<IConsoleEntry>(),
-                ToConsoleEntries(e.RemovedRecords),
-                _contentSequence.Records.Count));
-            return;
-        }
+            if (e.Cleared)
+            {
+                changed.Invoke(this, new ConsoleHistoryChangedEventArgs(
+                    HistoryChangeKind.Cleared,
+                    Array.Empty<IConsoleEntry>(),
+                    Array.Empty<IConsoleEntry>(),
+                    ToConsoleEntries(e.RemovedRecords),
+                    _contentSequence.Records.Count));
+                return;
+            }
 
-        if (e.Kind == ContentChangeKind.Added)
-        {
-            changed.Invoke(this, new ConsoleHistoryChangedEventArgs(
-                HistoryChangeKind.Added,
-                ToConsoleEntries(e.AddedRecords),
-                ToConsoleEntries(e.RemovedRecords),
-                Array.Empty<IConsoleEntry>(),
-                _contentSequence.Records.Count));
+            if (e.Kind == ContentChangeKind.Added)
+            {
+                changed.Invoke(this, new ConsoleHistoryChangedEventArgs(
+                    HistoryChangeKind.Added,
+                    ToConsoleEntries(e.AddedRecords),
+                    ToConsoleEntries(e.RemovedRecords),
+                    Array.Empty<IConsoleEntry>(),
+                    _contentSequence.Records.Count));
+            }
         }
     }
 

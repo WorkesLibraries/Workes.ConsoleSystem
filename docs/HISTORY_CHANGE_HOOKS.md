@@ -56,4 +56,6 @@ Events are raised synchronously after the history mutation commits, so `Entries`
 
 Subscriber exceptions follow normal .NET event behavior: they propagate to the code performing the mutation, while the history mutation remains committed. Keep UI event handlers short and handle their own failures where appropriate.
 
+History snapshots, writes, clears, and synchronous notifications are serialized so overlapping command executions cannot corrupt retained entries or interleave event delivery. A handler may inspect history inside a notification. UI hosts should marshal their own UI updates to the appropriate thread.
+
 These notifications are ConsoleSystem-owned. No ContentSystem records, IDs, event args, or manager types appear in the public event signatures.

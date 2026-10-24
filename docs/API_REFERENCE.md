@@ -13,6 +13,7 @@ Create one `ConsoleManager` per console instance. Configure it once, register de
 | Execute input | `TryExecuteCommand(string, out CommandResult)` | Returns `false` and a structured failure for parse, validation, or handler failures. |
 | Execute input and throw on failure | `ExecuteCommand(string)` | Returns a successful result; throws `ConsoleOperationException` with the structured failure otherwise. |
 | Execute a parsed command | `TryExecuteCommand(BoundCommand, out CommandResult)` or `ExecuteCommand(BoundCommand)` | Skips parsing but still records the original input, validates, invokes the handler, and records the outcome. |
+| Execute asynchronously | `TryExecuteCommandAsync(...)` or `ExecuteCommandAsync(...)` | Accepts either input or `BoundCommand`; the try form returns `Task<CommandResult>`, and the execute form throws for command failures. Both run synchronous or asynchronous handlers. |
 | Register definitions | `RegisterCommand(CommandDefinition)` or `RegisterCommands(IEnumerable<CommandDefinition>)` | Batch registration validates every definition before adding any of them. |
 | Register optional help | `RegisterHelpCommand(HelpCommandDefinition)` | Creates a normal registered command bound to this manager's current registry and caller access checks. |
 | Add a custom visible entry | `RecordEntry(IConsoleEntry)` | Adds the entry to the same bounded history as logs and command entries. |
@@ -25,7 +26,7 @@ Null inputs to manager methods that require an object throw `ArgumentNullExcepti
 
 ### `Workes.ConsoleSystem.Core`
 
-- `ConsoleManager`: root for configuration, logging, histories, registration, parsing, validation, autocomplete, and execution. Use its constructor overload accepting `IConsolePermissionProvider` for caller-specific access checks. `Options` returns a detached configuration snapshot.
+- `ConsoleManager`: root for configuration, logging, histories, registration, parsing, validation, autocomplete, and sync/async execution. Use its constructor overload accepting `IConsolePermissionProvider` for caller-specific access checks; the three-argument overload also accepts an `ICommandDispatcher`. `Options` returns a detached configuration snapshot.
 - `ConsoleFailure`: structured failure data (`Kind`, stable `Code`, `Message`, optional `Component`, `Source`, and nested `Cause`). Use codes or kinds for program logic, not message text.
 - `ConsoleFailureKind` and `ConsoleFailureCodes`: failure categories and built-in stable codes, including permission and availability rejections.
 - `ConsoleSystemException` and `ConsoleOperationException`: exceptions for expected-success APIs that fail. Both expose `Failure`; `ConsoleOperationException` is used by `ExecuteCommand`. A handler exception is retained as `InnerException` and in the failure cause chain.
@@ -48,11 +49,11 @@ Manager construction snapshots and validates the full options graph. Null nested
 - Help: `HelpCommandBuilder`, `HelpCommandDefinition`, `CommandHelpContext`, `CommandHelpAccessContext`, and the help access policy/decision types.
 - Autocomplete: `CommandAutocompleteContext`, `CommandAutocompleteCandidate`, `CommandAutocompleteCandidateKind`, and `CommandAutocompleteResult`.
 - Parsing and validation: `BoundCommand`, `CommandParseResult`, and `CommandValidationResult`.
-- Handler execution: `CommandContext` and `CommandResult`.
+- Handler execution: `CommandContext`, `CommandResult`, and `ICommandDispatcher`.
 - Output: `CommandOutput`, `CommandOutputBuilder`, and `CommandOutputKind` (`Inline` or `Block`).
 - Registered-command view: `CommandSystem`, available as `ConsoleManager.Commands`; its `Definitions` property is a read-only view.
 
-Use `CommandBuilder` for definitions and `CommandResult.Success(...)` / `Failed(...)` for handler outcomes. There is no public constructor for `CommandDefinition` or `CommandResult`. The builder requires an execution handler before `Build()` succeeds. Every argument, flag, and option has a required logical ID as well as its canonical input name. IDs use ordinal comparison; one optional positional argument may share an ID with an option when both bind the same property and type. `Defaults((id, value), ...)` configures resolved defaults by ID. `ValueCandidates(...)` and `SuggestAllowedValues()` apply to the latest positional argument or option; explicit providers take precedence. `RequirePermission(...)`, `RequireAnyPermission(...)`, and `AvailableWhen(...)` add optional access rules.
+Use `CommandBuilder` and choose either `Execute(...)` or `ExecuteAsync(...)`; a definition cannot combine synchronous and asynchronous handlers. Task-only async handlers produce a successful empty result when they complete. Use `CommandResult.Success(...)` / `Failed(...)` for explicit outcomes. There is no public constructor for `CommandDefinition` or `CommandResult`. The builder requires an execution handler before `Build()` succeeds. Every argument, flag, and option has a required logical ID as well as its canonical input name. IDs use ordinal comparison; one optional positional argument may share an ID with an option when both bind the same property and type. `Defaults((id, value), ...)` configures resolved defaults by ID. `ValueCandidates(...)` and `SuggestAllowedValues()` apply to the latest positional argument or option; explicit providers take precedence. `RequirePermission(...)`, `RequireAnyPermission(...)`, and `AvailableWhen(...)` add optional access rules.
 
 For typed commands, all bindings and the handler must use the same reference type. Binding expressions must select public instance properties. The state type must expose a public constructor whose parameter names match bound property names; matching follows the configured case-sensitivity setting. Constructor parameters receive values by name, so their order need not match schema order. Immutable records are a convenient state shape. Bind every value the handler needs to a constructor-backed property.
 
@@ -76,7 +77,7 @@ Entries are retained in the visible history as the same objects that were record
 
 `CommandHistory` has a public parameterless constructor for an independent empty history. Its add operation is manager-owned, so use `ConsoleManager.CommandHistory` when you want command execution or `RecordCommandInput` to populate it. Command input history trims only for duplicate comparison; it retains the submitted string unchanged. `RejectConsecutive` compares the trimmed newest and submitted values using ordinal case-insensitive comparison. When full, either history drops its oldest item to retain a new one.
 
-Both history objects expose `Changed`; `ConsoleManager.ConsoleHistoryChanged` and `ConsoleManager.CommandHistoryChanged` are forwarding convenience events. Events run synchronously after mutation, and their argument collections are read-only snapshots. See [History change hooks](HISTORY_CHANGE_HOOKS.md) for detailed payload and timing behavior.
+Both history objects expose `Changed`; `ConsoleManager.ConsoleHistoryChanged` and `ConsoleManager.CommandHistoryChanged` are forwarding convenience events. Events run synchronously after mutation, and their argument collections are read-only snapshots. Reads, writes, clears, and notifications are synchronized for overlapping command execution. Notifications run on the writing thread. See [History change hooks](HISTORY_CHANGE_HOOKS.md) for detailed payload and timing behavior.
 
 ### `Workes.ConsoleSystem.Presentation`
 
@@ -114,9 +115,11 @@ Strings, booleans, enums, nullable forms of supported types, and values accepted
 
 ## Failure handling
 
-Use `TryExecuteCommand` when rejection is an expected branch. The result exposes `IsSuccess`, optional `Failure`, and `Outputs`. A failed handler result may contain outputs, but those outputs are not written to visible history. For successful execution, declared command success outputs are recorded first, followed by the outputs in the handler's result.
+Use `TryExecuteCommand` or `TryExecuteCommandAsync` when rejection is an expected branch. The result exposes `IsSuccess`, optional `Failure`, and `Outputs`. A failed handler result may contain outputs, but those outputs are not written to visible history. For successful execution, declared command success outputs are recorded first, followed by the outputs in the handler's result.
 
-Use `ExecuteCommand` when success is expected. A rejected command throws `ConsoleOperationException`, whose `Failure` is the same structured result available from the try-based API. Null method arguments and invalid setup/programming inputs remain standard .NET argument or invalid-operation exceptions; they are not converted into command failures.
+Use `ExecuteCommand` or `ExecuteCommandAsync` when success is expected. A rejected command throws `ConsoleOperationException`, whose `Failure` is the same structured result available from the try-based API. Null method arguments and invalid setup/programming inputs remain standard .NET argument or invalid-operation exceptions; they are not converted into command failures.
+
+Async methods accept an optional `CancellationToken`; it is also exposed to the handler through `CommandContext.CancellationToken`. Cancellation is cooperative and reported with `CommandExecutionCancelled` only when the execution token caused an `OperationCanceledException`. `ICommandDispatcher` is an optional host service for specific thread-bound callbacks; it does not schedule the handler itself. See [Command execution](COMMAND_EXECUTION.md) for ordering and examples.
 
 Built-in failure codes use the `workes.console.` prefix. Common command codes include:
 
@@ -130,14 +133,16 @@ Built-in failure codes use the `workes.console.` prefix. Common command codes in
 | `CommandValueInvalid` / `CommandStateBindingFailed` | A value cannot be converted or the typed state cannot be constructed. |
 | `CommandConstraintRejected` | An option rule or state constraint rejected the command. |
 | `CommandExecutionRejected` | The handler returned failure or threw. |
+| `CommandRequiresAsyncExecution` | A synchronous manager method was used for an async-only command. |
+| `CommandExecutionCancelled` | The execution cancellation token cancelled the command. |
 | `CommandPermissionDenied` | A required caller permission was not granted (introduced in 0.4.0). |
 | `CommandUnavailable` | A runtime availability check blocked the command (introduced in 0.4.0). |
 
 The complete constant list is in `ConsoleFailureCodes`. Messages are for people and may change; branch on `Kind` and `Code`. Failures created for thrown handlers include the original exception details through nested causes. See [Command outputs and failures](COMMAND_OUTPUTS_AND_FAILURES.md) for construction examples.
 
-## Scope of the 0.6.0 package
+## Scope of the 0.6.0 package and current development
 
-The 0.6.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, stateless autocomplete, optional history change events, command permissions, runtime availability checks, the redesigned logical command value model, and an opt-in configurable help command with metadata, syntax, error, matching, and ordering customization. The package does not include history persistence, asynchronous handlers, UI controls, markup parsing, or a renderer. The host owns presentation, input widgets, filtering, persistence, and thread coordination.
+The released 0.6.0 package provides synchronous command handlers, retained in-memory histories, semantic text data, stateless autocomplete, optional history change events, command permissions, runtime availability checks, the redesigned logical command value model, and an opt-in configurable help command. Current source also adds asynchronous handlers, cooperative cancellation, and optional host dispatch. It does not include history persistence, UI controls, markup parsing, streaming output, or a renderer. The host owns presentation, input widgets, filtering, persistence, and UI thread coordination.
 
 ## Focused guides
 

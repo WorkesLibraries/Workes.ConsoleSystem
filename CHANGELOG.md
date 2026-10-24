@@ -2,6 +2,22 @@
 
 This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
+## [0.7.0] - 24-10-2026
+
+### Added
+
+- Added asynchronous simple and typed command handlers that can return `Task<CommandResult>` or `Task`.
+- Added asynchronous manager execution for raw input and parsed commands, with structured try results and throwing execute methods.
+- Added cooperative cancellation through async execution and `CommandContext.CancellationToken`.
+- Added optional `ICommandDispatcher` injection for explicit host-thread callbacks.
+- Synchronized console and command history snapshots, mutations, clears, and synchronous change notifications for overlapping executions.
+
+### Changed
+
+- Async input and configured echo are recorded on submission; outputs and failures are recorded after handler completion.
+- Synchronous manager methods return a structured failure for commands configured with asynchronous handlers rather than blocking.
+- Documented completion-order output, cancellation behavior, host dispatcher responsibilities, and history notification threading.
+
 ## [0.6.0] - 24-10-2026
 
 ### Added
