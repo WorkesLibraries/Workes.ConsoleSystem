@@ -17,6 +17,7 @@ public sealed class CommandBuilder
     private readonly List<ArgumentDraft> _arguments = new List<ArgumentDraft>();
     private readonly List<FlagDraft> _flags = new List<FlagDraft>();
     private readonly List<OptionDraft> _options = new List<OptionDraft>();
+    private readonly List<(string Id, object? Value)> _defaults = new List<(string Id, object? Value)>();
     private readonly List<CommandConstraintDefinition> _constraints = new List<CommandConstraintDefinition>();
     private readonly List<string> _requiredPermissions = new List<string>();
     private readonly List<IReadOnlyList<string>> _requiredAnyPermissionGroups = new List<IReadOnlyList<string>>();
@@ -25,8 +26,8 @@ public sealed class CommandBuilder
     private string _description = string.Empty;
     private Type? _stateType;
     private Delegate? _handler;
-    private OptionDraft? _lastOption;
     private ValueMemberDraft? _lastValueMember;
+    private ArgumentDraft? _lastArgument;
     private bool? _echoInput;
 
     /// <summary>
@@ -46,26 +47,26 @@ public sealed class CommandBuilder
     public CommandBuilder Description(string description)
     {
         _description = description ?? throw new ArgumentNullException(nameof(description));
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
 
     /// <summary>
-    /// Adds a required positional argument.
+    /// Adds a positional argument. Arguments are required unless marked optional.
     /// </summary>
     /// <typeparam name="TState">The command state type.</typeparam>
     /// <param name="propertySelector">The state property selector.</param>
+    /// <param name="id">The logical state value ID.</param>
     /// <param name="name">The argument name.</param>
     /// <returns>The current builder.</returns>
-    public CommandBuilder Argument<TState>(Expression<Func<TState, object?>> propertySelector, string name)
+    public CommandBuilder Argument<TState>(Expression<Func<TState, object?>> propertySelector, string id, string name)
     {
         PropertyInfo property = GetProperty(propertySelector);
         UseStateType(typeof(TState));
-        var argument = new ArgumentDraft(property, ValidateName(name, nameof(name)), string.Empty);
+        var argument = new ArgumentDraft(property, ValidateName(id, nameof(id)), ValidateName(name, nameof(name)), string.Empty);
         _arguments.Add(argument);
-        _lastOption = null;
         _lastValueMember = argument;
+        _lastArgument = argument;
         return this;
     }
 
@@ -74,16 +75,17 @@ public sealed class CommandBuilder
     /// </summary>
     /// <typeparam name="TState">The command state type.</typeparam>
     /// <param name="propertySelector">The state property selector.</param>
+    /// <param name="id">The logical state value ID.</param>
     /// <param name="name">The canonical flag name.</param>
     /// <param name="aliases">The flag aliases.</param>
     /// <returns>The current builder.</returns>
-    public CommandBuilder Flag<TState>(Expression<Func<TState, object?>> propertySelector, string name, params string[] aliases)
+    public CommandBuilder Flag<TState>(Expression<Func<TState, object?>> propertySelector, string id, string name, params string[] aliases)
     {
         PropertyInfo property = GetProperty(propertySelector);
         UseStateType(typeof(TState));
-        _flags.Add(new FlagDraft(property, ValidateName(name, nameof(name)), ValidateAliases(aliases), string.Empty));
-        _lastOption = null;
+        _flags.Add(new FlagDraft(property, ValidateName(id, nameof(id)), ValidateName(name, nameof(name)), ValidateAliases(aliases), string.Empty));
         _lastValueMember = null;
+        _lastArgument = null;
         return this;
     }
 
@@ -92,68 +94,80 @@ public sealed class CommandBuilder
     /// </summary>
     /// <typeparam name="TState">The command state type.</typeparam>
     /// <param name="propertySelector">The state property selector.</param>
+    /// <param name="id">The logical state value ID.</param>
     /// <param name="name">The canonical option name.</param>
     /// <param name="aliases">The option aliases.</param>
     /// <returns>The current builder.</returns>
-    public CommandBuilder Option<TState>(Expression<Func<TState, object?>> propertySelector, string name, params string[] aliases)
+    public CommandBuilder Option<TState>(Expression<Func<TState, object?>> propertySelector, string id, string name, params string[] aliases)
     {
         PropertyInfo property = GetProperty(propertySelector);
         UseStateType(typeof(TState));
-        _lastOption = new OptionDraft(property, ValidateName(name, nameof(name)), ValidateAliases(aliases), string.Empty);
-        _options.Add(_lastOption);
-        _lastValueMember = _lastOption;
+        var option = new OptionDraft(property, ValidateName(id, nameof(id)), ValidateName(name, nameof(name)), ValidateAliases(aliases), string.Empty);
+        _options.Add(option);
+        _lastValueMember = option;
+        _lastArgument = null;
         return this;
     }
 
-    /// <summary>
-    /// Sets default value metadata on the most recently added option.
-    /// </summary>
-    /// <param name="value">The default value metadata.</param>
-    /// <returns>The current builder.</returns>
-    public CommandBuilder Default(object? value)
+    /// <summary>Marks the most recently declared positional argument as optional.</summary>
+    public CommandBuilder Optional()
     {
-        RequireLastOption().DefaultValue = value;
-        _lastValueMember = _lastOption;
+        ArgumentDraft argument = _lastArgument is not null && ReferenceEquals(_lastValueMember, _lastArgument)
+            ? _lastArgument
+            : throw new InvalidOperationException("Optional() must follow a positional argument definition.");
+        argument.IsOptional = true;
+        _lastArgument = null;
         return this;
     }
 
     /// <summary>
-    /// Sets range metadata on the most recently added option.
+    /// Sets defaults for logical command values by ID.
+    /// </summary>
+    /// <param name="defaults">The logical value IDs and their default values.</param>
+    /// <returns>The current builder.</returns>
+    public CommandBuilder Defaults(params (string Id, object? Value)[] defaults)
+    {
+        if (defaults is null) throw new ArgumentNullException(nameof(defaults));
+        foreach ((string id, object? value) in defaults)
+            _defaults.Add((ValidateName(id, nameof(defaults)), value));
+        _lastArgument = null;
+        return this;
+    }
+
+    /// <summary>
+    /// Sets range metadata on the most recently added positional argument or option.
     /// </summary>
     /// <param name="minimum">The inclusive minimum value metadata.</param>
     /// <param name="maximum">The inclusive maximum value metadata.</param>
     /// <returns>The current builder.</returns>
     public CommandBuilder Range(object? minimum, object? maximum)
     {
-        OptionDraft option = RequireLastOption();
-        option.RangeMinimum = minimum;
-        option.RangeMaximum = maximum;
-        _lastValueMember = option;
+        ValueMemberDraft member = RequireLastValueMember();
+        member.RangeMinimum = minimum;
+        member.RangeMaximum = maximum;
         return this;
     }
 
     /// <summary>
-    /// Sets allowed value metadata on the most recently added option.
+    /// Sets allowed value metadata on the most recently added positional argument or option.
     /// </summary>
     /// <param name="values">The allowed value metadata.</param>
     /// <returns>The current builder.</returns>
     public CommandBuilder AllowedValues(params object?[] values)
     {
-        RequireLastOption().AllowedValues = values is null
+        RequireLastValueMember().AllowedValues = values is null
             ? throw new ArgumentNullException(nameof(values))
             : new List<object?>(values);
-        _lastValueMember = _lastOption;
         return this;
     }
 
     /// <summary>
-    /// Enables autocomplete suggestions from the allowed values of the most recently added option.
+    /// Enables autocomplete suggestions from the allowed values of the most recently added positional argument or option.
     /// </summary>
     /// <returns>The current builder.</returns>
     public CommandBuilder SuggestAllowedValues()
     {
-        RequireLastOption().SuggestAllowedValues = true;
-        _lastValueMember = _lastOption;
+        RequireLastValueMember().SuggestAllowedValues = true;
         return this;
     }
 
@@ -194,7 +208,6 @@ public sealed class CommandBuilder
             ValidateName(name, nameof(name)),
             message ?? throw new ArgumentNullException(nameof(message)),
             state => predicate((TState)state!)));
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -204,7 +217,6 @@ public sealed class CommandBuilder
     public CommandBuilder RequirePermission(string permission)
     {
         _requiredPermissions.Add(PermissionPath.ValidateName(permission, nameof(permission)));
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -234,7 +246,6 @@ public sealed class CommandBuilder
         }
 
         _requiredAnyPermissionGroups.Add(copy.AsReadOnly());
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -244,7 +255,6 @@ public sealed class CommandBuilder
     public CommandBuilder AvailableWhen(Func<CommandAvailabilityContext, CommandAvailabilityResult> check)
     {
         _availabilityChecks.Add(check ?? throw new ArgumentNullException(nameof(check)));
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -256,7 +266,6 @@ public sealed class CommandBuilder
     public CommandBuilder EchoInput()
     {
         _echoInput = true;
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -268,7 +277,6 @@ public sealed class CommandBuilder
     public CommandBuilder DoNotEchoInput()
     {
         _echoInput = false;
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -281,7 +289,6 @@ public sealed class CommandBuilder
     public CommandBuilder SuccessOutputInline(string text)
     {
         _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Inline(text)));
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -294,7 +301,6 @@ public sealed class CommandBuilder
     public CommandBuilder SuccessOutputInline(ConsoleText content)
     {
         _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Inline(content)));
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -307,7 +313,6 @@ public sealed class CommandBuilder
     public CommandBuilder SuccessOutputBlock(string text)
     {
         _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Block(text)));
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -320,7 +325,6 @@ public sealed class CommandBuilder
     public CommandBuilder SuccessOutputBlock(ConsoleText content)
     {
         _successOutputs.Add(new CommandSuccessOutputDefinition(CommandOutput.Block(content)));
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -338,7 +342,6 @@ public sealed class CommandBuilder
         }
 
         _handler = handler ?? throw new ArgumentNullException(nameof(handler));
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -353,7 +356,6 @@ public sealed class CommandBuilder
     {
         UseStateType(typeof(TState));
         _handler = handler ?? throw new ArgumentNullException(nameof(handler));
-        _lastOption = null;
         _lastValueMember = null;
         return this;
     }
@@ -372,6 +374,7 @@ public sealed class CommandBuilder
         }
 
         ValidateUniqueMemberNames();
+        ValidateValueIds();
 
         return new CommandDefinition(
             _path,
@@ -380,26 +383,34 @@ public sealed class CommandBuilder
             _arguments.ConvertAll(x => new CommandArgumentDefinition(
                 x.Property.Name,
                 x.Property.PropertyType,
+                x.Id,
                 x.Name,
                 x.Description,
-                x.ValueCandidateProvider)).AsReadOnly(),
+                x.ValueCandidateProvider,
+                x.IsOptional,
+                NormalizeRangeValue(x.RangeMinimum, x.RangeMaximum, x.Property.PropertyType, "minimum", x.Name),
+                NormalizeRangeValue(x.RangeMaximum, x.RangeMinimum, x.Property.PropertyType, "maximum", x.Name),
+                NormalizeAllowedValues(x.AllowedValues, x.Property.PropertyType, x.Name).AsReadOnly(),
+                x.SuggestAllowedValues)).AsReadOnly(),
             _flags.ConvertAll(x => new CommandFlagDefinition(
                 x.Property.Name,
+                x.Id,
                 x.Name,
                 new List<string>(x.Aliases).AsReadOnly(),
                 x.Description)).AsReadOnly(),
             _options.ConvertAll(x => new CommandOptionDefinition(
                 x.Property.Name,
                 x.Property.PropertyType,
+                x.Id,
                 x.Name,
                 new List<string>(x.Aliases).AsReadOnly(),
                 x.Description,
-                NormalizeMetadataValue(x.DefaultValue, x.Property.PropertyType, "default value", x.Name, allowNull: true),
                 NormalizeRangeValue(x.RangeMinimum, x.RangeMaximum, x.Property.PropertyType, "minimum", x.Name),
                 NormalizeRangeValue(x.RangeMaximum, x.RangeMinimum, x.Property.PropertyType, "maximum", x.Name),
                 NormalizeAllowedValues(x.AllowedValues, x.Property.PropertyType, x.Name).AsReadOnly(),
                 x.SuggestAllowedValues,
                 x.ValueCandidateProvider)).AsReadOnly(),
+            BuildDefaults(),
             new List<CommandConstraintDefinition>(_constraints).AsReadOnly(),
             new List<string>(_requiredPermissions).AsReadOnly(),
             new List<IReadOnlyList<string>>(_requiredAnyPermissionGroups).AsReadOnly(),
@@ -482,14 +493,109 @@ public sealed class CommandBuilder
         _stateType = stateType;
     }
 
-    private OptionDraft RequireLastOption()
-    {
-        return _lastOption ?? throw new InvalidOperationException("Option metadata must follow an option definition.");
-    }
-
     private ValueMemberDraft RequireLastValueMember()
     {
         return _lastValueMember ?? throw new InvalidOperationException("Value candidate metadata must follow a positional argument or option definition.");
+    }
+
+    private IReadOnlyDictionary<string, object?> BuildDefaults()
+    {
+        var schema = new Dictionary<string, (Type Type, bool RequiredArgument, bool Flag)>(StringComparer.Ordinal);
+        foreach (ArgumentDraft argument in _arguments)
+        {
+            schema[argument.Id] = (argument.Property.PropertyType, !argument.IsOptional, false);
+        }
+
+        foreach (OptionDraft option in _options)
+        {
+            if (!schema.ContainsKey(option.Id)) schema[option.Id] = (option.Property.PropertyType, false, false);
+        }
+
+        foreach (FlagDraft flag in _flags)
+        {
+            schema[flag.Id] = (typeof(bool), false, true);
+        }
+
+        var defaults = new Dictionary<string, object?>(StringComparer.Ordinal);
+        foreach ((string id, object? value) in _defaults)
+        {
+            if (!schema.TryGetValue(id, out var entry))
+            {
+                throw new InvalidOperationException($"Default references unknown value ID '{id}'.");
+            }
+
+            if (entry.Flag)
+            {
+                throw new InvalidOperationException($"Flags cannot have defaults (ID '{id}').");
+            }
+
+            if (entry.RequiredArgument)
+            {
+                throw new InvalidOperationException($"Required positional arguments cannot have defaults (ID '{id}').");
+            }
+
+            if (defaults.ContainsKey(id))
+            {
+                throw new InvalidOperationException($"Duplicate default for value ID '{id}'.");
+            }
+
+            defaults.Add(id, NormalizeMetadataValue(value, entry.Type, "default value", id, allowNull: AllowsNull(entry.Type)));
+        }
+
+        return new System.Collections.ObjectModel.ReadOnlyDictionary<string, object?>(defaults);
+    }
+
+    private void ValidateValueIds()
+    {
+        for (int i = 0; i < _arguments.Count; i++)
+        {
+            if (_arguments[i].IsOptional && i != _arguments.Count - 1)
+            {
+                throw new InvalidOperationException("An optional positional argument must be the final positional argument.");
+            }
+        }
+
+        var groups = new Dictionary<string, List<(PropertyInfo Property, string Kind, bool Optional)>>(StringComparer.Ordinal);
+        void Add(string id, PropertyInfo property, string kind, bool optional)
+        {
+            if (!groups.TryGetValue(id, out List<(PropertyInfo, string, bool)>? group))
+            {
+                groups.Add(id, group = new List<(PropertyInfo, string, bool)>());
+            }
+
+            group.Add((property, kind, optional));
+        }
+
+        foreach (ArgumentDraft argument in _arguments)
+        {
+            Add(argument.Id, argument.Property, "argument", argument.IsOptional);
+        }
+
+        foreach (FlagDraft flag in _flags)
+        {
+            Add(flag.Id, flag.Property, "flag", false);
+        }
+
+        foreach (OptionDraft option in _options)
+        {
+            Add(option.Id, option.Property, "option", false);
+        }
+
+        foreach (KeyValuePair<string, List<(PropertyInfo Property, string Kind, bool Optional)>> pair in groups)
+        {
+            if (pair.Value.Count <= 1)
+            {
+                continue;
+            }
+
+            bool allowedPair = pair.Value.Count == 2 && pair.Value.Exists(x => x.Kind == "argument" && x.Optional) && pair.Value.Exists(x => x.Kind == "option");
+            if (!allowedPair
+                || pair.Value[0].Property.PropertyType != pair.Value[1].Property.PropertyType
+                || !pair.Value[0].Property.Equals(pair.Value[1].Property))
+            {
+                throw new InvalidOperationException($"Value ID '{pair.Key}' can only be shared by one optional argument and one option targeting the same property and type.");
+            }
+        }
     }
 
     private void ValidateUniqueMemberNames()
@@ -529,14 +635,14 @@ public sealed class CommandBuilder
 
         if (value is null || otherValue is null)
         {
-            throw new InvalidOperationException($"Option '{optionName}' range metadata must include both minimum and maximum values.");
+            throw new InvalidOperationException($"Binding '{optionName}' range metadata must include both minimum and maximum values.");
         }
 
         object normalized = NormalizeMetadataValue(value, targetType, $"range {label}", optionName, allowNull: false)!;
         object normalizedOther = NormalizeMetadataValue(otherValue, targetType, $"range {label}", optionName, allowNull: false)!;
         if (CompareMetadataValues(normalized, normalizedOther, optionName) > 0 && label == "minimum")
         {
-            throw new InvalidOperationException($"Option '{optionName}' range minimum cannot be greater than the maximum.");
+            throw new InvalidOperationException($"Binding '{optionName}' range minimum cannot be greater than the maximum.");
         }
 
         return normalized;
@@ -562,7 +668,7 @@ public sealed class CommandBuilder
                 return null;
             }
 
-            throw new InvalidOperationException($"Option '{optionName}' {label} metadata cannot be null.");
+            throw new InvalidOperationException($"Binding '{optionName}' {label} metadata cannot be null.");
         }
 
         Type conversionType = Nullable.GetUnderlyingType(targetType) ?? targetType;
@@ -587,7 +693,7 @@ public sealed class CommandBuilder
         }
         catch (Exception ex) when (ex is ArgumentException || ex is FormatException || ex is InvalidCastException || ex is OverflowException)
         {
-            throw new InvalidOperationException($"Option '{optionName}' {label} metadata must be compatible with {conversionType.Name}.", ex);
+            throw new InvalidOperationException($"Binding '{optionName}' {label} metadata must be compatible with {conversionType.Name}.", ex);
         }
     }
 
@@ -595,7 +701,7 @@ public sealed class CommandBuilder
     {
         if (left is not IComparable comparable)
         {
-            throw new InvalidOperationException($"Option '{optionName}' range metadata must be comparable.");
+            throw new InvalidOperationException($"Binding '{optionName}' range metadata must be comparable.");
         }
 
         try
@@ -604,7 +710,7 @@ public sealed class CommandBuilder
         }
         catch (ArgumentException ex)
         {
-            throw new InvalidOperationException($"Option '{optionName}' range metadata values must be comparable with each other.", ex);
+            throw new InvalidOperationException($"Binding '{optionName}' range metadata values must be comparable with each other.", ex);
         }
     }
 
@@ -624,18 +730,25 @@ public sealed class CommandBuilder
     private abstract class ValueMemberDraft
     {
         public Func<CommandAutocompleteContext, IEnumerable<string>>? ValueCandidateProvider { get; set; }
+        public object? RangeMinimum { get; set; }
+        public object? RangeMaximum { get; set; }
+        public List<object?> AllowedValues { get; set; } = new List<object?>();
+        public bool SuggestAllowedValues { get; set; }
     }
 
     private sealed class ArgumentDraft : ValueMemberDraft
     {
-        public ArgumentDraft(PropertyInfo property, string name, string description)
+        public ArgumentDraft(PropertyInfo property, string id, string name, string description)
         {
             Property = property;
+            Id = id;
             Name = name;
             Description = description;
         }
 
         public PropertyInfo Property { get; }
+        public string Id { get; }
+        public bool IsOptional { get; set; }
 
         public string Name { get; }
 
@@ -644,7 +757,7 @@ public sealed class CommandBuilder
 
     private sealed class FlagDraft
     {
-        public FlagDraft(PropertyInfo property, string name, List<string> aliases, string description)
+        public FlagDraft(PropertyInfo property, string id, string name, List<string> aliases, string description)
         {
             if (property.PropertyType != typeof(bool))
             {
@@ -652,12 +765,14 @@ public sealed class CommandBuilder
             }
 
             Property = property;
+            Id = id;
             Name = name;
             Aliases = aliases;
             Description = description;
         }
 
         public PropertyInfo Property { get; }
+        public string Id { get; }
 
         public string Name { get; }
 
@@ -668,15 +783,17 @@ public sealed class CommandBuilder
 
     private sealed class OptionDraft : ValueMemberDraft
     {
-        public OptionDraft(PropertyInfo property, string name, List<string> aliases, string description)
+        public OptionDraft(PropertyInfo property, string id, string name, List<string> aliases, string description)
         {
             Property = property;
+            Id = id;
             Name = name;
             Aliases = aliases;
             Description = description;
         }
 
         public PropertyInfo Property { get; }
+        public string Id { get; }
 
         public string Name { get; }
 
@@ -684,14 +801,5 @@ public sealed class CommandBuilder
 
         public string Description { get; }
 
-        public object? DefaultValue { get; set; }
-
-        public object? RangeMinimum { get; set; }
-
-        public object? RangeMaximum { get; set; }
-
-        public List<object?> AllowedValues { get; set; } = new List<object?>();
-
-        public bool SuggestAllowedValues { get; set; }
     }
 }

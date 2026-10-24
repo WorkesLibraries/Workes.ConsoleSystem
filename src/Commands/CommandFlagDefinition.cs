@@ -10,10 +10,11 @@ public sealed class CommandFlagDefinition : CommandMemberDefinition
 {
     internal CommandFlagDefinition(
         string propertyName,
+        string id,
         string name,
         IReadOnlyList<string> aliases,
         string description)
-        : base(propertyName, typeof(bool), name, aliases, description, null)
+        : base(propertyName, typeof(bool), id, name, aliases, description, null)
     {
     }
 }

@@ -64,6 +64,8 @@ internal static class CommandParser
         var argumentValues = new Dictionary<string, object?>(StringComparer.Ordinal);
         var flagValues = new Dictionary<string, object?>(StringComparer.Ordinal);
         var optionValues = new Dictionary<string, object?>(StringComparer.Ordinal);
+        var explicitValues = new Dictionary<string, object?>(StringComparer.Ordinal);
+        var resolvedValues = new Dictionary<string, object?>(StringComparer.Ordinal);
         var propertyValues = new Dictionary<string, object?>(comparer);
         var seenNamedMembers = new HashSet<string>(comparer);
 
@@ -72,8 +74,7 @@ internal static class CommandParser
         bool namedMembersStarted = false;
         foreach (CommandFlagDefinition flag in command.Flags)
         {
-            flagValues.Add(flag.Name, false);
-            propertyValues[flag.PropertyName] = false;
+            resolvedValues[flag.Id] = false;
         }
 
         while (tokenIndex < tokens.Count)
@@ -89,6 +90,12 @@ internal static class CommandParser
                 }
 
                 CommandArgumentDefinition argument = command.Arguments[argumentIndex];
+                if (explicitValues.ContainsKey(argument.Id))
+                {
+                    return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                        ConsoleFailureCodes.CommandMemberDuplicate,
+                        $"Value '{argument.Id}' was supplied through more than one input binding.", source: argument.Id), token.Start, token.Length);
+                }
                 if (!TryConvert(token.Text, argument.ValueType, options, out object? convertedArgument, out string? message))
                 {
                     return CommandParseResult.Failed(input, ConsoleFailures.CommandBinding(
@@ -98,13 +105,14 @@ internal static class CommandParser
                 }
 
                 argumentValues.Add(argument.Name, convertedArgument);
-                propertyValues[argument.PropertyName] = convertedArgument;
+                explicitValues.Add(argument.Id, convertedArgument);
+                resolvedValues[argument.Id] = convertedArgument;
                 argumentIndex++;
                 tokenIndex++;
                 continue;
             }
 
-            if (!options.AllowInterleavedOptions && argumentIndex < command.Arguments.Count)
+            if (!options.AllowInterleavedOptions && argumentIndex < command.Arguments.Count && !command.Arguments[argumentIndex].IsOptional)
             {
                 CommandArgumentDefinition missingArgument = command.Arguments[argumentIndex];
                 return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
@@ -156,8 +164,17 @@ internal static class CommandParser
                         source: flag.Name), token.Start, token.Length);
                 }
 
+                if (explicitValues.ContainsKey(flag.Id))
+                {
+                    return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                        ConsoleFailureCodes.CommandMemberDuplicate,
+                        $"Value '{flag.Id}' was supplied more than once.",
+                        source: flag.Id), token.Start, token.Length);
+                }
+
                 flagValues[flag.Name] = true;
-                propertyValues[flag.PropertyName] = true;
+                explicitValues[flag.Id] = true;
+                resolvedValues[flag.Id] = true;
                 tokenIndex++;
                 continue;
             }
@@ -173,6 +190,13 @@ internal static class CommandParser
                     ConsoleFailureCodes.CommandMemberDuplicate,
                     $"Option '{option.Name}' was provided more than once.",
                     source: option.Name), token.Start, token.Length);
+            }
+
+            if (explicitValues.ContainsKey(option.Id))
+            {
+                return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
+                    ConsoleFailureCodes.CommandMemberDuplicate,
+                    $"Value '{option.Id}' was supplied through more than one input binding.", source: option.Id), token.Start, token.Length);
             }
 
             if (!TryReadOptionValue(input, tokens, tokenIndex, inlineValue, option, options, out string? rawValue, out int consumedTokens, out CommandParseResult? failure))
@@ -192,11 +216,12 @@ internal static class CommandParser
             }
 
             optionValues.Add(option.Name, convertedOption);
-            propertyValues[option.PropertyName] = convertedOption;
+            explicitValues.Add(option.Id, convertedOption);
+            resolvedValues[option.Id] = convertedOption;
             tokenIndex += consumedTokens;
         }
 
-        if (argumentIndex < command.Arguments.Count)
+        if (argumentIndex < command.Arguments.Count && !command.Arguments[argumentIndex].IsOptional)
         {
             CommandArgumentDefinition missingArgument = command.Arguments[argumentIndex];
             return CommandParseResult.Failed(input, ConsoleFailures.CommandParsing(
@@ -205,18 +230,18 @@ internal static class CommandParser
                 source: missingArgument.Name), input.Length, 0);
         }
 
+        foreach (CommandArgumentDefinition argument in command.Arguments)
+        {
+            ResolveValue(command, argument.Id, argument.ValueType, argument.PropertyName, explicitValues, resolvedValues, propertyValues);
+        }
         foreach (CommandOptionDefinition option in command.Options)
         {
-            if (optionValues.ContainsKey(option.Name))
-            {
-                continue;
-            }
+            ResolveValue(command, option.Id, option.ValueType, option.PropertyName, explicitValues, resolvedValues, propertyValues);
+        }
 
-            object? value = option.DefaultValue is not null
-                ? NormalizeDefaultValue(option.DefaultValue, option.ValueType, options)
-                : GetDefaultValue(option.ValueType);
-            optionValues.Add(option.Name, value);
-            propertyValues[option.PropertyName] = value;
+        foreach (CommandFlagDefinition flag in command.Flags)
+        {
+            propertyValues[flag.PropertyName] = resolvedValues[flag.Id];
         }
 
         if (!TryCreateState(command.StateType, propertyValues, options.IsCaseSensitive, out object? state, out string? stateMessage))
@@ -231,9 +256,31 @@ internal static class CommandParser
             input,
             command,
             state,
+            new ReadOnlyDictionary<string, object?>(resolvedValues),
             new ReadOnlyDictionary<string, object?>(argumentValues),
             new ReadOnlyDictionary<string, object?>(flagValues),
             new ReadOnlyDictionary<string, object?>(optionValues)));
+    }
+
+    private static void ResolveValue(
+        CommandDefinition command, string id, Type type, string propertyName,
+        IReadOnlyDictionary<string, object?> explicitValues, IDictionary<string, object?> resolvedValues,
+        IDictionary<string, object?> propertyValues)
+    {
+        if (explicitValues.TryGetValue(id, out object? explicitValue))
+        {
+            resolvedValues[id] = explicitValue;
+        }
+        else if (command.Defaults.TryGetValue(id, out object? configuredDefault))
+        {
+            resolvedValues[id] = configuredDefault;
+        }
+        else if (!resolvedValues.ContainsKey(id))
+        {
+            resolvedValues[id] = GetDefaultValue(type);
+        }
+
+        propertyValues[propertyName] = resolvedValues[id];
     }
 
     private static bool TryReadOptionValue(
@@ -509,21 +556,6 @@ internal static class CommandParser
     private static string FormatExpectedBooleanLiterals(BooleanLiteralOptions options)
     {
         return string.Join(", ", options.TrueLiterals) + ", " + string.Join(", ", options.FalseLiterals);
-    }
-
-    private static object? NormalizeDefaultValue(object defaultValue, Type targetType, CommandParsingOptions options)
-    {
-        if (defaultValue is string rawDefault)
-        {
-            return TryConvert(rawDefault, targetType, options, out object? converted, out _)
-                ? converted
-                : defaultValue;
-        }
-
-        Type conversionType = Nullable.GetUnderlyingType(targetType) ?? targetType;
-        return conversionType.IsInstanceOfType(defaultValue)
-            ? defaultValue
-            : Convert.ChangeType(defaultValue, conversionType, CultureInfo.InvariantCulture);
     }
 
     private static bool IsPrefixedName(CommandToken token, string prefix)

@@ -632,3 +632,21 @@ Prepare version 0.4.0 as the next release target. Update package metadata, insta
 #### Consequences
 
 The project version and documented installation target become 0.4.0. Changelog content remains marked unreleased until publication. The published 0.3.0 artifact remains unchanged.
+
+### D-042: Resolve Command Values By ID With One Optional Positional Source
+
+#### Context
+
+The command model needs optional positional input and alternate ways to supply the same state value without making arguments, flags, and options separate state concepts. This also provides a stable basis for the configurable help command planned next.
+
+#### Decision
+
+Require an ordinal string ID on each argument, flag, and option binding. IDs identify logical state values independently from input names. Allow at most one optional positional argument, and require it to be last. A value ID may be shared only by that optional argument and one option when both bind the same property and type; supplying both sources is a parse failure. Resolve values from explicit input, a bulk ID default, then `default(T)`. Flags remain false when absent and cannot have defaults. Expose all resolved values in `BoundCommand.Values`, and keep the argument, flag, and option maps limited to values explicitly supplied by those sources. Binding-specific validation and autocomplete remain attached to each source; typed state constraints use the final resolved state. Omitted optional positionals do not block named members when `AllowInterleavedOptions` is false.
+
+#### Reasoning
+
+IDs let command state remain one coherent model while making source choice explicit. A single trailing optional positional value supports common command syntax without making positional parsing ambiguous. Sharing an ID with one option provides a clear alternate input path and conflict rule. Bulk defaults and the resolved `Values` map distinguish submitted input from resolved state.
+
+#### Consequences
+
+This is an intentional pre-1.0 public API change. Existing command definitions must add IDs and migrate option-local defaults to `Defaults(...)`. The help command remains a later stage and should build on these command definitions without exposing ContentSystem types.

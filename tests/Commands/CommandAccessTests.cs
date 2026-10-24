@@ -235,7 +235,7 @@ public sealed class CommandAccessTests
         var console = new ConsoleManager(options);
         console.RegisterCommand(new CommandBuilder("admin.kick")
             .RequirePermission("admin.kick")
-            .Flag<KickState>(state => state.Silent, "silent")
+            .Flag<KickState>(state => state.Silent, "silent", "silent")
             .Execute<KickState>((_, _) => CommandResult.Success())
             .Build());
 

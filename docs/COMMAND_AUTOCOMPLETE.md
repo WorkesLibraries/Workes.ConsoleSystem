@@ -36,15 +36,15 @@ Candidates are returned in command registration and schema order. The UI chooses
 
 The manager suggests matching command paths, then the unused flag names and option names for the matched command. Named candidates include the configured `FlagAndOptionPrefix`; aliases are suggested as their own candidates. A flag or option already supplied before the cursor is omitted.
 
-Positional argument values and option values can be suggested by a provider attached to that schema member. For options, `AllowedValues(...)` remains validation-only unless followed by `SuggestAllowedValues()`. This opt-in suggests the allowed set; an explicit `ValueCandidates(...)` provider takes precedence and can return a chosen subset or dynamic candidates.
+Positional argument values and option values can be suggested by a provider attached to that binding. For either binding type, `AllowedValues(...)` remains validation-only unless followed by `SuggestAllowedValues()`. This opt-in suggests that binding's allowed set; an explicit `ValueCandidates(...)` provider takes precedence and can return a chosen subset or dynamic candidates. A shared optional argument/option ID can have different metadata and candidates for each input source. Once one source supplies the ID, autocomplete does not offer the alternate source.
 
 ```csharp
 var command = new CommandBuilder("player.give")
-    .Argument<GiveState>(state => state.Player, "player")
+    .Argument<GiveState>(state => state.Player, id: "player", name: "player")
         .ValueCandidates(context => FindPlayers(context.PartialValue))
-    .Argument<GiveState>(state => state.Item, "item")
+    .Argument<GiveState>(state => state.Item, id: "item", name: "item")
         .ValueCandidates(context => new[] { "wood", "stone", "gold" })
-    .Option<GiveState>(state => state.Amount, "amount", "a")
+    .Option<GiveState>(state => state.Amount, id: "amount", name: "amount", aliases: new[] { "a" })
         .ValueCandidates(context => new[] { "1", "10", "100" })
     .Execute<GiveState>((context, state) => CommandResult.Success())
     .Build();
@@ -56,11 +56,11 @@ internal sealed record GiveState(string Player, string Item, int Amount);
 
 Providers are synchronous and run when a query reaches their value position. They receive `CommandAutocompleteContext` with the full `Input`, `CursorIndex`, current `PartialValue`, matched `Command`, active argument or option `Member`, and token texts before the cursor. This lets a provider use earlier input or current application state to build suggestions. A provider's exception propagates to the caller; autocomplete does not turn provider errors into command execution failures. Null candidate strings are ignored.
 
-For a fixed option value set, opt in without repeating the values in a provider:
+For a fixed argument or option value set, opt in without repeating the values in a provider:
 
 ```csharp
 var mode = new CommandBuilder("game.mode")
-    .Option<ModeState>(state => state.Mode, "mode")
+    .Option<ModeState>(state => state.Mode, id: "mode", name: "mode")
         .AllowedValues("creative", "survival", "spectator")
         .SuggestAllowedValues()
     .Execute<ModeState>((context, state) => CommandResult.Success())

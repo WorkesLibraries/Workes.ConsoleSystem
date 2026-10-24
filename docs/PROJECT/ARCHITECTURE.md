@@ -54,11 +54,13 @@ Snapshots are an available future integration point, not a required first implem
 
 ## Command And Presentation Flow
 
-Commands use one schema model. Required positional arguments represent core input; flags and named options represent optional state. Simple commands should not need a state type, while complex commands should prefer small immutable typed state records.
+Commands use one schema model built from logical value IDs and input bindings. Required positional arguments, flags, and named options all bind values into one typed state; an ID can be shared only between one optional trailing positional argument and one option targeting the same property and type. Resolved values come from explicit input, then a bulk ID default, then `default(T)`. Simple commands should not need a state type, while complex commands should prefer small immutable typed state records.
 
 Normal command submission is manager-owned and runs parsing, access checks, validation, handler invocation, and output/failure recording as one workflow. Parsing, validation, and autocomplete are also available as side-effect-free inspection operations, although autocomplete may invoke the permission provider and availability checks to filter command paths. Permission and availability checks are part of the 0.4.0 release target and are not in published 0.3.0. Expected command rejection is represented through the package's structured failure/result model; programmer and setup misuse use standard .NET exceptions.
 
 The parser and autocomplete share `CommandTokenizer`. Parsing rejects unclosed quoted input; autocomplete accepts it while the user is editing. Autocomplete reads registered command definitions, returns candidates and replacement ranges, and invokes optional synchronous value providers without writing history or executing commands.
+
+`BoundCommand.Values` is the resolved logical-value view keyed by ID. Its `Arguments`, `Flags`, and `Options` maps retain only explicitly supplied source bindings. Binding-level rules and autocomplete belong to the specific positional or option binding; typed state constraints see the final resolved state. Optional positional input is limited to one final argument so it does not make later positional interpretation ambiguous.
 
 Console entries and semantic text remain engine-neutral. The host UI chooses how to render entry types and semantic segments. ConsoleSystem does not own a game engine, UI framework, markup language, theme, or rich-text conversion.
 

@@ -37,9 +37,9 @@ public sealed class CommandExecutionTests
         RestartState? captured = null;
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
-            .Argument<RestartState>(x => x.Reason, "reason")
-            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players")
-            .Option<RestartState>(x => x.DelaySeconds, "delay")
+            .Argument<RestartState>(x => x.Reason, "reason", "reason")
+            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay")
             .Execute<RestartState>((ctx, state) =>
             {
                 captured = state;
@@ -59,7 +59,7 @@ public sealed class CommandExecutionTests
         int invocations = 0;
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("counter.add")
-            .Argument<CountState>(x => x.Amount, "amount")
+            .Argument<CountState>(x => x.Amount, "amount", "amount")
             .Constraint<CountState>("positive", "Amount must be positive.", state => state.Amount > 0)
             .Execute<CountState>((ctx, state) =>
             {
@@ -95,7 +95,7 @@ public sealed class CommandExecutionTests
         bool invoked = false;
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("counter.add")
-            .Argument<CountState>(x => x.Amount, "amount")
+            .Argument<CountState>(x => x.Amount, "amount", "amount")
             .Constraint<CountState>("positive", "Amount must be positive.", state => state.Amount > 0)
             .Execute<CountState>((ctx, state) =>
             {
@@ -153,7 +153,7 @@ public sealed class CommandExecutionTests
         var originalException = new InvalidOperationException("Typed handler failed.");
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("explode")
-            .Argument<ExplodeState>(x => x.Value, "value")
+            .Argument<ExplodeState>(x => x.Value, "value", "value")
             .Execute<ExplodeState>((ctx, state) => throw originalException)
             .Build());
 
@@ -215,7 +215,7 @@ public sealed class CommandExecutionTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("counter.add")
-            .Argument<CountState>(x => x.Amount, "amount")
+            .Argument<CountState>(x => x.Amount, "amount", "amount")
             .Constraint<CountState>("positive", "Amount must be positive.", state => state.Amount > 0)
             .Execute<CountState>((ctx, state) => CommandResult.Success())
             .Build());

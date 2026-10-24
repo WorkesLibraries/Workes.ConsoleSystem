@@ -13,9 +13,29 @@ internal static class CommandValidator
             throw new ArgumentNullException(nameof(command));
         }
 
+        foreach (CommandArgumentDefinition argument in command.Definition.Arguments)
+        {
+            if (!command.Arguments.TryGetValue(argument.Name, out object? value)) continue;
+            ConsoleFailure? rangeFailure = ValidateRange(argument, value);
+            if (rangeFailure is not null)
+            {
+                return CommandValidationResult.Failed(command, rangeFailure);
+            }
+
+            ConsoleFailure? allowedValuesFailure = ValidateAllowedValues(argument, value);
+            if (allowedValuesFailure is not null)
+            {
+                return CommandValidationResult.Failed(command, allowedValuesFailure);
+            }
+        }
+
         foreach (CommandOptionDefinition option in command.Definition.Options)
         {
-            object? value = command.Options[option.Name];
+            if (!command.Options.TryGetValue(option.Name, out object? value))
+            {
+                continue;
+            }
+
             ConsoleFailure? rangeFailure = ValidateRange(option, value);
             if (rangeFailure is not null)
             {
@@ -61,7 +81,7 @@ internal static class CommandValidator
         return CommandValidationResult.Succeeded(command);
     }
 
-    private static ConsoleFailure? ValidateRange(CommandOptionDefinition option, object? value)
+    private static ConsoleFailure? ValidateRange(CommandMemberDefinition option, object? value)
     {
         if (option.RangeMinimum is null && option.RangeMaximum is null)
         {
@@ -94,7 +114,7 @@ internal static class CommandValidator
         return null;
     }
 
-    private static ConsoleFailure? ValidateAllowedValues(CommandOptionDefinition option, object? value)
+    private static ConsoleFailure? ValidateAllowedValues(CommandMemberDefinition option, object? value)
     {
         if (option.AllowedValues.Count == 0)
         {

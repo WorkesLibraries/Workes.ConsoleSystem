@@ -69,9 +69,9 @@ public sealed class CommandParsingTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("give")
-            .Argument<GiveState>(x => x.Player, "player")
-            .Argument<GiveState>(x => x.Item, "item")
-            .Argument<GiveState>(x => x.Amount, "amount")
+            .Argument<GiveState>(x => x.Player, "player", "player")
+            .Argument<GiveState>(x => x.Item, "item", "item")
+            .Argument<GiveState>(x => x.Amount, "amount", "amount")
             .Execute<GiveState>((ctx, state) => CommandResult.Success())
             .Build());
 
@@ -233,18 +233,19 @@ public sealed class CommandParsingTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("player.teleport")
-            .Argument<TeleportState>(x => x.Player, "player")
-            .Option<TeleportState>(x => x.Zone, "zone")
-            .Default("spawn")
-            .Option<TeleportState>(x => x.Height, "height")
+            .Argument<TeleportState>(x => x.Player, "player", "player")
+            .Option<TeleportState>(x => x.Zone, "zone", "zone")
+            .Defaults(("zone", "spawn"))
+            .Option<TeleportState>(x => x.Height, "height", "height")
             .Execute<TeleportState>((ctx, state) => CommandResult.Success())
             .Build());
 
         CommandParseResult result = console.ParseCommand("player.teleport Anthony5172");
 
         Assert.That(result.IsSuccess, Is.True);
-        Assert.That(result.Command!.Options["zone"], Is.EqualTo("spawn"));
-        Assert.That(result.Command.Options["height"], Is.EqualTo(0));
+        Assert.That(result.Command!.Options, Is.Empty);
+        Assert.That(result.Command.Values["zone"], Is.EqualTo("spawn"));
+        Assert.That(result.Command.Values["height"], Is.EqualTo(0));
         Assert.That(result.Command.GetState<TeleportState>()!.Zone, Is.EqualTo("spawn"));
     }
 
@@ -253,10 +254,10 @@ public sealed class CommandParsingTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("configure")
-            .Option<ConfigureState>(x => x.Enabled, "enabled")
-            .Option<ConfigureState>(x => x.Count, "count")
-            .Option<ConfigureState>(x => x.Mode, "mode")
-            .Option<ConfigureState>(x => x.OptionalAmount, "amount")
+            .Option<ConfigureState>(x => x.Enabled, "enabled", "enabled")
+            .Option<ConfigureState>(x => x.Count, "count", "count")
+            .Option<ConfigureState>(x => x.Mode, "mode", "mode")
+            .Option<ConfigureState>(x => x.OptionalAmount, "amount", "amount")
             .Execute<ConfigureState>((ctx, state) => CommandResult.Success())
             .Build());
 
@@ -285,10 +286,10 @@ public sealed class CommandParsingTests
             }
         });
         console.RegisterCommand(new CommandBuilder("configure")
-            .Option<ConfigureState>(x => x.Enabled, "enabled")
-            .Option<ConfigureState>(x => x.Count, "count")
-            .Option<ConfigureState>(x => x.Mode, "mode")
-            .Option<ConfigureState>(x => x.OptionalAmount, "amount")
+            .Option<ConfigureState>(x => x.Enabled, "enabled", "enabled")
+            .Option<ConfigureState>(x => x.Count, "count", "count")
+            .Option<ConfigureState>(x => x.Mode, "mode", "mode")
+            .Option<ConfigureState>(x => x.OptionalAmount, "amount", "amount")
             .Execute<ConfigureState>((ctx, state) => CommandResult.Success())
             .Build());
 
@@ -313,10 +314,10 @@ public sealed class CommandParsingTests
             }
         });
         console.RegisterCommand(new CommandBuilder("configure")
-            .Option<ConfigureState>(x => x.Enabled, "enabled")
-            .Option<ConfigureState>(x => x.Count, "count")
-            .Option<ConfigureState>(x => x.Mode, "mode")
-            .Option<ConfigureState>(x => x.OptionalAmount, "amount")
+            .Option<ConfigureState>(x => x.Enabled, "enabled", "enabled")
+            .Option<ConfigureState>(x => x.Count, "count", "count")
+            .Option<ConfigureState>(x => x.Mode, "mode", "mode")
+            .Option<ConfigureState>(x => x.OptionalAmount, "amount", "amount")
             .Execute<ConfigureState>((ctx, state) => CommandResult.Success())
             .Build());
 
@@ -332,8 +333,8 @@ public sealed class CommandParsingTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("say")
-            .Argument<SayState>(x => x.Message, "message")
-            .Option<SayState>(x => x.Target, "target")
+            .Argument<SayState>(x => x.Message, "message", "message")
+            .Option<SayState>(x => x.Target, "target", "target")
             .Execute<SayState>((ctx, state) => CommandResult.Success())
             .Build());
 
@@ -373,8 +374,8 @@ public sealed class CommandParsingTests
     {
         var console = new ConsoleManager();
         CommandDefinition command = new CommandBuilder("server.restart")
-            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "i")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "I")
+            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "I")
             .Execute<RestartState>((ctx, state) => CommandResult.Success())
             .Build();
 
@@ -427,8 +428,8 @@ public sealed class CommandParsingTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("player.teleport")
-            .Argument<TeleportState>(x => x.Player, "player")
-            .Option<TeleportState>(x => x.Zone, "zone")
+            .Argument<TeleportState>(x => x.Player, "player", "player")
+            .Option<TeleportState>(x => x.Zone, "zone", "zone")
             .Execute<TeleportState>((ctx, state) => CommandResult.Success())
             .Build());
 
@@ -521,7 +522,7 @@ public sealed class CommandParsingTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("say")
-            .Argument<SingleMessageState>(x => x.Message, "message")
+            .Argument<SingleMessageState>(x => x.Message, "message", "message")
             .Execute<SingleMessageState>((ctx, state) => CommandResult.Success())
             .Build());
 
@@ -562,9 +563,9 @@ public sealed class CommandParsingTests
     private static CommandDefinition GiveCommand()
     {
         return new CommandBuilder("give")
-            .Argument<GiveState>(x => x.Player, "player")
-            .Argument<GiveState>(x => x.Item, "item")
-            .Argument<GiveState>(x => x.Amount, "amount")
+            .Argument<GiveState>(x => x.Player, "player", "player")
+            .Argument<GiveState>(x => x.Item, "item", "item")
+            .Argument<GiveState>(x => x.Amount, "amount", "amount")
             .Execute<GiveState>((ctx, state) => CommandResult.Success())
             .Build();
     }
@@ -572,10 +573,10 @@ public sealed class CommandParsingTests
     private static CommandDefinition RestartCommand()
     {
         return new CommandBuilder("server.restart")
-            .Argument<RestartState>(x => x.Reason, "reason")
-            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "i")
-            .Option<RestartState>(x => x.DelaySeconds, "delay", "d")
-            .Default(10)
+            .Argument<RestartState>(x => x.Reason, "reason", "reason")
+            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Defaults(("delay", 10))
             .Execute<RestartState>((ctx, state) => CommandResult.Success())
             .Build();
     }
@@ -583,10 +584,10 @@ public sealed class CommandParsingTests
     private static CommandDefinition MoveCommand()
     {
         return new CommandBuilder("move")
-            .Argument<MoveState>(x => x.Player, "player")
-            .Argument<MoveState>(x => x.Destination, "destination")
-            .Flag<MoveState>(x => x.Safe, "safe")
-            .Option<MoveState>(x => x.Reason, "reason")
+            .Argument<MoveState>(x => x.Player, "player", "player")
+            .Argument<MoveState>(x => x.Destination, "destination", "destination")
+            .Flag<MoveState>(x => x.Safe, "safe", "safe")
+            .Option<MoveState>(x => x.Reason, "reason", "reason")
             .Execute<MoveState>((ctx, state) => CommandResult.Success())
             .Build();
     }

@@ -12,6 +12,7 @@ public sealed class BoundCommand
         string input,
         CommandDefinition definition,
         object? state,
+        IReadOnlyDictionary<string, object?> values,
         IReadOnlyDictionary<string, object?> arguments,
         IReadOnlyDictionary<string, object?> flags,
         IReadOnlyDictionary<string, object?> options)
@@ -19,6 +20,7 @@ public sealed class BoundCommand
         Input = input ?? throw new ArgumentNullException(nameof(input));
         Definition = definition ?? throw new ArgumentNullException(nameof(definition));
         State = state;
+        Values = values ?? throw new ArgumentNullException(nameof(values));
         Arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
         Flags = flags ?? throw new ArgumentNullException(nameof(flags));
         Options = options ?? throw new ArgumentNullException(nameof(options));
@@ -38,6 +40,9 @@ public sealed class BoundCommand
     /// Gets the typed command state when the command has one.
     /// </summary>
     public object? State { get; }
+
+    /// <summary>Gets resolved logical values by ID, including defaults and type defaults.</summary>
+    public IReadOnlyDictionary<string, object?> Values { get; }
 
     /// <summary>
     /// Gets bound positional argument values by schema name.

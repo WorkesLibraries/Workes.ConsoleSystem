@@ -28,10 +28,10 @@ public sealed class CommandRegistrationTests
     {
         CommandDefinition command = new CommandBuilder("server.restart")
             .Description("Restart the server.")
-            .Argument<RestartCommandState>(x => x.Reason, "reason")
-            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "i")
-            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "d")
-            .Default(10)
+            .Argument<RestartCommandState>(x => x.Reason, "reason", "reason")
+            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
+            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "delay", "d")
+            .Defaults(("delay", 10))
             .Range(0, 60)
             .AllowedValues(0, 10, 30, 60)
             .Constraint<RestartCommandState>(
@@ -49,7 +49,7 @@ public sealed class CommandRegistrationTests
         Assert.That(command.Flags[0].Aliases, Is.EqualTo(new[] { "i" }));
         Assert.That(command.Options, Has.Count.EqualTo(1));
         Assert.That(command.Options[0].Name, Is.EqualTo("delay"));
-        Assert.That(command.Options[0].DefaultValue, Is.EqualTo(10));
+        Assert.That(command.Defaults["delay"], Is.EqualTo(10));
         Assert.That(command.Options[0].RangeMinimum, Is.EqualTo(0));
         Assert.That(command.Options[0].RangeMaximum, Is.EqualTo(60));
         Assert.That(command.Options[0].AllowedValues, Is.EqualTo(new object[] { 0, 10, 30, 60 }));
@@ -115,8 +115,8 @@ public sealed class CommandRegistrationTests
     public void Build_DuplicateMemberNameOrAliasThrows()
     {
         var builder = new CommandBuilder("server.restart")
-            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "i")
-            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "i")
+            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
+            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "delay", "i")
             .Execute<RestartCommandState>((ctx, state) => CommandResult.Success());
 
         Assert.Throws<InvalidOperationException>(() => builder.Build());
@@ -127,7 +127,7 @@ public sealed class CommandRegistrationTests
     {
         Assert.Throws<ArgumentException>(() =>
             new CommandBuilder("server.restart")
-                .Flag<RestartCommandState>(x => x.DelaySeconds, "delay"));
+                .Flag<RestartCommandState>(x => x.DelaySeconds, "delay", "delay"));
     }
 
     [Test]
@@ -198,7 +198,7 @@ public sealed class CommandRegistrationTests
     {
         var console = new ConsoleManager();
         CommandDefinition command = new CommandBuilder("server.restart")
-            .Flag<RestartCommandState>(x => x.IgnorePlayers, "--ignore-players")
+            .Flag<RestartCommandState>(x => x.IgnorePlayers, "--ignore-players", "--ignore-players")
             .Execute<RestartCommandState>((ctx, state) => CommandResult.Success())
             .Build();
 
@@ -217,8 +217,8 @@ public sealed class CommandRegistrationTests
         });
 
         CommandDefinition command = new CommandBuilder("server.restart")
-            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "i")
-            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "d")
+            .Flag<RestartCommandState>(x => x.IgnorePlayers, "ignore-players", "ignore-players", "i")
+            .Option<RestartCommandState>(x => x.DelaySeconds, "delay", "delay", "d")
             .Execute<RestartCommandState>((ctx, state) => CommandResult.Success())
             .Build();
 

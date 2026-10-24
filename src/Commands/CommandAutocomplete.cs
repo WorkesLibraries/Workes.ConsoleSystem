@@ -94,6 +94,7 @@ internal static class CommandAutocomplete
     {
         int argumentIndex = 0;
         var usedNamedMembers = new HashSet<string>(comparer);
+        var usedValueIds = new HashSet<string>(StringComparer.Ordinal);
         CommandOptionDefinition? pendingOption = null;
 
         for (int index = 1; index < tokens.Count; index++)
@@ -124,13 +125,14 @@ internal static class CommandAutocomplete
             {
                 if (argumentIndex < command.Arguments.Count)
                 {
+                    usedValueIds.Add(command.Arguments[argumentIndex].Id);
                     argumentIndex++;
                 }
 
                 continue;
             }
 
-            if (!options.AllowInterleavedOptions && argumentIndex < command.Arguments.Count)
+            if (!options.AllowInterleavedOptions && argumentIndex < command.Arguments.Count && !command.Arguments[argumentIndex].IsOptional)
             {
                 return Empty(input, cursorIndex, cursorIndex, 0);
             }
@@ -142,6 +144,7 @@ internal static class CommandAutocomplete
             if (flag is not null)
             {
                 usedNamedMembers.Add(flag.Name);
+                usedValueIds.Add(flag.Id);
                 continue;
             }
 
@@ -152,6 +155,7 @@ internal static class CommandAutocomplete
             }
 
             usedNamedMembers.Add(option.Name);
+            usedValueIds.Add(option.Id);
             if (memberEqualsIndex >= 0)
             {
                 continue;
@@ -191,6 +195,8 @@ internal static class CommandAutocomplete
         {
             if (argumentIndex < command.Arguments.Count)
             {
+                if (usedValueIds.Contains(command.Arguments[argumentIndex].Id))
+                    return Empty(input, cursorIndex, replacementStart, replacementLength);
                 return CompleteValue(
                     input,
                     cursorIndex,
@@ -206,7 +212,7 @@ internal static class CommandAutocomplete
             return Empty(input, cursorIndex, replacementStart, replacementLength);
         }
 
-        if (!options.AllowInterleavedOptions && argumentIndex < command.Arguments.Count)
+        if (!options.AllowInterleavedOptions && argumentIndex < command.Arguments.Count && !command.Arguments[argumentIndex].IsOptional)
         {
             return Empty(input, cursorIndex, replacementStart, replacementLength);
         }
@@ -237,6 +243,7 @@ internal static class CommandAutocomplete
             command,
             options,
             usedNamedMembers,
+            usedValueIds,
             comparison);
     }
 
@@ -249,17 +256,18 @@ internal static class CommandAutocomplete
         CommandDefinition command,
         CommandParsingOptions options,
         HashSet<string> usedNamedMembers,
+        HashSet<string> usedValueIds,
         StringComparison comparison)
     {
         var candidates = new List<CommandAutocompleteCandidate>();
         foreach (CommandFlagDefinition flag in command.Flags)
         {
-            AddMemberCandidates(candidates, flag, CommandAutocompleteCandidateKind.Flag, options.FlagAndOptionPrefix, partialName, usedNamedMembers, comparison);
+            AddMemberCandidates(candidates, flag, CommandAutocompleteCandidateKind.Flag, options.FlagAndOptionPrefix, partialName, usedNamedMembers, usedValueIds, comparison);
         }
 
         foreach (CommandOptionDefinition option in command.Options)
         {
-            AddMemberCandidates(candidates, option, CommandAutocompleteCandidateKind.Option, options.FlagAndOptionPrefix, partialName, usedNamedMembers, comparison);
+            AddMemberCandidates(candidates, option, CommandAutocompleteCandidateKind.Option, options.FlagAndOptionPrefix, partialName, usedNamedMembers, usedValueIds, comparison);
         }
 
         return CreateResult(input, cursorIndex, replacementStart, replacementLength, candidates);
@@ -272,9 +280,10 @@ internal static class CommandAutocomplete
         string prefix,
         string partialName,
         HashSet<string> usedNamedMembers,
+        HashSet<string> usedValueIds,
         StringComparison comparison)
     {
-        if (usedNamedMembers.Contains(member.Name))
+        if (usedNamedMembers.Contains(member.Name) || usedValueIds.Contains(member.Id))
         {
             return;
         }
@@ -336,9 +345,9 @@ internal static class CommandAutocomplete
                 AddValueCandidate(candidates, candidate, member, partialValue, comparison);
             }
         }
-        else if (member is CommandOptionDefinition { SuggestAllowedValues: true } option)
+        else if (member.SuggestAllowedValues)
         {
-            foreach (object? allowedValue in option.AllowedValues)
+            foreach (object? allowedValue in member.AllowedValues)
             {
                 if (allowedValue is null)
                 {

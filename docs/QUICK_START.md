@@ -53,7 +53,7 @@ Typed command state is a reference type whose public constructor parameters matc
 ```csharp
 console.RegisterCommand(new CommandBuilder("greet")
     .Description("Greets a player.")
-    .Argument<GreetState>(state => state.Name, "name")
+    .Argument<GreetState>(state => state.Name, id: "name", name: "name")
     .Execute<GreetState>((context, state) =>
         CommandResult.Success(CommandOutput.Inline($"Hello, {state.Name}!")))
     .Build());
@@ -62,6 +62,8 @@ internal sealed record GreetState(string Name);
 ```
 
 `CommandBuilder.Build()` creates the definition; `ConsoleManager.RegisterCommand` owns registration. See [Command registration](COMMAND_REGISTRATION.md) for flags, options, aliases, ranges, and constraints.
+
+Each binding has a required logical ID as well as its input name. IDs identify resolved state values and defaults. Commands may share an ID between one optional trailing positional argument and one option when both bind the same state property; see the registration guide for the full pattern.
 
 ## Execute and inspect
 

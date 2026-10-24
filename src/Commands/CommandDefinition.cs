@@ -15,6 +15,7 @@ public sealed class CommandDefinition
         IReadOnlyList<CommandArgumentDefinition> arguments,
         IReadOnlyList<CommandFlagDefinition> flags,
         IReadOnlyList<CommandOptionDefinition> options,
+        IReadOnlyDictionary<string, object?> defaults,
         IReadOnlyList<CommandConstraintDefinition> constraints,
         IReadOnlyList<string> requiredPermissions,
         IReadOnlyList<IReadOnlyList<string>> requiredAnyPermissionGroups,
@@ -29,6 +30,7 @@ public sealed class CommandDefinition
         Arguments = arguments ?? throw new ArgumentNullException(nameof(arguments));
         Flags = flags ?? throw new ArgumentNullException(nameof(flags));
         Options = options ?? throw new ArgumentNullException(nameof(options));
+        Defaults = defaults ?? throw new ArgumentNullException(nameof(defaults));
         Constraints = constraints ?? throw new ArgumentNullException(nameof(constraints));
         RequiredPermissions = requiredPermissions ?? throw new ArgumentNullException(nameof(requiredPermissions));
         RequiredAnyPermissionGroups = requiredAnyPermissionGroups ?? throw new ArgumentNullException(nameof(requiredAnyPermissionGroups));
@@ -54,7 +56,7 @@ public sealed class CommandDefinition
     public Type? StateType { get; }
 
     /// <summary>
-    /// Gets the required positional argument definitions.
+    /// Gets the positional argument definitions in input order.
     /// </summary>
     public IReadOnlyList<CommandArgumentDefinition> Arguments { get; }
 
@@ -67,6 +69,9 @@ public sealed class CommandDefinition
     /// Gets the option definitions.
     /// </summary>
     public IReadOnlyList<CommandOptionDefinition> Options { get; }
+
+    /// <summary>Gets configured defaults by logical value ID.</summary>
+    public IReadOnlyDictionary<string, object?> Defaults { get; }
 
     /// <summary>
     /// Gets the constraint metadata definitions.

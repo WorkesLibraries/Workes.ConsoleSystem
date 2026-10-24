@@ -44,7 +44,7 @@ using Workes.ConsoleSystem.Entries;
 
 var console = new ConsoleManager();
 console.RegisterCommand(new CommandBuilder("greet")
-    .Argument<GreetState>(state => state.Name, "name")
+    .Argument<GreetState>(state => state.Name, id: "name", name: "name")
     .Execute<GreetState>((context, state) =>
         CommandResult.Success(CommandOutput.Inline($"Hello, {state.Name}!")))
     .Build());

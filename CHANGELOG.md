@@ -2,6 +2,18 @@
 
 This file records notable user-facing changes to `Workes.ConsoleSystem`. The package keeps its existing NuGet identity. The previously published 0.1.0 package remains unchanged; version 0.2.0 is the substantial rebuild around `Workes.ContentSystem` and is not intended as a drop-in upgrade from the earlier implementation.
 
+## [24-10-2026]
+
+### Changed
+
+- Refactored command bindings around required logical value IDs, resolved values, bulk defaults, and one optional trailing positional argument.
+- Kept argument, flag, and option source maps limited to explicitly supplied input and added `BoundCommand.Values` for resolved values.
+- Extended binding-specific range, allowed-value, and autocomplete metadata to positional arguments.
+
+### Documentation
+
+- Updated command registration, parsing, validation, autocomplete, API reference, Quick Start, README, architecture, and API guidelines for the new model.
+
 ## [0.4.0] - 17-10-2026
 
 ### Added

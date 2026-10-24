@@ -42,6 +42,10 @@ Allow custom console entries through a narrow entry contract and a controlled ma
 
 Use one command schema model rather than separate public types for each combination of positional arguments, flags, and options.
 
+- Give every input binding a required string ID that names its logical state value; keep that ID distinct from the positional or named input name. Use ordinal ID comparison and bulk `Defaults((id, value), ...)` configuration.
+- Permit one optional positional argument at the end. It may share an ID with one option only when both target the same state property and type; reject supplying both sources in one parse.
+- Expose resolved logical values by ID and retain argument, flag, and option maps as explicit-source views. Keep conversion, range, allowed-value, and autocomplete metadata on each input binding, then run typed constraints on the final state.
+
 - Simple commands should work without a separate state type.
 - Complex commands should prefer small immutable typed state records.
 - Required positional arguments represent core command state; flags and named options represent optional state.

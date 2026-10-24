@@ -24,9 +24,9 @@ public sealed class CommandValidationTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
-            .Argument<RestartState>(x => x.Reason, "reason")
-            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players")
-            .Option<RestartState>(x => x.DelaySeconds, "delay")
+            .Argument<RestartState>(x => x.Reason, "reason", "reason")
+            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay")
             .Constraint<RestartState>(
                 "delay-ignore-players",
                 "Delay cannot be combined with ignore players.",
@@ -50,9 +50,9 @@ public sealed class CommandValidationTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
-            .Argument<RestartState>(x => x.Reason, "reason")
-            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players")
-            .Option<RestartState>(x => x.DelaySeconds, "delay")
+            .Argument<RestartState>(x => x.Reason, "reason", "reason")
+            .Flag<RestartState>(x => x.IgnorePlayers, "ignore-players", "ignore-players")
+            .Option<RestartState>(x => x.DelaySeconds, "delay", "delay")
             .Constraint<RestartState>(
                 "delay-ignore-players",
                 "Delay cannot be combined with ignore players.",
@@ -71,7 +71,7 @@ public sealed class CommandValidationTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
-            .Argument<RestartReasonState>(x => x.Reason, "reason")
+            .Argument<RestartReasonState>(x => x.Reason, "reason", "reason")
             .Constraint<RestartReasonState>("first", "First failed.", state => false)
             .Constraint<RestartReasonState>("second", "Second failed.", state => false)
             .Execute<RestartReasonState>((ctx, state) => CommandResult.Success())
@@ -90,7 +90,7 @@ public sealed class CommandValidationTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
-            .Argument<RestartReasonState>(x => x.Reason, "reason")
+            .Argument<RestartReasonState>(x => x.Reason, "reason", "reason")
             .Constraint<RestartReasonState>("throws", "Should not surface directly.", state => throw new InvalidOperationException("Broken predicate."))
             .Execute<RestartReasonState>((ctx, state) => CommandResult.Success())
             .Build());
@@ -111,7 +111,7 @@ public sealed class CommandValidationTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
-            .Option<RangeState>(x => x.DelaySeconds, "delay")
+            .Option<RangeState>(x => x.DelaySeconds, "delay", "delay")
             .Range(0, 10)
             .Execute<RangeState>((ctx, state) => CommandResult.Success())
             .Build());
@@ -131,7 +131,7 @@ public sealed class CommandValidationTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("mode.set")
-            .Option<ModeState>(x => x.Mode, "mode")
+            .Option<ModeState>(x => x.Mode, "mode", "mode")
             .AllowedValues(Mode.Fast, Mode.Slow)
             .Execute<ModeState>((ctx, state) => CommandResult.Success())
             .Build());
@@ -149,7 +149,7 @@ public sealed class CommandValidationTests
     {
         var console = new ConsoleManager();
         console.RegisterCommand(new CommandBuilder("server.restart")
-            .Option<RangeState>(x => x.DelaySeconds, "delay")
+            .Option<RangeState>(x => x.DelaySeconds, "delay", "delay")
             .Range(0, 10)
             .AllowedValues(0, 5, 10)
             .Execute<RangeState>((ctx, state) => CommandResult.Success())
@@ -169,7 +169,7 @@ public sealed class CommandValidationTests
     {
         Assert.Throws<InvalidOperationException>(() =>
             new CommandBuilder("server.restart")
-                .Option<RangeState>(x => x.DelaySeconds, "delay")
+                .Option<RangeState>(x => x.DelaySeconds, "delay", "delay")
                 .Range(10, 0)
                 .Execute<RangeState>((ctx, state) => CommandResult.Success())
                 .Build());
@@ -180,7 +180,7 @@ public sealed class CommandValidationTests
     {
         Assert.Throws<InvalidOperationException>(() =>
             new CommandBuilder("server.restart")
-                .Option<RangeState>(x => x.DelaySeconds, "delay")
+                .Option<RangeState>(x => x.DelaySeconds, "delay", "delay")
                 .AllowedValues("not-a-number")
                 .Execute<RangeState>((ctx, state) => CommandResult.Success())
                 .Build());
@@ -191,7 +191,7 @@ public sealed class CommandValidationTests
     {
         Assert.Throws<ArgumentNullException>(() =>
             new CommandBuilder("server.restart")
-                .Argument<RestartState>(x => x.Reason, "reason")
+                .Argument<RestartState>(x => x.Reason, "reason", "reason")
                 .Constraint<RestartState>("constraint", "message", null!));
     }
 
