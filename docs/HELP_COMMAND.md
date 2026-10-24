@@ -143,6 +143,70 @@ new CommandBuilder("player.teleport")
 
 `.Errors(...)` enables four independently customizable outcomes: unknown command target, search without visible results, permission denial, and command unavailability. Omitted callbacks use `HelpCommandErrorMessages` defaults; a callback returning `null` or an empty string suppresses that message. Errors are silent until `.Errors(...)` is called. A blocked command is hidden by default, and direct help treats it as unknown. The access policy decides whether blocked details may be disclosed; explicit `Respond(lines)` output takes precedence over configured error text.
 
+### Default error messages
+
+Calling `.Errors()` enables all four built-in messages:
+
+| Outcome | Default text |
+|---|---|
+| Unknown command target | `No command named '{query}' is available.` |
+| Search with no visible results | `No commands matched '{query}'.` |
+| Permission denied | `You do not have access to command '{commandPath}'.` |
+| Command unavailable | `Command '{commandPath}' cannot be used right now.` |
+
+For example, with search and command help enabled, `help --command missing` returns `No command named 'missing' is available.`, while `help --search missing` returns `No commands matched 'missing'.`
+
+Customize only the outcomes you need. Omitted callbacks retain their built-in defaults:
+
+```csharp
+var help = new HelpCommandBuilder()
+    .EnableSearchOption("search")
+    .EnableCommandHelpOption("command")
+    .Errors(noSearchResults: context => $"Nothing matched '{context.Query}'.")
+    .Build();
+```
+
+To suppress one message while keeping the other defaults enabled, provide a callback returning `null` or an empty string:
+
+```csharp
+var help = new HelpCommandBuilder()
+    .Errors(noSearchResults: _ => null)
+    .Build();
+```
+
+Passing `null` as the callback means “use the default”; use a callback returning `null` to suppress it.
+
+Permission and availability messages additionally require a policy that chooses to disclose blocked commands. The built-in `ExplainBlocked` policy routes to the configured error message, so call `.Errors()` to enable its default text:
+
+```csharp
+var help = new HelpCommandBuilder()
+    .EnableCommandHelpOption("command")
+    .AccessPolicy(HelpCommandAccessPolicies.ExplainBlocked)
+    .Errors()
+    .Build();
+```
+
+With the default `HideBlocked` policy and errors enabled, a direct request for a blocked command uses the unknown-command message. A custom policy returning `Respond(lines)` supplies explicit output instead, which takes precedence over configured error text.
+
+### Other help defaults
+
+| Setting | Default |
+|---|---|
+| Help command path | `help` |
+| Shared formatter | `HelpCommandFormatters.Simple` |
+| Search modes | Disabled |
+| Command-specific help modes | Disabled |
+| Specialized formatters | Fall back to the shared formatter |
+| Access policy | `HelpCommandAccessPolicies.HideBlocked` |
+| Error messages | Disabled until `.Errors(...)` is called |
+| Search matching | Case-aware substring match on command paths |
+| Result ordering | Command registration order |
+| Command syntax | Absent unless supplied manually or generated |
+
+The manager's parser settings also control how help options are entered. Defaults are the `--` prefix, space-separated option values, and case-insensitive command matching. For example, the default option syntax is `help --search give`; a manager configured with another prefix or option value style uses that syntax instead.
+
+`CommandHelpContext.MatchedCommands` contains commands admitted by the access policy for formatting. `CommandHelpAccessContext.MatchedCommands` gives the policy the path-matched candidates before access visibility filtering, so it can make a decision with blocked candidates in view.
+
 Search defaults to case-aware substring matching against registered command paths. `.SearchWith(...)` accepts a predicate of `(command, term, isCaseSensitive)`. The manager limits candidates to its registered commands and applies access checks after matching. Results keep registration order by default; use `.OrderResults(HelpCommandResultOrder.Alphabetical)` or provide an `IComparer<CommandDefinition>`.
 
 ## Alias migration
